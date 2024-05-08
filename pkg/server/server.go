@@ -16,18 +16,16 @@ type Server struct {
 	engine *gin.Engine
 	srv    *http.Server
 
-	config       *config.Config
-	serverConfig *config.Server
-	handler      *handler.LogHandler
-	service      *service.Receiver
+	config  *config.Config
+	handler *handler.LogHandler
+	service *service.Receiver
 }
 
-func NewServer(config *config.Config, serverConfig *config.Server) *Server {
+func NewServer(config *config.Config) *Server {
 	s := &Server{
-		engine:       gin.Default(),
-		config:       config,
-		serverConfig: serverConfig,
-		service:      service.NewReceiver(config),
+		engine:  gin.Default(),
+		config:  config,
+		service: service.NewReceiver(config),
 	}
 
 	slog.Debug("[server] Starting server", "config", config.ToString())
@@ -84,5 +82,5 @@ func (s *Server) Stop() error {
 }
 
 func (s *Server) makeAddress() string {
-	return fmt.Sprintf("%s:%d", s.serverConfig.Address, s.serverConfig.Port)
+	return fmt.Sprintf("%s:%d", s.config.ServerConfig.Address, s.config.ServerConfig.Port)
 }
