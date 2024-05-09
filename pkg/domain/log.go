@@ -86,8 +86,8 @@ var LogLevel = map[string]int{
 	LevelDebug:     6,
 }
 
-func NewLog() Record {
-	return &Log{
+func NewLog(data map[interface{}]interface{}) Record {
+	ret := &Log{
 		ExtraFields: make(map[string]string),
 		TraceIP:     make([]string, 0),
 		Tags:        make([]string, 0),
@@ -96,6 +96,10 @@ func NewLog() Record {
 		Audit:       new(bool),
 		AutoIndex:   new(bool),
 	}
+
+	ret.Decode(data)
+
+	return ret
 }
 
 func (l *Log) ToString() string {
@@ -118,6 +122,7 @@ func GetStringP(s interface{}) *string {
 
 func (l *Log) Decode(data map[interface{}]interface{}) {
 	for k, v := range data {
+
 		key := strings.ToLower(fmt.Sprintf("%v", k))
 
 		switch key {
@@ -166,15 +171,25 @@ func (l *Log) Decode(data map[interface{}]interface{}) {
 			val := v.(float64)
 			l.Duration = &val
 		case "trace_ip":
-			l.TraceIP = v.([]string)
+			l.TraceIP = make([]string, len(v.([]interface{})))
+
+			for p, ip := range v.([]interface{}) {
+				l.TraceIP[p] = ip.(string)
+			}
 		case "region":
 			l.Region = GetStringP(v)
 		case "az":
 			l.AZ = GetStringP(v)
 		case "tags":
-			l.Tags = v.([]string)
+			l.Tags = make([]string, len(v.([]interface{})))
+
+			for p, tag := range v.([]interface{}) {
+				l.Tags[p] = tag.(string)
+			}
 		case "args":
-			l.Args = v.(map[string]string)
+			for arg_key, arg_val := range v.(map[interface{}]interface{}) {
+				l.Args[arg_key.(string)] = arg_val.(string)
+			}
 		case "transaction_message_reference":
 			l.TransactionMessageReference = GetStringP(v)
 		case "ttl":

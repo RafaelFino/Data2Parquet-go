@@ -8,14 +8,15 @@ import (
 )
 
 type Config struct {
-	Debug        bool              `json:"debug,omitempty"`
-	LogPath      string            `json:"log_path"`
-	WriterConfig map[string]string `json:"writer_config"`
-	WriterName   string            `json:"writer_name"`
-	BufferName   string            `json:"buffer_name"`
-	BufferConfig map[string]string `json:"buffer_config"`
-	Address      string            `json:"address,omitempty"`
-	Port         int               `json:"port,omitempty"`
+	Debug          bool              `json:"debug,omitempty"`
+	LogPath        string            `json:"log_path"`
+	WriterConfig   map[string]string `json:"writer_config"`
+	WriterName     string            `json:"writer_name"`
+	BufferName     string            `json:"buffer_name"`
+	BufferConfig   map[string]string `json:"buffer_config"`
+	BufferPageSize int               `json:"buffer_page_size"`
+	Address        string            `json:"address,omitempty"`
+	Port           int               `json:"port,omitempty"`
 }
 
 var keys = []string{"debug", "log_path", "writer_config", "writer_name", "address", "port", "buffer_name", "buffer_config"}
@@ -84,6 +85,9 @@ func (c *Config) Set(cfg map[string]string) error {
 			if err != nil {
 				return err
 			}
+		case "buffer_page_size":
+			c.BufferPageSize = 0
+			fmt.Sscanf(value, "%d", &c.BufferPageSize)
 		default:
 			slog.Warn("[config] Unknown key", "key", key)
 		}

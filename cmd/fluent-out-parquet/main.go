@@ -82,10 +82,7 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 		record["fluent_timestamp"] = timestamp
 		record["fluent_tag"] = C.GoString(tag)
 
-		line := domain.NewLog()
-		line.Decode(record)
-
-		rcv.Write(line)
+		rcv.Write(domain.NewLog(record))
 	}
 
 	return output.FLB_OK
