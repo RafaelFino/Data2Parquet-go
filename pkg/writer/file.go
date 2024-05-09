@@ -1,9 +1,9 @@
 package writer
 
 import (
+	"data2parquet/pkg/config"
+	"data2parquet/pkg/domain"
 	"log/slog"
-	"log2parquet/pkg/config"
-	"log2parquet/pkg/domain"
 )
 
 type File struct {

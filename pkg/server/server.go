@@ -1,12 +1,13 @@
 package server
 
 import (
+	"data2parquet/pkg/config"
+	"data2parquet/pkg/handler"
+	"data2parquet/pkg/receiver"
 	"fmt"
 	"log"
 	"log/slog"
-	"log2parquet/pkg/config"
-	"log2parquet/pkg/handler"
-	"log2parquet/pkg/service"
+
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,16 +17,16 @@ type Server struct {
 	engine *gin.Engine
 	srv    *http.Server
 
-	config  *config.Config
-	handler *handler.LogHandler
-	service *service.Receiver
+	config   *config.Config
+	handler  *handler.LogHandler
+	receiver *receiver.Receiver
 }
 
 func NewServer(config *config.Config) *Server {
 	s := &Server{
-		engine:  gin.Default(),
-		config:  config,
-		service: service.NewReceiver(config),
+		engine:   gin.Default(),
+		config:   config,
+		receiver: receiver.NewReceiver(config),
 	}
 
 	slog.Debug("[server] Starting server", "config", config.ToString())
@@ -65,8 +66,8 @@ func (s *Server) Run() {
 }
 
 func (s *Server) Stop() error {
-	slog.Debug("[server] stopping service")
-	err := s.service.Close()
+	slog.Debug("[server] stopping receiver")
+	err := s.receiver.Close()
 
 	if err != nil {
 		slog.Debug("[server] error stopping service", "error", err)
@@ -82,5 +83,5 @@ func (s *Server) Stop() error {
 }
 
 func (s *Server) makeAddress() string {
-	return fmt.Sprintf("%s:%d", s.config.ServerConfig.Address, s.config.ServerConfig.Port)
+	return fmt.Sprintf("%s:%d", s.config.Address, s.config.Port)
 }

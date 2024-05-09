@@ -1,8 +1,8 @@
 package writer
 
 import (
-	"log2parquet/pkg/config"
-	"log2parquet/pkg/domain"
+	"data2parquet/pkg/config"
+	"data2parquet/pkg/domain"
 )
 
 type Writer interface {

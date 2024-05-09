@@ -18,10 +18,14 @@ if [ "$par" == "all" ]; then
     do
         for arch in "${archs[@]}"
         do
-            for d in cmd/* ; do
-                echo "[$os $arch] Building ${d##*/} -> ./bin/$os-$arch/${d##*/}"
-                GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -ldflags="-s -w" -o bin/$os-$arch/${d##*/} $d/main.go
-            done
+            echo "[$os $arch] Building http-server -> ./bin/$os-$arch/http-server"
+            GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -ldflags="-s -w" -o bin/$os-$arch/http-server cmd/http-server/main.go
+
+            echo "[$os $arch] Building from-file -> ./bin/$os-$arch/from-file"
+            GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -ldflags="-s -w" -o bin/$os-$arch/from-file cmd/from-file/main.go
+
+            echo "[$os $arch] Building fluent-out-parquet -> ./bin/$os-$arch/fluent-out-parquet.so"
+            GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -buildmode=c-shared -o bin/$os-$arch/fluent-out-parquet.so cmd/fluent-out-parquet/main.go
         done
     done
     exit 0    

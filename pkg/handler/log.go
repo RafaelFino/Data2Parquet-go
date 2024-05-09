@@ -1,8 +1,8 @@
 package handler
 
 import (
+	"data2parquet/pkg/config"
 	"log/slog"
-	"log2parquet/pkg/config"
 	"net/http"
 	"time"
 
