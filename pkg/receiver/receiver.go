@@ -29,8 +29,8 @@ func (r *Receiver) init() error {
 	return nil
 }
 
-func (r *Receiver) Write(data domain.Record) {
-	slog.Debug("[receiver] Writing log", "log", data.ToString())
+func (r *Receiver) Write(record domain.Record) {
+	slog.Debug("[receiver] Writing record", "record", record.ToString())
 }
 
 func (r *Receiver) Close() error {

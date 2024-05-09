@@ -14,7 +14,7 @@ func (s *S3) Init(config *config.Config) error {
 	return nil
 }
 
-func (s *S3) Write(data []domain.Log) error {
+func (s *S3) Write(data []domain.Record) error {
 	slog.Debug("[writer] Writing logs", "data", data)
 	return nil
 }

@@ -14,7 +14,7 @@ func (f *File) Init(config *config.Config) error {
 	return nil
 }
 
-func (f *File) Write(data []domain.Log) error {
+func (f *File) Write(data []domain.Record) error {
 	slog.Debug("[writer] Writing logs", "data", data)
 	return nil
 }

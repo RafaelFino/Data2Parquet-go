@@ -11,23 +11,28 @@ if [ "$par" == "clean" ]; then
 fi
 
 if [ "$par" == "all" ]; then
-    archs=( "amd64" "arm64" )
-    oses=( "linux" "windows" "darwin" )
+    os="linux"
+    
+    arch="amd64"
+    echo "[$os $arch] Building http-server -> ./bin/$os-$arch/http-server"
+    GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -ldflags="-s -w" -o bin/$os-$arch/http-server cmd/http-server/main.go
 
-    for os in "${oses[@]}"
-    do
-        for arch in "${archs[@]}"
-        do
-            echo "[$os $arch] Building http-server -> ./bin/$os-$arch/http-server"
-            GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -ldflags="-s -w" -o bin/$os-$arch/http-server cmd/http-server/main.go
+    echo "[$os $arch] Building from-file -> ./bin/$os-$arch/from-file"
+    GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -ldflags="-s -w" -o bin/$os-$arch/from-file cmd/from-file/main.go
 
-            echo "[$os $arch] Building from-file -> ./bin/$os-$arch/from-file"
-            GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -ldflags="-s -w" -o bin/$os-$arch/from-file cmd/from-file/main.go
+    echo "[$os $arch] Building fluent-out-parquet -> ./bin/$os-$arch/fluent-out-parquet.so"
+    GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -buildmode=c-shared -o bin/$os-$arch/fluent-out-parquet.so cmd/fluent-out-parquet/main.go
 
-            echo "[$os $arch] Building fluent-out-parquet -> ./bin/$os-$arch/fluent-out-parquet.so"
-            GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -buildmode=c-shared -o bin/$os-$arch/fluent-out-parquet.so cmd/fluent-out-parquet/main.go
-        done
-    done
+    arch="arm64"
+    echo "[$os $arch] Building http-server -> ./bin/$os-$arch/http-server"
+    GOOS=$os GOARCH=$arch CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc go build -ldflags="-s -w" -o bin/$os-$arch/http-server cmd/http-server/main.go
+
+    echo "[$os $arch] Building from-file -> ./bin/$os-$arch/from-file"
+    GOOS=$os GOARCH=$arch CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc go build -ldflags="-s -w" -o bin/$os-$arch/from-file cmd/from-file/main.go
+
+    echo "[$os $arch] Building fluent-out-parquet -> ./bin/$os-$arch/fluent-out-parquet.so"
+    GOOS=$os GOARCH=$arch CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc go build -buildmode=c-shared -o bin/$os-$arch/fluent-out-parquet.so cmd/fluent-out-parquet/main.go
+
     exit 0    
 fi
 

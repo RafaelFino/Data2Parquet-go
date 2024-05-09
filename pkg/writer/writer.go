@@ -7,6 +7,6 @@ import (
 
 type Writer interface {
 	Init(config *config.Config) error
-	Write(data []domain.Log) error
+	Write(data []domain.Record) error
 	Close() error
 }
