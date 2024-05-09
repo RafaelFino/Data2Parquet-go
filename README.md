@@ -1,2 +1,2 @@
-# log2Parquet-go
-A go log converter to Apache Parquet
+# Data2Parquet-go
+A go data converter to Apache Parquet
