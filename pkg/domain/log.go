@@ -34,10 +34,7 @@ type Log struct {
 	AutoIndex                   *bool             `json:"auto_index,omitempty" parquet:"name=auto_index, type=BOOLEAN"`
 	LoggerName                  *string           `json:"logger_name,omitempty" parquet:"name=logger_name, type=UTF8 type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY size=256"`
 	ThreadName                  *string           `json:"thread_name,omitempty" parquet:"name=thread_name, type=UTF8 type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY size=256"`
-}
-
-func NewLog() Record {
-	return &Log{}
+	ExtraFields                 map[string]string `json:"extra_fields,omitempty" parquet:"name=extra_fields, type=MAP, convertedtype=MAP, keytype=BYTE_ARRAY, keyconvertedtype=UTF8, valuetype=UTF8, valueconvertedtype=UTF8"`
 }
 
 var CloudProviderAWS = "aws"
@@ -86,22 +83,106 @@ var LogLevel = map[string]int{
 	LevelDebug:     6,
 }
 
-func (l *Log) SetSchema(schema string) error {
-	return nil
+func NewLog() Record {
+	return &Log{
+		ExtraFields: make(map[string]string),
+		TraceIP:     make([]string, 0),
+		Tags:        make([]string, 0),
+		Args:        make(map[string]string),
+		Level:       LevelInfo,
+		Audit:       new(bool),
+		AutoIndex:   new(bool),
+	}
 }
 
 func (l *Log) ToString() string {
 	return fmt.Sprintf("%+v", l)
 }
 
-func (l *Log) Decode(data map[interface{}]interface{}) error {
-	return nil
+func GetStringP(s interface{}) *string {
+	if len := len(s.(string)); len == 0 {
+		return nil
+	}
+
+	ret := fmt.Sprintf("%s", s)
+	return &ret
 }
 
-func (l *Log) Headers() []string {
-	return nil
+func (l *Log) Decode(data map[interface{}]interface{}) {
+	for k, v := range data {
+		switch k {
+		case "time":
+			l.Time = v.(string)
+		case "level":
+			l.Level = v.(string)
+		case "correlation_id":
+			l.CorrelationId = GetStringP(v)
+		case "session_id":
+			l.SessionId = GetStringP(v)
+		case "message_id":
+			l.MessageId = GetStringP(v)
+		case "person_id":
+			l.PersonId = GetStringP(v)
+		case "user_id":
+			l.UserId = GetStringP(v)
+		case "device_id":
+			l.DeviceId = GetStringP(v)
+		case "message":
+			l.Message = v.(string)
+		case "business_capability":
+			l.BusinessCapability = v.(string)
+		case "business_domain":
+			l.BusinessDomain = v.(string)
+		case "business_service":
+			l.BusinessService = v.(string)
+		case "application_service":
+			l.ApplicationService = v.(string)
+		case "audit":
+			val := v.(bool)
+			l.Audit = &val
+		case "resource_type":
+			l.ResourceType = GetStringP(v)
+		case "cloud_provider":
+			l.CloudProvider = GetStringP(v)
+		case "source_id":
+			l.SourceId = GetStringP(v)
+		case "http_response":
+			l.HTTPResponse = v.(*int)
+		case "error_code":
+			l.ErrorCode = GetStringP(v)
+		case "stack_trace":
+			l.StackTrace = GetStringP(v)
+		case "duration":
+			val := v.(float64)
+			l.Duration = &val
+		case "trace_ip":
+			l.TraceIP = v.([]string)
+		case "region":
+			l.Region = GetStringP(v)
+		case "az":
+			l.AZ = GetStringP(v)
+		case "tags":
+			l.Tags = v.([]string)
+		case "args":
+			l.Args = v.(map[string]string)
+		case "transaction_message_reference":
+			l.TransactionMessageReference = GetStringP(v)
+		case "ttl":
+			val := v.(int)
+			l.Ttl = &val
+		case "auto_index":
+			val := v.(bool)
+			l.AutoIndex = &val
+		case "logger_name":
+			l.LoggerName = GetStringP(v)
+		case "thread_name":
+			l.ThreadName = GetStringP(v)
+		default:
+			l.ExtraFields[k.(string)] = v.(string)
+		}
+	}
 }
 
 func (l *Log) Key() string {
-	return ""
+	return fmt.Sprintf("%s-%s-%s", l.BusinessCapability, l.BusinessDomain, l.BusinessService)
 }
