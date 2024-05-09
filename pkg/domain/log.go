@@ -5,7 +5,7 @@ import "fmt"
 type Log struct {
 }
 
-func NewLog() Line {
+func NewLog() Record {
 	return &Log{}
 }
 

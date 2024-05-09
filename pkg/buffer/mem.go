@@ -7,14 +7,14 @@ import (
 )
 
 type Mem struct {
-	data map[string][]*domain.Line
+	data map[string][]*domain.Record
 }
 
 func NewMem() Buffer {
 	return &Mem{}
 }
 
-func (m *Mem) Push(key string, item *domain.Line) error {
+func (m *Mem) Push(key string, item *domain.Record) error {
 	if item == nil {
 		slog.Warn("[buffer.mem] Item is nil	", "key", key)
 		return errors.New("Item is nil")
@@ -23,11 +23,11 @@ func (m *Mem) Push(key string, item *domain.Line) error {
 	slog.Debug("[buffer.mem] Pushing item", "key", key, "item", (*item).ToString())
 
 	if m.data == nil {
-		m.data = make(map[string][]*domain.Line)
+		m.data = make(map[string][]*domain.Record)
 	}
 
 	if _, ok := m.data[key]; !ok {
-		m.data[key] = make([]*domain.Line, 0)
+		m.data[key] = make([]*domain.Record, 0)
 	}
 
 	m.data[key] = append(m.data[key], item)
@@ -35,7 +35,7 @@ func (m *Mem) Push(key string, item *domain.Line) error {
 	return nil
 }
 
-func (m *Mem) PushMany(key string, items []*domain.Line) error {
+func (m *Mem) PushMany(key string, items []*domain.Record) error {
 	if items == nil {
 		slog.Warn("[buffer.mem] Items is nil", "key", key)
 		return errors.New("Items is nil")
@@ -44,11 +44,11 @@ func (m *Mem) PushMany(key string, items []*domain.Line) error {
 	slog.Debug("[buffer.mem] Pushing items", "key", key, "items", len(items))
 
 	if m.data == nil {
-		m.data = make(map[string][]*domain.Line)
+		m.data = make(map[string][]*domain.Record)
 	}
 
 	if _, ok := m.data[key]; !ok {
-		m.data[key] = make([]*domain.Line, 0)
+		m.data[key] = make([]*domain.Record, 0)
 	}
 
 	m.data[key] = append(m.data[key], items...)
@@ -56,7 +56,7 @@ func (m *Mem) PushMany(key string, items []*domain.Line) error {
 	return nil
 }
 
-func (m *Mem) Get(key string) []*domain.Line {
+func (m *Mem) Get(key string) []*domain.Record {
 	if m.data == nil {
 		slog.Debug("[buffer.mem] Data is nil", "key", key)
 		return nil

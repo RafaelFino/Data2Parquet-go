@@ -9,15 +9,15 @@ func NewRedis() Buffer {
 	return &Redis{}
 }
 
-func (r *Redis) Push(key string, item *domain.Line) error {
+func (r *Redis) Push(key string, item *domain.Record) error {
 	return nil
 }
 
-func (r *Redis) PushMany(key string, items []*domain.Line) error {
+func (r *Redis) PushMany(key string, items []*domain.Record) error {
 	return nil
 }
 
-func (r *Redis) Get(key string) []*domain.Line {
+func (r *Redis) Get(key string) []*domain.Record {
 	return nil
 }
 

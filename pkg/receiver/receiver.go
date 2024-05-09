@@ -29,7 +29,7 @@ func (r *Receiver) init() error {
 	return nil
 }
 
-func (r *Receiver) Write(data domain.Line) {
+func (r *Receiver) Write(data domain.Record) {
 	slog.Debug("[receiver] Writing log", "log", data.ToString())
 }
 
