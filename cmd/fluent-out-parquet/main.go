@@ -79,17 +79,11 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 			timestamp = time.Now()
 		}
 
+		record["fluent_timestamp"] = timestamp
+		record["fluent_tag"] = C.GoString(tag)
+
 		line := domain.NewLog()
-
-		err := line.Decode(record)
-
-		if err != nil {
-			slog.Error("Error decoding record", "error", err)
-			continue
-		}
-
-		record["timestamp"] = timestamp
-		record["tag"] = C.GoString(tag)
+		line.Decode(record)
 
 		rcv.Write(line)
 	}

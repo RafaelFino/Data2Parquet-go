@@ -1,6 +1,9 @@
 package domain
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Log struct {
 	Time                        string            `json:"time" parquet:"name=time, type=TIMESTAMP_MILLIS"`
@@ -100,17 +103,24 @@ func (l *Log) ToString() string {
 }
 
 func GetStringP(s interface{}) *string {
-	if len := len(s.(string)); len == 0 {
+	if s == nil {
 		return nil
 	}
 
 	ret := fmt.Sprintf("%s", s)
+
+	if len(ret) == 0 {
+		return nil
+	}
+
 	return &ret
 }
 
 func (l *Log) Decode(data map[interface{}]interface{}) {
 	for k, v := range data {
-		switch k {
+		key := strings.ToLower(fmt.Sprintf("%v", k))
+
+		switch key {
 		case "time":
 			l.Time = v.(string)
 		case "level":
