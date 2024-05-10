@@ -17,16 +17,16 @@ func NewFile(config *config.Config) Writer {
 }
 
 func (f *File) Init() error {
-	slog.Debug("[writer] Initializing file writer", "config", f.config.ToString())
+	slog.Debug("Initializing file writer", "config", f.config.ToString(), "module", "writer.file", "function", "Init")
 	return nil
 }
 
 func (f *File) Write(data []domain.Record) error {
-	slog.Debug("[writer] Writing logs", "data", data)
+	slog.Debug("Writing logs", "data", data, "module", "writer.file", "function", "Write")
 	return nil
 }
 
 func (f *File) Close() error {
-	slog.Debug("[writer] Closing file writer")
+	slog.Debug("Closing file writer", "module", "writer.file", "function", "Close")
 	return nil
 }

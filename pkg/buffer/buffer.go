@@ -7,7 +7,8 @@ import (
 
 type Buffer interface {
 	Push(key string, item domain.Record) error
-	Get(key string, size int) []domain.Record
+	Get(key string) []domain.Record
+	Clear(key string, size int) error
 	Keys() []string
 }
 

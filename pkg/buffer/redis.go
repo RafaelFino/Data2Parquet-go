@@ -19,7 +19,11 @@ func (r *Redis) Push(key string, item domain.Record) error {
 	return nil
 }
 
-func (r *Redis) Get(key string, size int) []domain.Record {
+func (r *Redis) Get(key string) []domain.Record {
+	return nil
+}
+
+func (r *Redis) Clear(key string, size int) error {
 	return nil
 }
 

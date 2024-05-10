@@ -19,7 +19,7 @@ func NewLogHandler(config *config.Config) *LogHandler {
 func (h *LogHandler) Write(ctx *gin.Context) {
 	start := time.Now()
 
-	slog.Debug("[handler] Write log")
+	slog.Debug("Write record", "module", "handler", "function", "Write")
 
 	ctx.JSON(http.StatusCreated, gin.H{
 		"timestamp": time.Now().Unix(),
@@ -30,7 +30,7 @@ func (h *LogHandler) Write(ctx *gin.Context) {
 func (h *LogHandler) Healthcheck(ctx *gin.Context) {
 	start := time.Now()
 
-	slog.Debug("[handler] Healthcheck")
+	slog.Debug("Healthcheck", "module", "handler", "function", "Healthcheck")
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"status":    "ok",

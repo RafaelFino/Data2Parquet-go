@@ -36,7 +36,7 @@ func main() {
 		log.SetOutput(os.Stdout)
 	}
 
-	slog.Debug("[main] Starting", "config", cfg.ToString())
+	slog.Debug("Starting", "config", cfg.ToString(), "module", "main", "function", "main")
 
 	fmt.Printf("Starting...")
 
@@ -62,12 +62,16 @@ func initLogger(path string) error {
 		rotatelogs.WithRotationTime(time.Hour),
 		rotatelogs.WithRotationCount(30), //30 days
 	)
+
 	if err != nil {
-		log.Fatalf("Failed to Initialize Log File %s", err)
+		fmt.Printf("Failed to Initialize Log File %s", err)
+		return err
 	}
 
 	multi := io.MultiWriter(writer, os.Stdout)
-	log.SetOutput(multi)
+	logger := slog.New(slog.NewJSONHandler(multi, nil))
+
+	slog.SetDefault(logger)
 
 	return nil
 }

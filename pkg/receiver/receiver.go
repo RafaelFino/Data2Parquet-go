@@ -14,6 +14,7 @@ type Receiver struct {
 	writer  writer.Writer
 	buffer  buffer.Buffer
 	running bool
+	last    map[string]time.Time
 }
 
 func NewReceiver(config *config.Config) *Receiver {
@@ -22,9 +23,10 @@ func NewReceiver(config *config.Config) *Receiver {
 		writer:  writer.NewWriter(config),
 		buffer:  buffer.NewBuffer(config),
 		running: true,
+		last:    make(map[string]time.Time),
 	}
 
-	slog.Debug("[receiver] Initializing receiver", "config", config.ToString())
+	slog.Debug("Initializing receiver", "config", config.ToString(), "module", "receiver")
 
 	ret.writer.Init()
 
@@ -42,27 +44,48 @@ func NewReceiver(config *config.Config) *Receiver {
 }
 
 func (r *Receiver) Write(record domain.Record) {
-	slog.Debug("[receiver] Writing record", "record", record.ToString())
+	slog.Debug("Writing record", "record", record.ToString(), "module", "receiver")
 	r.buffer.Push(record.Key(), record)
+
+	if _, ok := r.last[record.Key()]; !ok {
+		if time.Since(r.last[record.Key()]) > time.Duration(r.config.FlushInterval)*time.Second {
+			r.Flush()
+			r.last[record.Key()] = time.Now()
+		}
+	} else {
+		r.last[record.Key()] = time.Now()
+	}
 }
 
 func (r *Receiver) Flush() {
-	slog.Info("[receiver] Flushing buffer")
+	slog.Info("Flushing buffer", "module", "receiver")
 	keys := r.buffer.Keys()
 	for _, key := range keys {
-		data := r.buffer.Get(key, r.config.BufferSize)
+		data := r.buffer.Get(key)
 
-		slog.Debug("[receiver] Flushing buffer", "key", key, "size", len(data))
-		r.writer.Write(data)
+		slog.Debug("Flushing buffer", "key", key, "size", len(data), "module", "receiver")
+		err := r.writer.Write(data)
+
+		if err != nil {
+			slog.Error("Error writing data", "error", err, "key", key, "size", len(data), "module", "receiver")
+			continue
+		}
+
+		err = r.buffer.Clear(key, len(data))
+
+		if err != nil {
+			slog.Error("Error clearing buffer", "error", err, "key", key, "size", len(data), "module", "receiver")
+			continue
+		}
 	}
 }
 func (r *Receiver) Close() error {
-	slog.Info("[receiver] Closing receiver")
+	slog.Info("Closing receiver", "module", "receiver")
 	r.running = false
 	return nil
 }
 
 func (r *Receiver) Healthcheck() error {
-	slog.Debug("[receiver] Healthcheck", "running", r.running)
+	slog.Debug("Healthcheck", "running", r.running, "module", "receiver")
 	return nil
 }

@@ -29,7 +29,7 @@ func NewServer(config *config.Config) *Server {
 		receiver: receiver.NewReceiver(config),
 	}
 
-	slog.Debug("[server] Starting server", "config", config.ToString())
+	slog.Debug("Starting server", "config", config.ToString(), "module", "server", "function", "NewServer")
 
 	s.handler = handler.NewLogHandler(config)
 
@@ -38,7 +38,7 @@ func NewServer(config *config.Config) *Server {
 	gin.DefaultErrorWriter = log.Writer()
 
 	if s.config.Debug {
-		slog.Debug("[server] Debug mode enabled")
+		slog.Debug("Debug mode enabled", "module", "server", "function", "NewServer")
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
@@ -57,26 +57,26 @@ func NewServer(config *config.Config) *Server {
 }
 
 func (s *Server) Run() {
-	slog.Debug("[server] starting server", "address", s.makeAddress())
+	slog.Debug("Starting server", "address", s.makeAddress(), "module", "server", "function", "Run")
 	err := s.srv.ListenAndServe()
 	if err != nil {
-		slog.Debug("[server] error starting server: %s", err)
+		slog.Debug("Error starting server: %s", err, "module", "server", "function", "Run")
 		panic(err)
 	}
 }
 
 func (s *Server) Stop() error {
-	slog.Debug("[server] stopping receiver")
+	slog.Debug("[Stopping receiver", "module", "server", "function", "Stop")
 	err := s.receiver.Close()
 
 	if err != nil {
-		slog.Debug("[server] error stopping service", "error", err)
+		slog.Debug("Error stopping service", "error", err, "module", "server", "function", "Stop")
 	}
 
 	err = s.srv.Close()
 
 	if err != nil {
-		slog.Debug("[server] error stopping server", "error", err)
+		slog.Debug("Error stopping server", "error", err, "module", "server", "function", "Stop")
 	}
 
 	return err
