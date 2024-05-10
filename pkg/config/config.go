@@ -19,9 +19,12 @@ type Config struct {
 	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
 	Address               string `json:"address,omitempty"`
 	Port                  int    `json:"port,omitempty"`
+	RedisHost             string `json:"redis_host,omitempty"`
+	RedisPassword         string `json:"redis_password,omitempty"`
+	RedisDB               int    `json:"redis_db,omitempty"`
 }
 
-var keys = []string{"Debug", "LogPath", "WriterType", "BufferType", "BufferSize", "FlushInterval", "WriterFilePath", "WriterCompressionType", "WriterRowGroupSize"}
+var keys = []string{"Debug", "LogPath", "WriterType", "BufferType", "BufferSize", "FlushInterval", "WriterFilePath", "WriterCompressionType", "WriterRowGroupSize", "RedisHost", "RedisPassword", "RedisDB"}
 
 func ConfigFromJSON(data string) (*Config, error) {
 	config := &Config{}
@@ -91,6 +94,21 @@ func (c *Config) Set(cfg map[string]string) error {
 			c.WriterFilePath = value
 		case "writer_compression_type":
 			c.WriterCompressionType = value
+		case "writer_row_group_size":
+			c.WriterRowGroupSize = 128 * 1024 * 1024
+			fmt.Sscanf(value, "%d", &c.WriterRowGroupSize)
+		case "address":
+			c.Address = value
+		case "port":
+			c.Port = 0
+			fmt.Sscanf(value, "%d", &c.Port)
+		case "redis_host":
+			c.RedisHost = value
+		case "redis_password":
+			c.RedisPassword = value
+		case "redis_db":
+			c.RedisDB = 0
+			fmt.Sscanf(value, "%d", &c.RedisDB)
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
 		}

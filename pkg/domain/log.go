@@ -1,8 +1,11 @@
 package domain
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
+
+	"golang.org/x/exp/slog"
 )
 
 type Log struct {
@@ -211,4 +214,26 @@ func (l *Log) Decode(data map[interface{}]interface{}) {
 
 func (l *Log) Key() string {
 	return fmt.Sprintf("%s-%s-%s", l.BusinessCapability, l.BusinessDomain, l.BusinessService)
+}
+
+func (l *Log) ToJson() string {
+	data, err := json.Marshal(l)
+
+	if err != nil {
+		slog.Error("Error marshalling JSON", "error", err)
+		return ""
+	}
+
+	return string(data)
+}
+
+func (l *Log) FromJson(data string) error {
+	err := json.Unmarshal([]byte(data), l)
+
+	if err != nil {
+		slog.Error("Error unmarshalling JSON", "error", err)
+		return err
+	}
+
+	return nil
 }

@@ -1,0 +1,10 @@
+services:
+  buffer:
+    image: redis:latest
+    restart: always
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes    
+    ports:
+      - '6379:6379'
+    volumes: 
+      - ./data/buffer:/data

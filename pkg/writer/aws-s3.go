@@ -30,3 +30,7 @@ func (s *S3) Close() error {
 	slog.Debug("[writer] Closing S3 writer")
 	return nil
 }
+
+func (s *S3) IsReady() bool {
+	return true
+}

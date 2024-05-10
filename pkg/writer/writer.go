@@ -14,6 +14,7 @@ type Writer interface {
 	Init() error
 	Write(data []domain.Record) error
 	Close() error
+	IsReady() bool
 }
 
 func NewWriter(config *config.Config) Writer {

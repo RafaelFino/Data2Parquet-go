@@ -10,6 +10,7 @@ type Buffer interface {
 	Get(key string) []domain.Record
 	Clear(key string, size int) error
 	Keys() []string
+	IsReady() bool
 }
 
 func NewBuffer(config *config.Config) Buffer {

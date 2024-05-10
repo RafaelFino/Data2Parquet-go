@@ -5,6 +5,7 @@ import (
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
 	"data2parquet/pkg/writer"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -111,8 +112,6 @@ func (r *Receiver) FlushKey(key string, force bool, wg *sync.WaitGroup) error {
 	return nil
 }
 func (r *Receiver) Flush(force bool) error {
-	slog.Info("Flushing buffer", "module", "receiver", "function", "Flush", "force", force)
-
 	start := time.Now()
 
 	r.mu.Lock()
@@ -128,7 +127,7 @@ func (r *Receiver) Flush(force bool) error {
 
 	wg.Wait()
 
-	slog.Info("Buffer flushed", "module", "receiver", "function", "Flush", "duration", time.Since(start))
+	slog.Info("Buffer flushed", "module", "receiver", "function", "Flush", "duration", time.Since(start), "keys", len(keys), "force", force)
 
 	return nil
 }
@@ -141,5 +140,13 @@ func (r *Receiver) Close() error {
 
 func (r *Receiver) Healthcheck() error {
 	slog.Debug("Healthcheck", "running", r.running, "module", "receiver", "function", "Healthcheck")
+	if !r.running {
+		return errors.New("receiver is not running")
+	}
+
+	if !r.buffer.IsReady() {
+		return errors.New("buffer is not ready")
+	}
+
 	return nil
 }

@@ -22,3 +22,6 @@ go.work
 
 ./data/*.json
 ./data/*.parquet
+
+data/*.json
+data/*.parquet

@@ -1,11 +1,14 @@
 {
  "log_path": "./logs",
  "writer_type": "file",
- "buffer_type": "mem",
+ "buffer_type": "redis",
  "buffer_size": 1000,
  "flush_interval": 60,
  "writer_file_path": "./data",
  "writer_compression_type": "snappy",
  "writer_row_group_size": 134217728,
- "debug": false
+ "debug": false,
+ "redis_host": "0.0.0.0:6379",
+ "redis_password": "",
+ "redis_db": 0
 }

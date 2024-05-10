@@ -79,3 +79,7 @@ func (f *File) Close() error {
 	slog.Debug("Closing file writer", "module", "writer.file", "function", "Close")
 	return nil
 }
+
+func (f *File) IsReady() bool {
+	return true
+}

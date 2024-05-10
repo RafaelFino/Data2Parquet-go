@@ -108,3 +108,7 @@ func (m *Mem) Keys() []string {
 
 	return keys
 }
+
+func (m *Mem) IsReady() bool {
+	return true
+}
