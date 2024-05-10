@@ -81,7 +81,7 @@ func (h *LogHandler) Flush(ctx *gin.Context) {
 
 	slog.Debug("Flush buffer", "module", "handler", "function", "Flush")
 
-	err := h.rcv.Flush()
+	err := h.rcv.Flush(false)
 
 	if err != nil {
 		slog.Error("Error flushing buffer", "error", err, "module", "handler", "function", "Flush")

@@ -1,0 +1,10 @@
+{
+ "log_path": "./logs",
+ "writer_type": "file",
+ "buffer_type": "mem",
+ "buffer_size": 1000,
+ "flush_interval": 60,
+ "writer_file_path": "./data",
+ "writer_compression_type": "snappy",
+ "writer_row_group_size": 134217728
+}

@@ -5,8 +5,8 @@ import (
 	"data2parquet/pkg/handler"
 	"data2parquet/pkg/receiver"
 	"fmt"
-	"log"
 	"log/slog"
+	"os"
 
 	"net/http"
 
@@ -34,8 +34,8 @@ func NewServer(config *config.Config) *Server {
 	s.handler = handler.NewLogHandler(config)
 
 	gin.ForceConsoleColor()
-	gin.DefaultWriter = log.Writer()
-	gin.DefaultErrorWriter = log.Writer()
+	gin.DefaultWriter = os.Stdout
+	gin.DefaultErrorWriter = os.Stderr
 
 	if s.config.Debug {
 		slog.Debug("Debug mode enabled", "module", "server", "function", "NewServer")

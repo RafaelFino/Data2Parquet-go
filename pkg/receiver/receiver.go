@@ -56,7 +56,7 @@ func (r *Receiver) Write(record domain.Record) error {
 
 	if _, ok := r.last[record.Key()]; !ok {
 		if time.Since(r.last[record.Key()]) > time.Duration(r.config.FlushInterval)*time.Second {
-			go r.Flush()
+			go r.Flush(false)
 		}
 	} else {
 		r.last[record.Key()] = time.Now()
@@ -65,15 +65,16 @@ func (r *Receiver) Write(record domain.Record) error {
 	return err
 }
 
-func (r *Receiver) Flush() error {
-	slog.Info("Flushing buffer", "module", "receiver", "function", "Flush")
+func (r *Receiver) Flush(force bool) error {
+	slog.Info("Flushing buffer", "module", "receiver", "function", "Flush", "force", force)
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	keys := r.buffer.Keys()
 	for _, key := range keys {
-		if r.last[key].Add(time.Duration(r.config.FlushInterval) * time.Second).After(time.Now()) {
+		if !force && r.last[key].Add(time.Duration(r.config.FlushInterval)*time.Second).After(time.Now()) {
+			slog.Debug("Skipping buffer flush, interval not reached", "key", key, "module", "receiver", "function", "Flush")
 			continue
 		}
 

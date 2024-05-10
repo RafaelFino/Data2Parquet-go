@@ -78,11 +78,11 @@ func initLogger(path string) error {
 
 func PrintLogo() {
 	fmt.Print(`
-###############################
-#                             #
-#  Log2Parquet - HTTP Server  #
-#                             #
-###############################
+################################
+#                              #
+#  Data2Parquet - HTTP Server  #
+#                              #
+################################
  
 `)
 }

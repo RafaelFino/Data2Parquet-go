@@ -61,6 +61,15 @@ func (c *Config) GetKeys() []string {
 	return keys
 }
 
+func (c *Config) WriteToFile(filename string) error {
+	data := c.ToJSON()
+	err := os.WriteFile(filename, []byte(data), 0644)
+	if err != nil {
+		slog.Error("Error writing to file", "error", err, "module", "config", "function", "WriteToFile")
+		return err
+	}
+	return nil
+}
 func (c *Config) Set(cfg map[string]string) error {
 	for key, value := range cfg {
 		switch key {

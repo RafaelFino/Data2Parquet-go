@@ -44,6 +44,12 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 
 	cfg.Set(cfgMap)
 
+	if cfg.Debug {
+		slog.SetLogLoggerLevel(slog.LevelDebug.Level())
+	} else {
+		slog.SetLogLoggerLevel(slog.LevelInfo.Level())
+	}
+
 	slog.Debug("Config loaded", "config", cfg.ToString())
 
 	rcv = receiver.NewReceiver(cfg)

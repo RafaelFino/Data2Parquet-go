@@ -162,7 +162,8 @@ func (l *Log) Decode(data map[interface{}]interface{}) {
 		case "source_id":
 			l.SourceId = GetStringP(v)
 		case "http_response":
-			l.HTTPResponse = v.(*int)
+			val := int(v.(float64))
+			l.HTTPResponse = &val
 		case "error_code":
 			l.ErrorCode = GetStringP(v)
 		case "stack_trace":
@@ -187,8 +188,8 @@ func (l *Log) Decode(data map[interface{}]interface{}) {
 				l.Tags[p] = tag.(string)
 			}
 		case "args":
-			for arg_key, arg_val := range v.(map[interface{}]interface{}) {
-				l.Args[arg_key.(string)] = arg_val.(string)
+			for arg_key, arg_val := range v.(map[string]interface{}) {
+				l.Args[arg_key] = arg_val.(string)
 			}
 		case "transaction_message_reference":
 			l.TransactionMessageReference = GetStringP(v)
