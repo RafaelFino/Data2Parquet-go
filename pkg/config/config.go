@@ -81,6 +81,8 @@ func (c *Config) Set(cfg map[string]string) error {
 		case "buffer_size":
 			c.BufferSize = 1000
 			fmt.Sscanf(value, "%d", &c.BufferSize)
+		case "writer_file_path":
+			c.WriterFilePath = value
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
 		}
@@ -101,12 +103,12 @@ func (c *Config) SetDefaults() {
 		c.BufferType = "mem"
 	}
 
-	if c.BufferSize == 0 {
+	if c.BufferSize < 1 {
 		c.BufferSize = 1000
 	}
 
-	if c.FlushInterval == 0 {
-		c.FlushInterval = 1
+	if c.FlushInterval < 60 {
+		c.FlushInterval = 60
 	}
 
 	if c.WriterFilePath == "" {
