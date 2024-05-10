@@ -1,14 +1,14 @@
 {
- "log_path": "./logs",
- "writer_type": "file",
- "buffer_type": "redis",
- "buffer_size": 1000,
- "flush_interval": 60,
- "writer_file_path": "./data",
- "writer_compression_type": "snappy",
- "writer_row_group_size": 134217728,
- "debug": false,
- "redis_host": "0.0.0.0:6379",
- "redis_password": "",
- "redis_db": 0
+    "buffer_size": 1000,
+    "buffer_type": "redis",
+    "debug": false,
+    "flush_interval": 60,
+    "log_path": "./logs",
+    "redis_db": 0,
+    "redis_host": "0.0.0.0:6379",
+    "redis_password": "",
+    "writer_compression_type": "snappy",
+    "writer_file_path": "./data",
+    "writer_row_group_size": 134217728,
+    "writer_type": "file"
 }
