@@ -14,14 +14,14 @@ type Config struct {
 	BufferType            string `json:"buffer_type"`
 	BufferSize            int    `json:"buffer_size"`
 	FlushInterval         int    `json:"flush_interval"`
-	Address               string `json:"address,omitempty"`
-	Port                  int    `json:"port,omitempty"`
 	WriterFilePath        string `json:"writer_file_path,omitempty"`
 	WriterCompressionType string `json:"writer_compression_type,omitempty"`
 	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
+	Address               string `json:"address,omitempty"`
+	Port                  int    `json:"port,omitempty"`
 }
 
-var keys = []string{"debug", "log_path", "writer_type", "address", "port", "buffer_type", "buffer_size", "flush_interval", "writer_file_path", "writer_compression_type", "writer_row_group_size"}
+var keys = []string{"Debug", "LogPath", "WriterType", "BufferType", "BufferSize", "FlushInterval", "WriterFilePath", "WriterCompressionType", "WriterRowGroupSize"}
 
 func ConfigFromJSON(data string) (*Config, error) {
 	config := &Config{}
@@ -70,11 +70,6 @@ func (c *Config) Set(cfg map[string]string) error {
 			c.LogPath = value
 		case "writer_type":
 			c.WriterType = value
-		case "address":
-			c.Address = value
-		case "port":
-			c.Port = 0
-			fmt.Sscanf(value, "%d", &c.Port)
 		case "buffer_type":
 			c.BufferType = value
 		case "flush_interval":
