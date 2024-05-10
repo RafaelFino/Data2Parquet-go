@@ -6,6 +6,7 @@ import (
 	"data2parquet/pkg/domain"
 	"data2parquet/pkg/writer"
 	"log/slog"
+	"sync"
 	"time"
 )
 
@@ -15,6 +16,7 @@ type Receiver struct {
 	buffer  buffer.Buffer
 	running bool
 	last    map[string]time.Time
+	mu      sync.Mutex
 }
 
 func NewReceiver(config *config.Config) *Receiver {
@@ -24,6 +26,7 @@ func NewReceiver(config *config.Config) *Receiver {
 		buffer:  buffer.NewBuffer(config),
 		running: true,
 		last:    make(map[string]time.Time),
+		mu:      sync.Mutex{},
 	}
 
 	slog.Debug("Initializing receiver", "config", config.ToString(), "module", "receiver")
@@ -49,8 +52,7 @@ func (r *Receiver) Write(record domain.Record) {
 
 	if _, ok := r.last[record.Key()]; !ok {
 		if time.Since(r.last[record.Key()]) > time.Duration(r.config.FlushInterval)*time.Second {
-			r.Flush()
-			r.last[record.Key()] = time.Now()
+			go r.Flush()
 		}
 	} else {
 		r.last[record.Key()] = time.Now()
@@ -59,9 +61,21 @@ func (r *Receiver) Write(record domain.Record) {
 
 func (r *Receiver) Flush() {
 	slog.Info("Flushing buffer", "module", "receiver")
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	keys := r.buffer.Keys()
 	for _, key := range keys {
+		if r.last[key].Add(time.Duration(r.config.FlushInterval) * time.Second).After(time.Now()) {
+			continue
+		}
+
 		data := r.buffer.Get(key)
+
+		if len(data) == 0 {
+			continue
+		}
 
 		slog.Debug("Flushing buffer", "key", key, "size", len(data), "module", "receiver")
 		err := r.writer.Write(data)
@@ -77,7 +91,11 @@ func (r *Receiver) Flush() {
 			slog.Error("Error clearing buffer", "error", err, "key", key, "size", len(data), "module", "receiver")
 			continue
 		}
+
+		r.last[key] = time.Now()
 	}
+
+	slog.Debug("Buffer flushed", "module", "receiver")
 }
 func (r *Receiver) Close() error {
 	slog.Info("Closing receiver", "module", "receiver")
