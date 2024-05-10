@@ -36,7 +36,7 @@ func NewReceiver(config *config.Config) *Receiver {
 
 func (r *Receiver) Write(record domain.Record) {
 	slog.Debug("[receiver] Writing record", "record", record.ToString())
-	r.buffer.Push(record.Key(), &record)
+	r.buffer.Push(record.Key(), record)
 }
 
 func (r *Receiver) Close() error {
