@@ -8,18 +8,19 @@ import (
 )
 
 type Config struct {
-	Debug          bool              `json:"debug,omitempty"`
-	LogPath        string            `json:"log_path"`
-	WriterConfig   map[string]string `json:"writer_config"`
-	WriterType     string            `json:"writer_type"`
-	BufferType     string            `json:"buffer_type"`
-	BufferConfig   map[string]string `json:"buffer_config"`
-	BufferPageSize int               `json:"buffer_page_size"`
-	Address        string            `json:"address,omitempty"`
-	Port           int               `json:"port,omitempty"`
+	Debug         bool              `json:"debug,omitempty"`
+	LogPath       string            `json:"log_path"`
+	WriterConfig  map[string]string `json:"writer_config"`
+	WriterType    string            `json:"writer_type"`
+	BufferType    string            `json:"buffer_type"`
+	BufferConfig  map[string]string `json:"buffer_config"`
+	BufferSize    int               `json:"buffer_size"`
+	FlushInterval int               `json:"flush_interval"`
+	Address       string            `json:"address,omitempty"`
+	Port          int               `json:"port,omitempty"`
 }
 
-var keys = []string{"debug", "log_path", "writer_config", "writer_type", "address", "port", "buffer_type", "buffer_config"}
+var keys = []string{"debug", "log_path", "writer_config", "writer_type", "address", "port", "buffer_type", "buffer_config", "buffer_size", "flush_interval"}
 
 func ConfigFromJSON(data string) (*Config, error) {
 	config := &Config{}
@@ -85,9 +86,12 @@ func (c *Config) Set(cfg map[string]string) error {
 			if err != nil {
 				return err
 			}
-		case "buffer_page_size":
-			c.BufferPageSize = 0
-			fmt.Sscanf(value, "%d", &c.BufferPageSize)
+		case "buffer_size":
+			c.BufferSize = 0
+			fmt.Sscanf(value, "%d", &c.BufferSize)
+		case "flush_interval":
+			c.FlushInterval = 60
+			fmt.Sscanf(value, "%d", &c.FlushInterval)
 		default:
 			slog.Warn("[config] Unknown key", "key", key)
 		}
