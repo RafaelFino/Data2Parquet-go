@@ -8,18 +8,20 @@ import (
 )
 
 type Config struct {
-	Debug          bool   `json:"debug,omitempty"`
-	LogPath        string `json:"log_path"`
-	WriterType     string `json:"writer_type"`
-	BufferType     string `json:"buffer_type"`
-	BufferSize     int    `json:"buffer_size"`
-	FlushInterval  int    `json:"flush_interval"`
-	Address        string `json:"address,omitempty"`
-	Port           int    `json:"port,omitempty"`
-	WriterFilePath string `json:"writer_file_path,omitempty"`
+	Debug                 bool   `json:"debug,omitempty"`
+	LogPath               string `json:"log_path"`
+	WriterType            string `json:"writer_type"`
+	BufferType            string `json:"buffer_type"`
+	BufferSize            int    `json:"buffer_size"`
+	FlushInterval         int    `json:"flush_interval"`
+	Address               string `json:"address,omitempty"`
+	Port                  int    `json:"port,omitempty"`
+	WriterFilePath        string `json:"writer_file_path,omitempty"`
+	WriterCompressionType string `json:"writer_compression_type,omitempty"`
+	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
 }
 
-var keys = []string{"debug", "log_path", "writer_type", "address", "port", "buffer_type", "buffer_size", "flush_interval", "writer_file_path"}
+var keys = []string{"debug", "log_path", "writer_type", "address", "port", "buffer_type", "buffer_size", "flush_interval", "writer_file_path", "writer_compression_type", "writer_row_group_size"}
 
 func ConfigFromJSON(data string) (*Config, error) {
 	config := &Config{}
@@ -83,6 +85,8 @@ func (c *Config) Set(cfg map[string]string) error {
 			fmt.Sscanf(value, "%d", &c.BufferSize)
 		case "writer_file_path":
 			c.WriterFilePath = value
+		case "writer_compression_type":
+			c.WriterCompressionType = value
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
 		}
@@ -113,5 +117,13 @@ func (c *Config) SetDefaults() {
 
 	if c.WriterFilePath == "" {
 		c.WriterFilePath = "./out"
+	}
+
+	if c.WriterCompressionType == "" {
+		c.WriterCompressionType = "snappy"
+	}
+
+	if c.WriterRowGroupSize < 1024 {
+		c.WriterRowGroupSize = 128 * 1024 * 1024 //128M
 	}
 }
