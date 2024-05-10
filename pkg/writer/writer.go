@@ -31,7 +31,7 @@ var CompressionTypeGzip = "gzip"
 var CompressionTypeNone = "none"
 
 func WriteToFile(key string, data []domain.Record, w io.Writer, rowGroupSize int64, compressionType parquet.CompressionCodec) error {
-	pw, err := writer.NewParquetWriterFromWriter(w, new(domain.Record), 4)
+	pw, err := writer.NewParquetWriterFromWriter(w, new(domain.Log), 4)
 	if err != nil {
 		slog.Error("Error creating parquet writer", "error", err, "module", "writer", "function", "writeToFile", "key", key)
 		return err

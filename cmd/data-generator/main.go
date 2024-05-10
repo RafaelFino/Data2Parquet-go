@@ -22,7 +22,7 @@ func main() {
 
 	resType := "ec2"
 	cloudProvider := "aws"
-	httpResult := 200
+	httpResult := int64(200)
 	stack := string(debug.Stack())
 	start := time.Now()
 	region := "us-east-1"
@@ -32,7 +32,7 @@ func main() {
 	threadName := "data2parquet.main"
 
 	for i := 0; i < count; i++ {
-		duration := float64(time.Since(start).Milliseconds())
+		duration := time.Since(start).Milliseconds()
 		lines[i] = domain.Log{
 			Level:                       "INFO",
 			Message:                     "My random log message to text to parquet conversion, index " + fmt.Sprintf("%d", i),
@@ -63,6 +63,7 @@ func main() {
 			Audit:                       &boolValue,
 			LoggerName:                  &loggerName,
 			ThreadName:                  &threadName,
+			TraceIP:                     []string{"192.168.0.1", "0.0.0.1"},
 		}
 	}
 

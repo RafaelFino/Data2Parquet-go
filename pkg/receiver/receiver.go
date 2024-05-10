@@ -63,8 +63,9 @@ func (r *Receiver) Write(record domain.Record) error {
 		slog.Error("Error pushing record", "error", err, "record", record.ToString(), "module", "receiver", "function", "Write")
 	}
 
-	if _, ok := r.last[record.Key()]; !ok {
+	if _, ok := r.last[record.Key()]; ok {
 		if time.Since(r.last[record.Key()]) > time.Duration(r.config.FlushInterval)*time.Second {
+			slog.Debug("Flushing buffer", "module", "receiver", "function", "Write", "last", r.last[record.Key()])
 			go r.Flush(false)
 		}
 	} else {
