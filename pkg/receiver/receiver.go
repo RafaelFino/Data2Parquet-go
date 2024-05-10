@@ -56,7 +56,7 @@ func NewReceiver(config *config.Config) *Receiver {
 	return ret
 }
 
-func (r *Receiver) Write(record domain.Record) error {
+func (r *Receiver) Write(record *domain.Record) error {
 	err := r.buffer.Push(record.Key(), record)
 
 	if err != nil {

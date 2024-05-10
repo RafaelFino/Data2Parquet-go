@@ -21,7 +21,7 @@ func (s *S3) Init() error {
 	return nil
 }
 
-func (s *S3) Write(data []domain.Record) error {
+func (s *S3) Write(data []*domain.Record) error {
 	slog.Debug("[writer] Writing logs", "data", data)
 	return nil
 }

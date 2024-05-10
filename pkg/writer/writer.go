@@ -12,7 +12,7 @@ import (
 
 type Writer interface {
 	Init() error
-	Write(data []domain.Record) error
+	Write(data []*domain.Record) error
 	Close() error
 	IsReady() bool
 }
@@ -31,8 +31,8 @@ var CompressionTypeSnappy = "snappy"
 var CompressionTypeGzip = "gzip"
 var CompressionTypeNone = "none"
 
-func WriteToFile(key string, data []domain.Record, w io.Writer, rowGroupSize int64, compressionType parquet.CompressionCodec) error {
-	pw, err := writer.NewParquetWriterFromWriter(w, new(domain.Log), 4)
+func WriteToFile(key string, data []*domain.Record, w io.Writer, rowGroupSize int64, compressionType parquet.CompressionCodec) error {
+	pw, err := writer.NewParquetWriterFromWriter(w, new(domain.Record), 4)
 	if err != nil {
 		slog.Error("Error creating parquet writer", "error", err, "module", "writer", "function", "writeToFile", "key", key)
 		return err

@@ -30,7 +30,7 @@ func main() {
 	parallel := 4
 
 	start := time.Now()
-	result := make(chan *domain.Log, parallel)
+	result := make(chan *domain.Record, parallel)
 	wg := &sync.WaitGroup{}
 	wg.Add(parallel)
 
@@ -38,8 +38,8 @@ func main() {
 		go GenerateLog(i, count/parallel, result, wg)
 	}
 
-	data := map[string][]*domain.Log{}
-	data["logs"] = make([]*domain.Log, 0, count)
+	data := map[string][]*domain.Record{}
+	data["logs"] = make([]*domain.Record, 0, count)
 
 	signal := make(chan bool)
 
@@ -105,7 +105,7 @@ func main() {
 
 }
 
-func GenerateLog(pid int, count int, result chan *domain.Log, wg *sync.WaitGroup) {
+func GenerateLog(pid int, count int, result chan *domain.Record, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	resType := "ec2"
@@ -123,7 +123,7 @@ func GenerateLog(pid int, count int, result chan *domain.Log, wg *sync.WaitGroup
 
 	for i := 0; i < count; i++ {
 		duration := time.Since(start).Milliseconds()
-		line := &domain.Log{
+		line := &domain.Record{
 			Level:                       "INFO",
 			Message:                     "My random log message to text to parquet conversion, index " + fmt.Sprintf("%d", i),
 			Time:                        time.Now().Format(time.RFC3339Nano),

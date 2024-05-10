@@ -40,14 +40,14 @@ func (f *File) Init() error {
 	return nil
 }
 
-func (f *File) Write(data []domain.Record) error {
+func (f *File) Write(data []*domain.Record) error {
 	start := time.Now()
 
-	records := make(map[string][]domain.Record)
+	records := make(map[string][]*domain.Record)
 
 	for _, record := range data {
 		if _, ok := records[record.Key()]; !ok {
-			records[record.Key()] = make([]domain.Record, 0, f.config.BufferSize)
+			records[record.Key()] = make([]*domain.Record, 0, f.config.BufferSize)
 		}
 
 		records[record.Key()] = append(records[record.Key()], record)

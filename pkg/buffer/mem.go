@@ -10,19 +10,19 @@ import (
 
 type Mem struct {
 	config *config.Config
-	data   map[string][]domain.Record
+	data   map[string][]*domain.Record
 	buff   chan BuffItem
 	mu     sync.Mutex
 }
 
 type BuffItem struct {
 	key  string
-	item domain.Record
+	item *domain.Record
 }
 
 func NewMem(config *config.Config) Buffer {
 	ret := &Mem{
-		data:   make(map[string][]domain.Record),
+		data:   make(map[string][]*domain.Record),
 		config: config,
 		buff:   make(chan BuffItem, config.BufferSize),
 	}
@@ -34,7 +34,7 @@ func NewMem(config *config.Config) Buffer {
 	return ret
 }
 
-func (m *Mem) Push(key string, item domain.Record) error {
+func (m *Mem) Push(key string, item *domain.Record) error {
 	if item == nil {
 		slog.Warn("Item is nil	", "key", key, "module", "buffer.mem", "function", "Push")
 		return errors.New("item is nil")
@@ -54,7 +54,7 @@ func (m *Mem) run() {
 		case item := <-m.buff:
 			m.mu.Lock()
 			if _, ok := m.data[item.key]; !ok {
-				m.data[item.key] = make([]domain.Record, 0, m.config.BufferSize)
+				m.data[item.key] = make([]*domain.Record, 0, m.config.BufferSize)
 			}
 
 			m.data[item.key] = append(m.data[item.key], item.item)
@@ -63,7 +63,7 @@ func (m *Mem) run() {
 	}
 }
 
-func (m *Mem) Get(key string) []domain.Record {
+func (m *Mem) Get(key string) []*domain.Record {
 	slog.Debug("Getting buffer", "key", key, "module", "buffer.mem", "function", "Get")
 
 	if m.data == nil {

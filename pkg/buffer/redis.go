@@ -35,12 +35,12 @@ func NewRedis(config *config.Config) Buffer {
 	return ret
 }
 
-func (r *Redis) Push(key string, item domain.Record) error {
+func (r *Redis) Push(key string, item *domain.Record) error {
 	r.client.LPush(context.Background(), key, item.ToJson())
 	return nil
 }
 
-func (r *Redis) Get(key string) []domain.Record {
+func (r *Redis) Get(key string) []*domain.Record {
 	cmd := r.client.LLen(context.Background(), key)
 
 	if cmd.Err() != nil {
@@ -57,10 +57,10 @@ func (r *Redis) Get(key string) []domain.Record {
 		return nil
 	}
 
-	ret := make([]domain.Record, size)
+	ret := make([]*domain.Record, size)
 
 	for i, v := range result.Val() {
-		r := &domain.Log{}
+		r := &domain.Record{}
 		r.FromJson(v)
 		ret[i] = r
 		slog.Debug("Getting buffer", "key", key, "module", "buffer.redis", "function", "Get", "record", r.ToString())
