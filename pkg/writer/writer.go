@@ -6,7 +6,17 @@ import (
 )
 
 type Writer interface {
-	Init(config *config.Config) error
+	Init() error
 	Write(data []domain.Record) error
 	Close() error
+}
+
+func NewWriter(config *config.Config) Writer {
+	switch config.WriterType {
+	case "aws-s3":
+		return NewS3(config)
+
+	default:
+		return NewFile(config)
+	}
 }

@@ -61,6 +61,7 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 	var record map[interface{}]interface{}
 
 	dec := output.NewDecoder(data, int(length))
+
 	for {
 		// Extract Record
 		ret, ts, record = output.GetRecord(dec)
@@ -81,6 +82,8 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 
 		record["fluent_timestamp"] = timestamp
 		record["fluent_tag"] = C.GoString(tag)
+
+		slog.Debug("Receive record", "record", record)
 
 		rcv.Write(domain.NewLog(record))
 	}

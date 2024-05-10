@@ -11,15 +11,15 @@ type Config struct {
 	Debug          bool              `json:"debug,omitempty"`
 	LogPath        string            `json:"log_path"`
 	WriterConfig   map[string]string `json:"writer_config"`
-	WriterName     string            `json:"writer_name"`
-	BufferName     string            `json:"buffer_name"`
+	WriterType     string            `json:"writer_type"`
+	BufferType     string            `json:"buffer_type"`
 	BufferConfig   map[string]string `json:"buffer_config"`
 	BufferPageSize int               `json:"buffer_page_size"`
 	Address        string            `json:"address,omitempty"`
 	Port           int               `json:"port,omitempty"`
 }
 
-var keys = []string{"debug", "log_path", "writer_config", "writer_name", "address", "port", "buffer_name", "buffer_config"}
+var keys = []string{"debug", "log_path", "writer_config", "writer_type", "address", "port", "buffer_type", "buffer_config"}
 
 func ConfigFromJSON(data string) (*Config, error) {
 	config := &Config{}
@@ -70,15 +70,15 @@ func (c *Config) Set(cfg map[string]string) error {
 			if err != nil {
 				return err
 			}
-		case "writer_name":
-			c.WriterName = value
+		case "writer_type":
+			c.WriterType = value
 		case "address":
 			c.Address = value
 		case "port":
 			c.Port = 0
 			fmt.Sscanf(value, "%d", &c.Port)
-		case "buffer_name":
-			c.BufferName = value
+		case "buffer_type":
+			c.BufferType = value
 		case "buffer_config":
 			c.BufferConfig = map[string]string{}
 			err := json.Unmarshal([]byte(value), &c.BufferConfig)

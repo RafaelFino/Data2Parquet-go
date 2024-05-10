@@ -1,23 +1,25 @@
 package buffer
 
-import "data2parquet/pkg/domain"
+import (
+	"data2parquet/pkg/config"
+	"data2parquet/pkg/domain"
+)
 
 type Redis struct {
+	config *config.Config
 }
 
-func NewRedis() Buffer {
-	return &Redis{}
+func NewRedis(config *config.Config) Buffer {
+	return &Redis{
+		config: config,
+	}
 }
 
-func (r *Redis) Push(key string, item *domain.Record) error {
+func (r *Redis) Push(key string, item domain.Record) error {
 	return nil
 }
 
-func (r *Redis) PushMany(key string, items []*domain.Record) error {
-	return nil
-}
-
-func (r *Redis) Get(key string) []*domain.Record {
+func (r *Redis) Get(key string, size int) []domain.Record {
 	return nil
 }
 

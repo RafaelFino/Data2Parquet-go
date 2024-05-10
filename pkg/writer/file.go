@@ -7,10 +7,17 @@ import (
 )
 
 type File struct {
+	config *config.Config
 }
 
-func (f *File) Init(config *config.Config) error {
-	slog.Debug("[writer] Initializing file writer", "config", config.ToString())
+func NewFile(config *config.Config) Writer {
+	return &File{
+		config: config,
+	}
+}
+
+func (f *File) Init() error {
+	slog.Debug("[writer] Initializing file writer", "config", f.config.ToString())
 	return nil
 }
 

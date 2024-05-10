@@ -1,33 +1,38 @@
 package buffer
 
 import (
+	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
 	"errors"
 	"log/slog"
 )
 
 type Mem struct {
-	data map[string][]*domain.Record
+	config *config.Config
+	data   map[string][]domain.Record
 }
 
-func NewMem() Buffer {
-	return &Mem{}
+func NewMem(config *config.Config) Buffer {
+	return &Mem{
+		data:   make(map[string][]domain.Record),
+		config: config,
+	}
 }
 
-func (m *Mem) Push(key string, item *domain.Record) error {
+func (m *Mem) Push(key string, item domain.Record) error {
 	if item == nil {
 		slog.Warn("[buffer.mem] Item is nil	", "key", key)
-		return errors.New("Item is nil")
+		return errors.New("item is nil")
 	}
 
-	slog.Debug("[buffer.mem] Pushing item", "key", key, "item", (*item).ToString())
+	slog.Debug("[buffer.mem] Pushing item", "key", key, "item", item.ToString())
 
 	if m.data == nil {
-		m.data = make(map[string][]*domain.Record)
+		m.data = make(map[string][]domain.Record)
 	}
 
 	if _, ok := m.data[key]; !ok {
-		m.data[key] = make([]*domain.Record, 0)
+		m.data[key] = make([]domain.Record, 0)
 	}
 
 	m.data[key] = append(m.data[key], item)
@@ -35,39 +40,23 @@ func (m *Mem) Push(key string, item *domain.Record) error {
 	return nil
 }
 
-func (m *Mem) PushMany(key string, items []*domain.Record) error {
-	if items == nil {
-		slog.Warn("[buffer.mem] Items is nil", "key", key)
-		return errors.New("Items is nil")
-	}
-
-	slog.Debug("[buffer.mem] Pushing items", "key", key, "items", len(items))
-
+func (m *Mem) Get(key string, size int) []domain.Record {
 	if m.data == nil {
-		m.data = make(map[string][]*domain.Record)
+		return []domain.Record{}
 	}
 
 	if _, ok := m.data[key]; !ok {
-		m.data[key] = make([]*domain.Record, 0)
+		return []domain.Record{}
 	}
 
-	m.data[key] = append(m.data[key], items...)
-
-	return nil
-}
-
-func (m *Mem) Get(key string) []*domain.Record {
-	if m.data == nil {
-		slog.Debug("[buffer.mem] Data is nil", "key", key)
-		return nil
+	if len(m.data[key]) < size {
+		size = len(m.data[key])
 	}
 
-	if _, ok := m.data[key]; !ok {
-		slog.Debug("[buffer.mem] Key not found", "key", key)
-		return nil
-	}
+	ret := m.data[key][:size]
+	m.data[key] = m.data[key][size:]
 
-	return m.data[key]
+	return ret
 }
 
 func (m *Mem) Keys() []string {

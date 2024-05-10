@@ -7,10 +7,17 @@ import (
 )
 
 type S3 struct {
+	config *config.Config
 }
 
-func (s *S3) Init(config *config.Config) error {
-	slog.Debug("[writer] Initializing S3 writer", "config", config.ToString())
+func NewS3(config *config.Config) Writer {
+	return &S3{
+		config: config,
+	}
+}
+
+func (s *S3) Init() error {
+	slog.Debug("[writer] Initializing S3 writer", "config", s.config.ToString())
 	return nil
 }
 
