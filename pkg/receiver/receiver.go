@@ -11,22 +11,24 @@ import (
 )
 
 type Receiver struct {
-	config  *config.Config
-	writer  writer.Writer
-	buffer  buffer.Buffer
-	running bool
-	last    map[string]time.Time
-	mu      sync.Mutex
+	config     *config.Config
+	writer     writer.Writer
+	buffer     buffer.Buffer
+	running    bool
+	last       map[string]time.Time
+	mu         sync.Mutex
+	stopSignal chan bool
 }
 
 func NewReceiver(config *config.Config) *Receiver {
 	ret := &Receiver{
-		config:  config,
-		writer:  writer.NewWriter(config),
-		buffer:  buffer.NewBuffer(config),
-		running: true,
-		last:    make(map[string]time.Time),
-		mu:      sync.Mutex{},
+		config:     config,
+		writer:     writer.NewWriter(config),
+		buffer:     buffer.NewBuffer(config),
+		running:    true,
+		last:       make(map[string]time.Time),
+		mu:         sync.Mutex{},
+		stopSignal: make(chan bool),
 	}
 
 	slog.Debug("Initializing receiver", "config", config.ToString(), "module", "receiver", "function", "NewReceiver")
@@ -34,12 +36,19 @@ func NewReceiver(config *config.Config) *Receiver {
 	ret.writer.Init()
 
 	go func(rcv *Receiver) {
-		for {
-			if !rcv.running {
-				break
+		select {
+		case <-rcv.stopSignal:
+			{
+				slog.Info("Stopping receiver", "module", "receiver", "function", "NewReceiver")
+				rcv.Flush(true)
+				rcv.Close()
 			}
-			<-time.After(time.Duration(rcv.config.FlushInterval) * time.Second)
-			rcv.Flush()
+		case <-time.After(time.Duration(rcv.config.FlushInterval) * time.Second):
+			{
+				if rcv.running {
+					rcv.Flush(false)
+				}
+			}
 		}
 	}(ret)
 
@@ -109,6 +118,7 @@ func (r *Receiver) Flush(force bool) error {
 func (r *Receiver) Close() error {
 	slog.Info("Closing receiver", "module", "receiver", "function", "Close")
 	r.running = false
+	r.stopSignal <- true
 	return nil
 }
 

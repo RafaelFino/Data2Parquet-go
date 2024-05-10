@@ -73,7 +73,7 @@ func main() {
 		}
 	}
 
-	err = rcv.Flush()
+	err = rcv.Flush(true)
 
 	if err != nil {
 		slog.Error("Error flushing records", "error", err)
