@@ -39,7 +39,8 @@ func main() {
 	logHandler := tint.NewHandler(os.Stdout, &tint.Options{
 		NoColor:    !isatty.IsTerminal(os.Stdout.Fd()),
 		Level:      logLevel,
-		TimeFormat: time.Kitchen,
+		TimeFormat: time.RFC3339Nano,
+		AddSource:  cfg.Debug,
 	})
 
 	logger := slog.New(logHandler)
@@ -92,6 +93,8 @@ func main() {
 	}
 
 	slog.Info("Finished", "duration", time.Since(start))
+
+	os.Exit(0)
 }
 
 func PrintLogo() {
