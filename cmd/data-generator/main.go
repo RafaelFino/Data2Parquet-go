@@ -17,7 +17,7 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	count := 5000
+	count := 1000000
 	lines := make([]domain.Log, count)
 
 	resType := "ec2"
@@ -43,10 +43,10 @@ func main() {
 			PersonId:                    GetID(),
 			UserId:                      GetID(),
 			DeviceId:                    GetID(),
-			BusinessCapability:          "business_capability",
-			BusinessDomain:              "business_domain",
-			BusinessService:             "business_service",
-			ApplicationService:          "application_service",
+			BusinessCapability:          "business_capability" + fmt.Sprintf("%d", i%10),
+			BusinessDomain:              "business_domain" + fmt.Sprintf("%d", i%10),
+			BusinessService:             "business_service" + fmt.Sprintf("%d", i%20),
+			ApplicationService:          "application_service" + fmt.Sprintf("%d", i%30),
 			ResourceType:                &resType,
 			CloudProvider:               &cloudProvider,
 			SourceId:                    GetID(),
@@ -56,8 +56,8 @@ func main() {
 			Duration:                    &duration,
 			Region:                      &region,
 			AZ:                          &az,
-			Tags:                        []string{"tag1", "tag2", "tag3"},
-			Args:                        map[string]string{"arg1": "val1", "arg2": "val2", "arg3": "val3"},
+			Tags:                        []string{"tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8", "tag9", "tag10"},
+			Args:                        map[string]string{"arg1": "val1", "arg2": "val2", "arg3": "val3", "arg4": "val4", "arg5": "val5", "arg6": "val6", "arg7": "val7", "arg8": "val8", "arg9": "val9", "arg10": "val10"},
 			TransactionMessageReference: GetID(),
 			AutoIndex:                   &boolValue,
 			Audit:                       &boolValue,

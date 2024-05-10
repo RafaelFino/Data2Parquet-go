@@ -43,8 +43,6 @@ func WriteToFile(key string, data []domain.Record, w io.Writer, rowGroupSize int
 	pw.CompressionType = compressionType
 
 	for _, record := range data {
-		slog.Debug("Writing record", "record", record.ToString(), "module", "writer", "function", "writeToFile", "key", key)
-
 		if err = pw.Write(record); err != nil {
 			slog.Error("Error writing parquet file", "error", err, "module", "writer", "function", "writeToFile", "key", key, "record", record)
 		}

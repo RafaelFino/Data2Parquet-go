@@ -40,8 +40,6 @@ func (m *Mem) Push(key string, item domain.Record) error {
 		return errors.New("item is nil")
 	}
 
-	slog.Debug("Pushing item", "key", key, "item", item.ToString(), "module", "buffer.mem", "function", "Push")
-
 	m.buff <- BuffItem{
 		key:  key,
 		item: item,

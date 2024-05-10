@@ -56,7 +56,6 @@ func NewReceiver(config *config.Config) *Receiver {
 }
 
 func (r *Receiver) Write(record domain.Record) error {
-	slog.Debug("Writing record", "record", record.ToString(), "module", "receiver", "function", "Write")
 	err := r.buffer.Push(record.Key(), record)
 
 	if err != nil {
@@ -75,44 +74,61 @@ func (r *Receiver) Write(record domain.Record) error {
 	return err
 }
 
+func (r *Receiver) FlushKey(key string, force bool, wg *sync.WaitGroup) error {
+	start := time.Now()
+	defer wg.Done()
+
+	if !force && r.last[key].Add(time.Duration(r.config.FlushInterval)*time.Second).After(time.Now()) {
+		slog.Debug("Skipping buffer flush, interval not reached", "key", key, "module", "receiver", "function", "Flush")
+		return nil
+	}
+
+	data := r.buffer.Get(key)
+
+	if len(data) == 0 {
+		return nil
+	}
+
+	slog.Debug("Flushing buffer", "key", key, "size", len(data), "module", "receiver", "function", "Flush")
+	err := r.writer.Write(data)
+
+	if err != nil {
+		slog.Error("Error writing data", "error", err, "key", key, "size", len(data), "module", "receiver", "function", "Flush")
+		return err
+	}
+
+	slog.Debug("Clearing buffer", "key", key, "size", len(data), "module", "receiver", "function", "Flush")
+	err = r.buffer.Clear(key, len(data))
+
+	if err != nil {
+		slog.Error("Error clearing buffer", "error", err, "key", key, "size", len(data), "module", "receiver")
+		return err
+	}
+
+	slog.Debug("Buffer flushed", "key", key, "size", len(data), "module", "receiver", "function", "Flush", "last", r.last[key], "duration", time.Since(start))
+	r.last[key] = time.Now()
+
+	return nil
+}
 func (r *Receiver) Flush(force bool) error {
 	slog.Info("Flushing buffer", "module", "receiver", "function", "Flush", "force", force)
+
+	start := time.Now()
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	keys := r.buffer.Keys()
+	wg := &sync.WaitGroup{}
+	wg.Add(len(keys))
+
 	for _, key := range keys {
-		if !force && r.last[key].Add(time.Duration(r.config.FlushInterval)*time.Second).After(time.Now()) {
-			slog.Debug("Skipping buffer flush, interval not reached", "key", key, "module", "receiver", "function", "Flush")
-			continue
-		}
-
-		data := r.buffer.Get(key)
-
-		if len(data) == 0 {
-			continue
-		}
-
-		slog.Debug("Flushing buffer", "key", key, "size", len(data), "module", "receiver", "function", "Flush")
-		err := r.writer.Write(data)
-
-		if err != nil {
-			slog.Error("Error writing data", "error", err, "key", key, "size", len(data), "module", "receiver", "function", "Flush")
-			return err
-		}
-
-		slog.Debug("Clearing buffer", "key", key, "size", len(data), "module", "receiver", "function", "Flush")
-		err = r.buffer.Clear(key, len(data))
-
-		if err != nil {
-			slog.Error("Error clearing buffer", "error", err, "key", key, "size", len(data), "module", "receiver")
-			return err
-		}
-
-		slog.Debug("Buffer flushed", "key", key, "size", len(data), "module", "receiver", "function", "Flush", "last", r.last[key])
-		r.last[key] = time.Now()
+		go r.FlushKey(key, force, wg)
 	}
+
+	wg.Wait()
+
+	slog.Info("Buffer flushed", "module", "receiver", "function", "Flush", "duration", time.Since(start))
 
 	return nil
 }

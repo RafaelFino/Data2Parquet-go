@@ -5,6 +5,7 @@ import (
 	"data2parquet/pkg/domain"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/xitongsys/parquet-go/parquet"
 )
@@ -40,7 +41,7 @@ func (f *File) Init() error {
 }
 
 func (f *File) Write(data []domain.Record) error {
-	slog.Debug("Writing logs", "module", "writer.file", "function", "Write")
+	start := time.Now()
 
 	records := make(map[string][]domain.Record)
 
@@ -68,7 +69,7 @@ func (f *File) Write(data []domain.Record) error {
 			return err
 		}
 
-		slog.Info("File written", "key", key, "module", "writer.file", "function", "Write", "filePath", filePath)
+		slog.Info("File written", "key", key, "module", "writer.file", "function", "Write", "filePath", filePath, "records", len(records), "duration", time.Since(start))
 	}
 
 	return nil

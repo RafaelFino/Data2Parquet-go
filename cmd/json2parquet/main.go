@@ -15,6 +15,7 @@ import (
 )
 
 func main() {
+	start := time.Now()
 	PrintLogo()
 
 	var logLevel = slog.LevelInfo
@@ -33,7 +34,6 @@ func main() {
 
 	if cfg.Debug {
 		logLevel = slog.LevelDebug.Level()
-		slog.Info("Debug mode enabled")
 	}
 
 	logHandler := tint.NewHandler(os.Stdout, &tint.Options{
@@ -58,6 +58,9 @@ func main() {
 
 	records, err := ReadJSON(file)
 
+	slog.Info("Read records", "count", len(records), "duration", time.Since(start))
+	start = time.Now()
+
 	if err != nil {
 		slog.Error("Error reading JSON file", "error", err)
 		os.Exit(1)
@@ -73,6 +76,9 @@ func main() {
 		}
 	}
 
+	slog.Info("Records sent", "duration", time.Since(start), "count", len(records))
+	start = time.Now()
+
 	err = rcv.Flush(true)
 
 	if err != nil {
@@ -84,6 +90,8 @@ func main() {
 	if err != nil {
 		slog.Error("Error closing receiver", "error", err)
 	}
+
+	slog.Info("Finished", "duration", time.Since(start))
 }
 
 func PrintLogo() {
