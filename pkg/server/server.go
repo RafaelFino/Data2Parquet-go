@@ -46,7 +46,8 @@ func NewServer(config *config.Config) *Server {
 
 	s.engine = gin.Default()
 	s.engine.POST("/log/", s.handler.Write)
-	s.engine.POST("/healthcheck/", s.handler.Healthcheck)
+	s.engine.POST("/flush/", s.handler.Flush)
+	s.engine.GET("/healthcheck/", s.handler.Healthcheck)
 
 	s.srv = &http.Server{
 		Addr:    s.makeAddress(),

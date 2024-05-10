@@ -46,9 +46,13 @@ func NewReceiver(config *config.Config) *Receiver {
 	return ret
 }
 
-func (r *Receiver) Write(record domain.Record) {
+func (r *Receiver) Write(record domain.Record) error {
 	slog.Debug("Writing record", "record", record.ToString(), "module", "receiver", "function", "Write")
-	r.buffer.Push(record.Key(), record)
+	err := r.buffer.Push(record.Key(), record)
+
+	if err != nil {
+		slog.Error("Error pushing record", "error", err, "record", record.ToString(), "module", "receiver", "function", "Write")
+	}
 
 	if _, ok := r.last[record.Key()]; !ok {
 		if time.Since(r.last[record.Key()]) > time.Duration(r.config.FlushInterval)*time.Second {
@@ -57,9 +61,11 @@ func (r *Receiver) Write(record domain.Record) {
 	} else {
 		r.last[record.Key()] = time.Now()
 	}
+
+	return err
 }
 
-func (r *Receiver) Flush() {
+func (r *Receiver) Flush() error {
 	slog.Info("Flushing buffer", "module", "receiver", "function", "Flush")
 
 	r.mu.Lock()
@@ -82,7 +88,7 @@ func (r *Receiver) Flush() {
 
 		if err != nil {
 			slog.Error("Error writing data", "error", err, "key", key, "size", len(data), "module", "receiver", "function", "Flush")
-			continue
+			return err
 		}
 
 		slog.Debug("Clearing buffer", "key", key, "size", len(data), "module", "receiver", "function", "Flush")
@@ -90,12 +96,14 @@ func (r *Receiver) Flush() {
 
 		if err != nil {
 			slog.Error("Error clearing buffer", "error", err, "key", key, "size", len(data), "module", "receiver")
-			continue
+			return err
 		}
 
 		slog.Debug("Buffer flushed", "key", key, "size", len(data), "module", "receiver", "function", "Flush", "last", r.last[key])
 		r.last[key] = time.Now()
 	}
+
+	return nil
 }
 func (r *Receiver) Close() error {
 	slog.Info("Closing receiver", "module", "receiver", "function", "Close")

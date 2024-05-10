@@ -63,7 +63,6 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 	dec := output.NewDecoder(data, int(length))
 
 	for {
-		// Extract Record
 		ret, ts, record = output.GetRecord(dec)
 		if ret != 0 {
 			break
@@ -85,7 +84,12 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 
 		slog.Debug("Receive record", "record", record)
 
-		rcv.Write(domain.NewLog(record))
+		err := rcv.Write(domain.NewLog(record))
+
+		if err != nil {
+			slog.Error("Error writing record", "error", err)
+			return output.FLB_ERROR
+		}
 	}
 
 	return output.FLB_OK
