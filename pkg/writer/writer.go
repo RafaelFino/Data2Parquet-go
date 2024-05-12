@@ -17,7 +17,7 @@ type Writer interface {
 	IsReady() bool
 }
 
-func NewWriter(config *config.Config) Writer {
+func New(config *config.Config) Writer {
 	switch config.WriterType {
 	case "aws-s3":
 		return NewS3(config)

@@ -9,7 +9,6 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-//go:generate msgp
 type Record struct {
 	Time                        string            `json:"time" parquet:"name=time, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"time"`
 	Level                       string            `json:"level" parquet:"name=level, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"level"`
@@ -91,7 +90,7 @@ var LogLevel = map[string]int{
 	LevelDebug:     6,
 }
 
-func NewLog(data map[interface{}]interface{}) *Record {
+func NewRecord(data map[interface{}]interface{}) *Record {
 	ret := &Record{
 		ExtraFields: make(map[string]string),
 		TraceIP:     make([]string, 0),

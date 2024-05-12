@@ -6,14 +6,16 @@ import (
 )
 
 type Buffer interface {
+	Close() error
 	Push(key string, item *domain.Record) error
 	Get(key string) []*domain.Record
 	Clear(key string, size int) error
+	Len(key string) int
 	Keys() []string
 	IsReady() bool
 }
 
-func NewBuffer(config *config.Config) Buffer {
+func New(config *config.Config) Buffer {
 	switch config.BufferType {
 	case "redis":
 		return NewRedis(config)

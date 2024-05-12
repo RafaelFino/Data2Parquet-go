@@ -129,7 +129,7 @@ func ReadJSON(file *os.File) ([]*domain.Record, error) {
 				line[k] = v
 			}
 
-			ret = append(ret, domain.NewLog(line))
+			ret = append(ret, domain.NewRecord(line))
 		}
 	}
 

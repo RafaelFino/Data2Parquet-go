@@ -24,8 +24,8 @@ type Receiver struct {
 func NewReceiver(config *config.Config) *Receiver {
 	ret := &Receiver{
 		config:     config,
-		writer:     writer.NewWriter(config),
-		buffer:     buffer.NewBuffer(config),
+		writer:     writer.New(config),
+		buffer:     buffer.New(config),
 		running:    true,
 		last:       make(map[string]time.Time),
 		mu:         sync.Mutex{},

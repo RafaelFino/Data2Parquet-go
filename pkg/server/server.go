@@ -31,7 +31,7 @@ func NewServer(config *config.Config) *Server {
 
 	slog.Debug("Starting server", "config", config.ToString(), "module", "server", "function", "NewServer")
 
-	s.handler = handler.NewLogHandler(config)
+	s.handler = handler.NewRecordHandler(config)
 
 	gin.ForceConsoleColor()
 	gin.DefaultWriter = os.Stdout
@@ -45,7 +45,7 @@ func NewServer(config *config.Config) *Server {
 	}
 
 	s.engine = gin.Default()
-	s.engine.POST("/log/", s.handler.Write)
+	s.engine.POST("/record/", s.handler.Write)
 	s.engine.POST("/flush/", s.handler.Flush)
 	s.engine.GET("/healthcheck/", s.handler.Healthcheck)
 

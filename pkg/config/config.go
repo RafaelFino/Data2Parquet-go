@@ -9,26 +9,52 @@ import (
 )
 
 type Config struct {
-	Debug                 bool   `json:"debug,omitempty"`
-	LogPath               string `json:"log_path"`
-	WriterType            string `json:"writer_type"`
-	BufferType            string `json:"buffer_type"`
-	BufferSize            int    `json:"buffer_size"`
-	FlushInterval         int    `json:"flush_interval"`
-	WriterFilePath        string `json:"writer_file_path,omitempty"`
-	WriterCompressionType string `json:"writer_compression_type,omitempty"`
-	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
 	Address               string `json:"address,omitempty"`
+	BufferSize            int    `json:"buffer_size"`
+	BufferType            string `json:"buffer_type"`
+	Debug                 bool   `json:"debug,omitempty"`
+	FlushInterval         int    `json:"flush_interval"`
+	LogPath               string `json:"log_path"`
 	Port                  int    `json:"port,omitempty"`
-	RedisHost             string `json:"redis_host,omitempty"`
-	RedisPassword         string `json:"redis_password,omitempty"`
-	RedisDB               int    `json:"redis_db,omitempty"`
 	RedisDataPrefix       string `json:"redis_data_prefix,omitempty"`
+	RedisDB               int    `json:"redis_db,omitempty"`
+	RedisHost             string `json:"redis_host,omitempty"`
 	RedisKeys             string `json:"redis_keys,omitempty"`
+	RedisLocalPath        string `json:"redis_local_path,omitempty"`
+	RedisPassword         string `json:"redis_password,omitempty"`
 	RedisSkipFlush        bool   `json:"redis_skip_flush,omitempty"`
+	WriterCompressionType string `json:"writer_compression_type,omitempty"`
+	WriterFilePath        string `json:"writer_file_path,omitempty"`
+	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
+	WriterType            string `json:"writer_type"`
 }
 
-var keys = []string{"Debug", "LogPath", "WriterType", "BufferType", "BufferSize", "FlushInterval", "WriterFilePath", "WriterCompressionType", "WriterRowGroupSize", "RedisHost", "RedisPassword", "RedisDB", "RedisSkipFlush", "RedisDataPrefix", "RedisKeys"}
+var keys = []string{
+	"BufferSize",
+	"BufferType",
+	"Debug",
+	"FlushInterval",
+	"LogPath",
+	"RedisDataPrefix",
+	"RedisDB",
+	"RedisHost",
+	"RedisKeys",
+	"RedisLocalPath",
+	"RedisPassword",
+	"RedisSkipFlush",
+	"WriterCompressionType",
+	"WriterFilePath",
+	"WriterRowGroupSize",
+	"WriterType",
+}
+
+func NewConfig() *Config {
+	ret := &Config{}
+
+	ret.SetDefaults()
+
+	return ret
+}
 
 func ConfigFromJSON(data string) (*Config, error) {
 	config := &Config{}
@@ -126,6 +152,30 @@ func (c *Config) Set(cfg map[string]string) error {
 	return nil
 }
 
+func (c *Config) Get() map[string]interface{} {
+	ret := make(map[string]interface{})
+
+	ret["Address"] = c.Address
+	ret["BufferSize"] = c.BufferSize
+	ret["BufferType"] = c.BufferType
+	ret["Debug"] = c.Debug
+	ret["FlushInterval"] = c.FlushInterval
+	ret["LogPath"] = c.LogPath
+	ret["Port"] = c.Port
+	ret["RedisDataPrefix"] = c.RedisDataPrefix
+	ret["RedisDB"] = c.RedisDB
+	ret["RedisHost"] = c.RedisHost
+	ret["RedisKeys"] = c.RedisKeys
+	ret["RedisPassword"] = c.RedisPassword
+	ret["RedisSkipFlush"] = c.RedisSkipFlush
+	ret["WriterCompressionType"] = c.WriterCompressionType
+	ret["WriterFilePath"] = c.WriterFilePath
+	ret["WriterRowGroupSize"] = c.WriterRowGroupSize
+	ret["WriterType"] = c.WriterType
+
+	return ret
+}
+
 func (c *Config) SetDefaults() {
 	if c.LogPath == "" {
 		c.LogPath = "./logs"
@@ -133,6 +183,18 @@ func (c *Config) SetDefaults() {
 
 	if c.WriterType == "" {
 		c.WriterType = "file"
+	}
+
+	if c.WriterFilePath == "" {
+		c.WriterFilePath = "./out"
+	}
+
+	if c.WriterCompressionType == "" {
+		c.WriterCompressionType = "snappy"
+	}
+
+	if c.WriterRowGroupSize < 1024 {
+		c.WriterRowGroupSize = 128 * 1024 * 1024 //128M
 	}
 
 	if c.BufferType == "" {
@@ -147,15 +209,7 @@ func (c *Config) SetDefaults() {
 		c.FlushInterval = 60
 	}
 
-	if c.WriterFilePath == "" {
-		c.WriterFilePath = "./out"
-	}
-
-	if c.WriterCompressionType == "" {
-		c.WriterCompressionType = "snappy"
-	}
-
-	if c.WriterRowGroupSize < 1024 {
-		c.WriterRowGroupSize = 128 * 1024 * 1024 //128M
+	if len(c.RedisKeys) == 0 {
+		c.RedisKeys = "keys"
 	}
 }

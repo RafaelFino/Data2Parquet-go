@@ -16,7 +16,7 @@ type LogHandler struct {
 	rcv *receiver.Receiver
 }
 
-func NewLogHandler(config *config.Config) *LogHandler {
+func NewRecordHandler(config *config.Config) *LogHandler {
 	return &LogHandler{
 		rcv: receiver.NewReceiver(config),
 	}
@@ -53,7 +53,7 @@ func (h *LogHandler) Write(ctx *gin.Context) {
 		return
 	}
 
-	record := domain.NewLog(data)
+	record := domain.NewRecord(data)
 
 	slog.Debug("Writing record", "record", record.ToString(), "module", "handler", "function", "Write")
 

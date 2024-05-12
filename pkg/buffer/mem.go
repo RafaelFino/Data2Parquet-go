@@ -13,6 +13,7 @@ type Mem struct {
 	data   map[string][]*domain.Record
 	buff   chan BuffItem
 	mu     sync.Mutex
+	Ready  bool
 }
 
 type BuffItem struct {
@@ -28,10 +29,44 @@ func NewMem(config *config.Config) Buffer {
 	}
 
 	ret.buff = make(chan BuffItem, config.BufferSize)
+	signal := make(chan bool)
 
-	go ret.run()
+	go func(m *Mem, signal chan bool) {
+		signal <- true
+		for item := range m.buff {
+			m.mu.Lock()
+			if _, ok := m.data[item.key]; !ok {
+				m.data[item.key] = make([]*domain.Record, 0, m.config.BufferSize)
+			}
+
+			m.data[item.key] = append(m.data[item.key], item.item)
+			m.mu.Unlock()
+		}
+	}(ret, signal)
+
+	ret.Ready = <-signal
 
 	return ret
+}
+
+func (m *Mem) Close() error {
+	slog.Debug("Closing buffer", "module", "buffer.mem", "function", "Close")
+	m.Ready = false
+	close(m.buff)
+	return nil
+}
+
+func (m *Mem) Len(key string) int {
+	slog.Debug("Getting buffer length", "key", key, "module", "buffer.mem", "function", "Len")
+	if m.data == nil {
+		return 0
+	}
+
+	if _, ok := m.data[key]; !ok {
+		return 0
+	}
+
+	return len(m.data[key])
 }
 
 func (m *Mem) Push(key string, item *domain.Record) error {
@@ -46,21 +81,6 @@ func (m *Mem) Push(key string, item *domain.Record) error {
 	}
 
 	return nil
-}
-
-func (m *Mem) run() {
-	for {
-		select {
-		case item := <-m.buff:
-			m.mu.Lock()
-			if _, ok := m.data[item.key]; !ok {
-				m.data[item.key] = make([]*domain.Record, 0, m.config.BufferSize)
-			}
-
-			m.data[item.key] = append(m.data[item.key], item.item)
-			m.mu.Unlock()
-		}
-	}
 }
 
 func (m *Mem) Get(key string) []*domain.Record {
@@ -110,5 +130,5 @@ func (m *Mem) Keys() []string {
 }
 
 func (m *Mem) IsReady() bool {
-	return true
+	return m.Ready
 }

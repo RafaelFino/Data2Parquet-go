@@ -26,5 +26,5 @@ go.work
 data/*.json
 data/*.parquet
 
-./bin/*
-./bin/*/*
+bin/*
+bin/*/*

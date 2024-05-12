@@ -90,7 +90,7 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 
 		slog.Debug("Receive record", "record", record)
 
-		err := rcv.Write(domain.NewLog(record))
+		err := rcv.Write(domain.NewRecord(record))
 
 		if err != nil {
 			slog.Error("Error writing record", "error", err)
