@@ -11,6 +11,7 @@ require (
 	github.com/lmittmann/tint v1.0.4
 	github.com/mattn/go-isatty v0.0.20
 	github.com/oklog/ulid v1.3.1
+	github.com/vmihailenco/msgpack/v5 v5.4.1
 	github.com/xitongsys/parquet-go v1.6.2
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 )
@@ -47,6 +48,7 @@ require (
 	github.com/tebeka/strftime v0.1.5 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
+	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/xitongsys/parquet-go-source v0.0.0-20200817004010-026bad9b25d0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/crypto v0.23.0 // indirect

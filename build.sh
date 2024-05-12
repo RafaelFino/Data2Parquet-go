@@ -20,6 +20,9 @@ if [ "$par" == "all" ]; then
     echo " >>  [$os $arch] Building json2parquet -> ./bin/$os-$arch/json2parquet"
     GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -ldflags="-s -w" -o bin/$os-$arch/json2parquet -ldflags="-s -w" -trimpath cmd/json2parquet/main.go
 
+    echo " >>  [$os $arch] Building data-generator -> ./bin/$os-$arch/data-generator"
+    GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -ldflags="-s -w" -o bin/$os-$arch/data-generator -ldflags="-s -w" -trimpath cmd/data-generator/main.go
+
     echo " >>  [$os $arch] Building fluent-out-parquet -> ./bin/$os-$arch/fluent-out-parquet.so"
     GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -buildmode=c-shared -o bin/$os-$arch/fluent-out-parquet.so -ldflags="-s -w" -trimpath cmd/fluent-out-parquet/main.go
 
@@ -30,6 +33,9 @@ if [ "$par" == "all" ]; then
 
     echo " >>  [$os $arch] Building json2parquet -> ./bin/$os-$arch/json2parquet"
     GOOS=$os GOARCH=$arch CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc go build -ldflags="-s -w" -o bin/$os-$arch/json2parquet -ldflags="-s -w" -trimpath cmd/json2parquet/main.go
+
+    echo " >>  [$os $arch] Building data-generator -> ./bin/$os-$arch/data-generator"
+    GOOS=$os GOARCH=$arch CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc go build -ldflags="-s -w" -o bin/$os-$arch/data-generator -ldflags="-s -w" -trimpath cmd/data-generator/main.go    
 
     echo " >>  [$os $arch] Building fluent-out-parquet -> ./bin/$os-$arch/fluent-out-parquet.so"
     GOOS=$os GOARCH=$arch CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc go build -buildmode=c-shared -o bin/$os-$arch/fluent-out-parquet.so -ldflags="-s -w" -trimpath cmd/fluent-out-parquet/main.go
@@ -46,6 +52,9 @@ GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -ldflags="-s -w" -o bin/$os-$arch/h
 
 echo " >>  [$os $arch] Building json2parquet -> ./bin/$os-$arch/json2parquet"
 GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -ldflags="-s -w" -o bin/$os-$arch/json2parquet -ldflags="-s -w" -trimpath cmd/json2parquet/main.go
+
+echo " >>  [$os $arch] Building data-generator -> ./bin/$os-$arch/data-generator"
+GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -ldflags="-s -w" -o bin/$os-$arch/data-generator -ldflags="-s -w" -trimpath cmd/data-generator/main.go
 
 echo " >>  [$os $arch] Building fluent-out-parquet -> ./bin/$os-$arch/fluent-out-parquet.so"
 GOOS=$os GOARCH=$arch CGO_ENABLED=1 go build -buildmode=c-shared -o bin/$os-$arch/fluent-out-parquet.so -ldflags="-s -w" -trimpath cmd/fluent-out-parquet/main.go

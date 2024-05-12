@@ -21,6 +21,10 @@ func NewWriter(config *config.Config) Writer {
 	switch config.WriterType {
 	case "aws-s3":
 		return NewS3(config)
+	case "file":
+		return NewFile(config)
+	case "none":
+		return NewNone(config)
 
 	default:
 		return NewFile(config)

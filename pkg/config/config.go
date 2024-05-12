@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -22,9 +23,12 @@ type Config struct {
 	RedisHost             string `json:"redis_host,omitempty"`
 	RedisPassword         string `json:"redis_password,omitempty"`
 	RedisDB               int    `json:"redis_db,omitempty"`
+	RedisDataPrefix       string `json:"redis_data_prefix,omitempty"`
+	RedisKeys             string `json:"redis_keys,omitempty"`
+	RedisSkipFlush        bool   `json:"redis_skip_flush,omitempty"`
 }
 
-var keys = []string{"Debug", "LogPath", "WriterType", "BufferType", "BufferSize", "FlushInterval", "WriterFilePath", "WriterCompressionType", "WriterRowGroupSize", "RedisHost", "RedisPassword", "RedisDB"}
+var keys = []string{"Debug", "LogPath", "WriterType", "BufferType", "BufferSize", "FlushInterval", "WriterFilePath", "WriterCompressionType", "WriterRowGroupSize", "RedisHost", "RedisPassword", "RedisDB", "RedisSkipFlush", "RedisDataPrefix", "RedisKeys"}
 
 func ConfigFromJSON(data string) (*Config, error) {
 	config := &Config{}
@@ -77,7 +81,7 @@ func (c *Config) Set(cfg map[string]string) error {
 	for key, value := range cfg {
 		switch key {
 		case "debug":
-			c.Debug = value == "true"
+			c.Debug = strings.ToLower(value) == "true"
 		case "log_path":
 			c.LogPath = value
 		case "writer_type":
@@ -109,6 +113,12 @@ func (c *Config) Set(cfg map[string]string) error {
 		case "redis_db":
 			c.RedisDB = 0
 			fmt.Sscanf(value, "%d", &c.RedisDB)
+		case "redis_flush":
+			c.RedisSkipFlush = strings.ToLower(value) == "true"
+		case "redis_data_prefix":
+			c.RedisDataPrefix = value
+		case "redis_keys":
+			c.RedisKeys = value
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
 		}
