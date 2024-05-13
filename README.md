@@ -52,21 +52,21 @@ type Record struct {
 }
 ```
 ## Buffers
-Using the key BufferType you can choose the storage to make data buffer, before writer work. You can configure BufferSize and FlushInterval to manage data.
-### Mem (BufferType = "mem")
+Using the key `BufferType` you can choose the storage to make data buffer, before writer work. You can configure `BufferSize` and `FlushInterval` to manage data.
+### Mem (`BufferType` = `mem`)
 Use a local memory structure to stora temporaly data before Writer receive data. This option should be more faster, but doesn't offer resilience in disaster case.
-### Redis (BufferType = "redis")
+### Redis (`BufferType` = `redis`)
 Use a redis instance to store temporaly data before Writer receive data. This offer a more secure way to store buffer data, but requires an external resource (Redis).
 
-Some parameters can be changed to handle Redis keys, such as RedisKeys and RedisDataPrefix, they will change how Writer make store keys.
+Some parameters can be changed to handle Redis keys, such as `RedisKeys` and `RedisDataPrefix`, they will change how Writer make store keys.
 
-The Works also can be configure just to receive data and never flush, it is specialy important if you want to have more than one worker receiving data in a cluster, scanling worloads. It's very recommended that only one instance made Flush for each kind of key.
+The Works also can be configure just to receive data and never flush it, it is specialy important if you want to have more than one worker receiving data in a cluster, scanling worloads. It's very recommended that only one instance made Flush for each kind of key. To do that, use `RedisSkipFlush` key as `true`
 
 ## Writers
-Using the key WriterType you can choose the writer to write parquet data.
-### File (WriterType = "file")
-Write data in a local file, use the tag WriterFilePath to choose path to store data
-### AWS-S3 (WriterType = "aws-s3")
+Using the key `WriterType` you can choose the writer to write parquet data.
+### File (`WriterType` = `file`)
+Write data in a local file, use the tag `WriterFilePath` to choose path to store data
+### AWS-S3 (`WriterType` = `aws-s3`)
 
 ## Config
 ``` golang
