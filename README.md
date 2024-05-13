@@ -109,7 +109,7 @@ type Config struct {
 }
 ```
 
-#### Example to json2Parquet:
+#### Example to json2Parquet with Redis buffer and file writer:
 
 ``` json
 {
@@ -117,7 +117,6 @@ type Config struct {
     "buffer_type": "redis",
     "debug": false,
     "flush_interval": 60,
-    "ledis_path": "/tmp",
     "log_path": "./logs",
     "redis_data_prefix": "data",
     "redis_db": 0,
@@ -132,6 +131,18 @@ type Config struct {
 }
 ```
 
-#### Example to Fluent Out Parquet
+#### Example to json2Parquet with memory buffer and file writer:
 
+``` json
+{
+    "buffer_type": "mem",
+    "flush_interval": 60,
+    "writer_compression_type": "snappy",
+    "writer_file_path": "./data",
+    "writer_row_group_size": 134217728,
+    "writer_type": "file"
+}
+```
+
+#### Fluent Out Parquet config keys
 To FluentBit, use the main key name, example: `WriterType` instead `writer_type`
