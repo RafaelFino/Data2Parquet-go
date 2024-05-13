@@ -34,9 +34,6 @@ func TestRedis(t *testing.T) {
 	}
 
 	cfg.BufferType = "ledis"
-	cfg.RedisHost = "localhost:6379"
-	cfg.RedisPassword = ""
-	cfg.RedisDB = 0
 	cfg.RedisDataPrefix = "test"
 	cfg.RedisKeys = "keys"
 	cfg.LedisPath = "/tmp"

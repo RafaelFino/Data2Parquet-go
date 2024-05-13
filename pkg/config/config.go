@@ -216,4 +216,12 @@ func (c *Config) SetDefaults() {
 	if len(c.RedisKeys) == 0 {
 		c.RedisKeys = "keys"
 	}
+
+	if c.RedisDB < 0 {
+		c.RedisDB = 0
+	}
+
+	if len(c.RedisDataPrefix) == 0 {
+		c.RedisDataPrefix = "data"
+	}
 }

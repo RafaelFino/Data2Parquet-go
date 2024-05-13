@@ -76,7 +76,12 @@ func runTest(t *testing.T, cfg *config.Config) {
 		}
 	}
 
-	rcv.Close()
+	err := rcv.Close()
+
+	if err != nil {
+		t.Log("Error closing receiver", "error", err)
+		t.Error("Error closing receiver")
+	}
 
 	t.Log("Receiver test completed", "duration", time.Since(start))
 }
