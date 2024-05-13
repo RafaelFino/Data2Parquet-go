@@ -42,7 +42,12 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 		}
 	}
 
-	cfg.Set(cfgMap)
+	err := cfg.Set(cfgMap)
+
+	if err != nil {
+		slog.Error("Error setting config", "error", err)
+		return output.FLB_ERROR
+	}
 
 	if cfg.Debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug.Level())

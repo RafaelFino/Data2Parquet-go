@@ -39,7 +39,12 @@ func NewReceiver(config *config.Config) *Receiver {
 
 	slog.Debug("Initializing receiver", "config", config.ToString(), "module", "receiver", "function", "NewReceiver")
 
-	ret.writer.Init()
+	err := ret.writer.Init()
+
+	if err != nil {
+		slog.Error("Error initializing writer", "error", err, "module", "receiver", "function", "NewReceiver")
+		return nil
+	}
 
 	return ret
 }

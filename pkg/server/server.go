@@ -61,7 +61,7 @@ func (s *Server) Run() {
 	slog.Debug("Starting server", "address", s.makeAddress(), "module", "server", "function", "Run")
 	err := s.srv.ListenAndServe()
 	if err != nil {
-		slog.Debug("Error starting server: %s", err, "module", "server", "function", "Run")
+		slog.Error("Error starting server", "error", err, "module", "server", "function", "Run")
 		panic(err)
 	}
 }
