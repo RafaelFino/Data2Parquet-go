@@ -44,57 +44,58 @@ func NewReceiver(config *config.Config) *Receiver {
 }
 
 func (r *Receiver) Write(record *domain.Record) error {
-	err := r.buffer.Push(record.Key(), record)
+	key := record.Key()
+	err := r.buffer.Push(key, record)
 
 	if err != nil {
 		slog.Error("Error pushing record", "error", err, "record", record.ToString(), "module", "receiver", "function", "Write")
 	}
 
 	//Check if key is already in control and increment count
-	if c, ok := r.control[record.Key()]; ok {
+	if c, ok := r.control[key]; ok {
 		c.Count++
-		r.control[record.Key()] = c
+		r.control[key] = c
 
 		if c.Count >= r.config.BufferSize {
 			//Call flush on reach buffer size
 			go func() {
-				err := r.FlushKey(record.Key())
+				err := r.FlushKey(key)
 
 				if err != nil {
-					slog.Error("Error flushing buffer", "error", err, "key", record.Key(), "module", "receiver", "function", "Write")
+					slog.Error("Error flushing buffer", "error", err, "key", key, "module", "receiver", "function", "Write")
 				}
 			}()
 		}
 	} else {
 		//Fisrt record for this key
-		r.control[record.Key()] = &BufferControl{
+		r.control[key] = &BufferControl{
 			Last:  time.Now(),
 			Count: 1,
 			mu:    &sync.Mutex{},
 		}
 
-		go func(r *Receiver) {
+		go func(r *Receiver, key string) {
 			for r.running {
 				select {
-				case key := <-r.stopSignal:
+				case k := <-r.stopSignal:
 					{
 						//Soft stop signal
-						slog.Info("Receiving stop signal from key", "module", "receiver", "function", "Write", "key", key)
+						slog.Info("Receiving stop signal from key", "module", "receiver", "function", "Write", "key", k)
 
 						return
 					}
 				case <-time.After(time.Duration(r.config.FlushInterval) * time.Second):
 					{
 						//Flush on interval
-						err := r.FlushKey(record.Key())
+						err := r.FlushKey(key)
 
 						if err != nil {
-							slog.Error("Error flushing buffer", "error", err, "key", record.Key(), "module", "receiver", "function", "Write")
+							slog.Error("Error flushing buffer", "error", err, "key", key, "module", "receiver", "function", "Write")
 						}
 					}
 				}
 			}
-		}(r)
+		}(r, key)
 	}
 
 	return err
