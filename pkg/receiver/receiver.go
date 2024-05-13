@@ -50,11 +50,13 @@ func (r *Receiver) Write(record *domain.Record) error {
 		slog.Error("Error pushing record", "error", err, "record", record.ToString(), "module", "receiver", "function", "Write")
 	}
 
+	//Check if key is already in control and increment count
 	if c, ok := r.control[record.Key()]; ok {
 		c.Count++
 		r.control[record.Key()] = c
 
 		if c.Count >= r.config.BufferSize {
+			//Call flush on reach buffer size
 			go func() {
 				err := r.FlushKey(record.Key())
 
@@ -64,6 +66,7 @@ func (r *Receiver) Write(record *domain.Record) error {
 			}()
 		}
 	} else {
+		//Fisrt record for this key
 		r.control[record.Key()] = &BufferControl{
 			Last:  time.Now(),
 			Count: 1,
@@ -75,11 +78,13 @@ func (r *Receiver) Write(record *domain.Record) error {
 				select {
 				case <-r.stopSignal:
 					{
+						//Soft stop signal
 						slog.Debug("Receiving stop signal from key", "module", "receiver", "function", "Write", "key", record.Key())
 						return
 					}
 				case <-time.After(time.Duration(r.config.FlushInterval) * time.Second):
 					{
+						//Flush on interval
 						err := r.FlushKey(record.Key())
 
 						if err != nil {
@@ -97,6 +102,7 @@ func (r *Receiver) Write(record *domain.Record) error {
 func (r *Receiver) FlushKey(key string) error {
 	start := time.Now()
 
+	//Get buffer control
 	var ctrl *BufferControl
 	ctrl, found := r.control[key]
 	if found {
@@ -106,6 +112,7 @@ func (r *Receiver) FlushKey(key string) error {
 		}
 	}
 
+	//Create buffer control if not found - should not happen
 	if !found || ctrl == nil {
 		ctrl = &BufferControl{
 			mu: &sync.Mutex{},
@@ -139,6 +146,7 @@ func (r *Receiver) FlushKey(key string) error {
 
 	slog.Debug("Buffer flushed", "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start))
 
+	//Reset buffer control
 	ctrl.Last = time.Now()
 	ctrl.Count = 0
 
@@ -181,6 +189,10 @@ func (r *Receiver) Healthcheck() error {
 
 	if !r.buffer.IsReady() {
 		return errors.New("buffer is not ready")
+	}
+
+	if !r.writer.IsReady() {
+		return errors.New("writer is not ready")
 	}
 
 	return nil
