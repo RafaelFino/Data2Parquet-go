@@ -17,7 +17,7 @@ type Receiver struct {
 	buffer     buffer.Buffer
 	running    bool
 	control    map[string]*BufferControl
-	stopSignal chan bool
+	stopSignal chan string
 }
 
 type BufferControl struct {
@@ -33,7 +33,7 @@ func NewReceiver(config *config.Config) *Receiver {
 		buffer:     buffer.New(config),
 		running:    true,
 		control:    make(map[string]*BufferControl),
-		stopSignal: make(chan bool),
+		stopSignal: make(chan string),
 	}
 
 	slog.Debug("Initializing receiver", "config", config.ToString(), "module", "receiver", "function", "NewReceiver")
@@ -76,10 +76,11 @@ func (r *Receiver) Write(record *domain.Record) error {
 		go func(r *Receiver) {
 			for r.running {
 				select {
-				case <-r.stopSignal:
+				case key := <-r.stopSignal:
 					{
 						//Soft stop signal
-						slog.Debug("Receiving stop signal from key", "module", "receiver", "function", "Write", "key", record.Key())
+						slog.Info("Receiving stop signal from key", "module", "receiver", "function", "Write", "key", key)
+
 						return
 					}
 				case <-time.After(time.Duration(r.config.FlushInterval) * time.Second):
@@ -155,6 +156,20 @@ func (r *Receiver) FlushKey(key string) error {
 	return nil
 }
 
+func (r *Receiver) Flush() error {
+	slog.Info("Flushing receiver to all keys", "module", "receiver", "function", "Flush")
+	for key := range r.control {
+		err := r.FlushKey(key)
+
+		if err != nil {
+			slog.Error("Error flushing buffer", "error", err, "key", key, "module", "receiver", "function", "Flush")
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (r *Receiver) Close() error {
 	slog.Info("Closing receiver", "module", "receiver", "function", "Close")
 	r.running = false
@@ -162,7 +177,8 @@ func (r *Receiver) Close() error {
 	slog.Info("Stopping receiver, flushing buffers", "module", "receiver", "function", "Close")
 
 	for key := range r.control {
-		r.stopSignal <- true
+		r.stopSignal <- key
+
 		//Change buffer control to force flush
 		if ctrl, found := r.control[key]; found {
 			ctrl.Count = r.config.BufferSize
@@ -173,7 +189,7 @@ func (r *Receiver) Close() error {
 		err := r.FlushKey(key)
 
 		if err != nil {
-			slog.Error("Error flushing buffer to close Receiver", "error", err, "key", key, "module", "receiver", "function", "NewReceiver")
+			slog.Error("Error flushing buffer to close Receiver", "error", err, "key", key, "module", "receiver", "function", "Close")
 			return err
 		}
 	}

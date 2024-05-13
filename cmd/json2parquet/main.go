@@ -80,7 +80,7 @@ func main() {
 	slog.Info("Records sent", "duration", time.Since(start), "count", len(records))
 	start = time.Now()
 
-	err = rcv.Flush(true)
+	err = rcv.Flush()
 
 	if err != nil {
 		slog.Error("Error flushing records", "error", err)
