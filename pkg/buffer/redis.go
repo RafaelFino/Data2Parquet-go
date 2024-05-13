@@ -6,12 +6,8 @@ import (
 	"data2parquet/pkg/domain"
 	"fmt"
 	"log/slog"
-	"os"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/ledisdb/ledisdb/server"
-
-	lediscfg "github.com/ledisdb/ledisdb/config"
 )
 
 type Redis struct {
@@ -36,6 +32,22 @@ func NewRedis(config *config.Config) Buffer {
 	return ret
 }
 
+func NewRedisWithClient(config *config.Config, client *redis.Client) Buffer {
+	ret := &Redis{
+		config: config,
+		client: client,
+	}
+
+	if !ret.IsReady() {
+		slog.Error("Redis is not ready", "module", "buffer", "function", "NewRedisWithClient")
+		return nil
+	}
+
+	slog.Debug("Connected to redis", "module", "buffer", "function", "NewRedisWithClient")
+
+	return ret
+}
+
 func (r *Redis) Close() error {
 	if r.client != nil {
 		err := r.client.Close()
@@ -51,31 +63,6 @@ func (r *Redis) Close() error {
 }
 
 func createClient(cfg *config.Config) *redis.Client {
-	if len(cfg.RedisLocalPath) > 0 {
-		slog.Debug("Creating redis client with local path", "path", cfg.RedisLocalPath, "module", "buffer.redis", "function", "createClient")
-
-		tmpDir, err := os.MkdirTemp(cfg.RedisLocalPath, "ledisdb")
-
-		if err != nil {
-			slog.Error("Error creating temp dir", "error", err, "module", "buffer.redis", "function", "createClient")
-			return nil
-		}
-
-		cfg := lediscfg.NewConfigDefault()
-		cfg.Addr = "" // use auto-assigned address
-		cfg.DataDir = tmpDir
-
-		app, err := server.NewApp(cfg)
-		if err != nil {
-			slog.Error("Error creating ledisdb app", "error", err, "module", "buffer.redis", "function", "createClient")
-			return nil
-		}
-
-		return redis.NewClient(&redis.Options{
-			Addr: app.Address(),
-		})
-	}
-
 	return redis.NewClient(&redis.Options{
 		Addr:     cfg.RedisHost,
 		Password: cfg.RedisPassword,

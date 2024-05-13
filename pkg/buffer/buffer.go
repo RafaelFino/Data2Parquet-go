@@ -19,6 +19,10 @@ func New(config *config.Config) Buffer {
 	switch config.BufferType {
 	case "redis":
 		return NewRedis(config)
+	case "ledis":
+		return NewLedis(config)
+	case "mem":
+		return NewMem(config)
 	default:
 		return NewMem(config)
 	}
