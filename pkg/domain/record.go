@@ -9,6 +9,41 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+// / Record
+// / @struct Record
+// / @implements Record
+// / @field Time string
+// / @field Level string
+// / @field CorrelationId *string
+// / @field SessionId *string
+// / @field MessageId *string
+// / @field PersonId *string
+// / @field UserId *string
+// / @field DeviceId *string
+// / @field Message string
+// / @field BusinessCapability string
+// / @field BusinessDomain string
+// / @field BusinessService string
+// / @field ApplicationService string
+// / @field Audit *bool
+// / @field ResourceType *string
+// / @field CloudProvider *string
+// / @field SourceId *string
+// / @field HTTPResponse *int64
+// / @field ErrorCode *string
+// / @field StackTrace *string
+// / @field Duration *int64
+// / @field TraceIP []string
+// / @field Region *string
+// / @field AZ *string
+// / @field Tags []string
+// / @field Args map[string]string
+// / @field TransactionMessageReference *string
+// / @field Ttl *int64
+// / @field AutoIndex *bool
+// / @field LoggerName *string
+// / @field ThreadName *string
+// / @field ExtraFields map[string]string
 type Record struct {
 	Time                        string            `json:"time" parquet:"name=time, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"time"`
 	Level                       string            `json:"level" parquet:"name=level, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"level"`
@@ -44,11 +79,13 @@ type Record struct {
 	ExtraFields                 map[string]string `json:"extra_fields,omitempty" parquet:"name=extra_fields, type=MAP, convertedtype=MAP, keytype=BYTE_ARRAY, keyconvertedtype=UTF8, valuetype=BYTE_ARRAY" msg:"extra_fields"`
 }
 
+// / CloudProviderAWS is the AWS cloud provider
 var CloudProviderAWS = "aws"
 var CloudProviderGCP = "gcp"
 var CloudProviderOCI = "oci"
 var CloudProviderAzure = "azure"
 
+// / CloudProviderType is the type of cloud provider
 var CloudProviderType = map[string]int{
 	CloudProviderAWS:   0,
 	CloudProviderGCP:   1,
@@ -56,6 +93,7 @@ var CloudProviderType = map[string]int{
 	CloudProviderAzure: 3,
 }
 
+// / ResourceType is the type of resource
 var ResK8s = "k8s"
 var ResVM = "vm"
 var ResServerless = "serverless"
@@ -72,6 +110,7 @@ var ResourceType = map[string]int{
 	ResVendor:       5,
 }
 
+// / LevelEmergency is the emergency level
 var LevelEmergency = "emergency"
 var LevelAlert = "alert"
 var LevelCritical = "critical"
@@ -90,6 +129,9 @@ var LogLevel = map[string]int{
 	LevelDebug:     6,
 }
 
+// / NewRecord creates a new record
+// / @param data map[interface{}]interface{} The data to create the record from
+// / @return *Record
 func NewRecord(data map[interface{}]interface{}) *Record {
 	ret := &Record{
 		ExtraFields: make(map[string]string),

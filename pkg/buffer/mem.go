@@ -8,6 +8,9 @@ import (
 	"sync"
 )
 
+// / Mem buffer
+// / @struct Mem
+// / @implements Buffer
 type Mem struct {
 	config *config.Config
 	data   map[string][]*domain.Record
@@ -21,6 +24,9 @@ type BuffItem struct {
 	item *domain.Record
 }
 
+// / New mem buffer
+// / @param config *config.Config
+// / @return Buffer
 func NewMem(config *config.Config) Buffer {
 	ret := &Mem{
 		data:   make(map[string][]*domain.Record),

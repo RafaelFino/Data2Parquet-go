@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+// / Receiver
+// / @struct Receiver
 type Receiver struct {
 	config     *config.Config
 	writer     writer.Writer
@@ -20,6 +22,8 @@ type Receiver struct {
 	stopSignal chan string
 }
 
+// / BufferControl
+// / @struct BufferControl
 type BufferControl struct {
 	Last    time.Time
 	Count   int
@@ -27,6 +31,9 @@ type BufferControl struct {
 	running bool
 }
 
+// / New receiver
+// / @param config *config.Config
+// / @return Receiver
 func NewReceiver(config *config.Config) *Receiver {
 	ret := &Receiver{
 		config:     config,

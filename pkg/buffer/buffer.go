@@ -5,6 +5,7 @@ import (
 	"data2parquet/pkg/domain"
 )
 
+// / Buffer interface
 type Buffer interface {
 	Close() error
 	Push(key string, item *domain.Record) error
@@ -15,6 +16,9 @@ type Buffer interface {
 	IsReady() bool
 }
 
+// / New buffer
+// / @param config *config.Config
+// / @return Buffer
 func New(config *config.Config) Buffer {
 	switch config.BufferType {
 	case "redis":

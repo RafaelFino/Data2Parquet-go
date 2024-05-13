@@ -10,11 +10,17 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
+// / Redis buffer
+// / @struct Redis
+// / @implements Buffer
 type Redis struct {
 	config *config.Config
 	client *redis.Client
 }
 
+// / New redis buffer
+// / @param config *config.Config
+// / @return Buffer
 func NewRedis(config *config.Config) Buffer {
 	ret := &Redis{
 		config: config,

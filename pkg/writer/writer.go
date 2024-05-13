@@ -10,6 +10,8 @@ import (
 	"github.com/xitongsys/parquet-go/writer"
 )
 
+// / Writer interface
+// / @interface Writer
 type Writer interface {
 	Init() error
 	Write(data []*domain.Record) error
@@ -17,6 +19,9 @@ type Writer interface {
 	IsReady() bool
 }
 
+// / New writer
+// / @param config *config.Config
+// / @return Writer
 func New(config *config.Config) Writer {
 	switch config.WriterType {
 	case "aws-s3":
@@ -31,6 +36,7 @@ func New(config *config.Config) Writer {
 	}
 }
 
+// / Compression types
 var CompressionTypeSnappy = "snappy"
 var CompressionTypeGzip = "gzip"
 var CompressionTypeNone = "none"
