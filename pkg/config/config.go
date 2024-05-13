@@ -20,7 +20,6 @@ type Config struct {
 	RedisDB               int    `json:"redis_db,omitempty"`
 	RedisHost             string `json:"redis_host,omitempty"`
 	RedisKeys             string `json:"redis_keys,omitempty"`
-	LedisPath             string `json:"ledis_path,omitempty"`
 	RedisPassword         string `json:"redis_password,omitempty"`
 	RedisSkipFlush        bool   `json:"redis_skip_flush,omitempty"`
 	WriterCompressionType string `json:"writer_compression_type,omitempty"`
@@ -34,7 +33,6 @@ var keys = []string{
 	"BufferType",
 	"Debug",
 	"FlushInterval",
-	"LedisPath",
 	"LogPath",
 	"RedisDataPrefix",
 	"RedisDB",
@@ -145,8 +143,6 @@ func (c *Config) Set(cfg map[string]string) error {
 			c.RedisDataPrefix = value
 		case "redis_keys":
 			c.RedisKeys = value
-		case "ledis_path":
-			c.LedisPath = value
 
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
@@ -164,7 +160,6 @@ func (c *Config) Get() map[string]interface{} {
 	ret["Debug"] = c.Debug
 	ret["FlushInterval"] = c.FlushInterval
 	ret["LogPath"] = c.LogPath
-	ret["LedisPath"] = c.LedisPath
 	ret["Port"] = c.Port
 	ret["RedisDataPrefix"] = c.RedisDataPrefix
 	ret["RedisDB"] = c.RedisDB

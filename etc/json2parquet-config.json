@@ -1,8 +1,9 @@
 {
     "buffer_size": 1000,
-    "buffer_type": "mem",
+    "buffer_type": "redis",
     "debug": false,
     "flush_interval": 60,
+    "ledis_path": "/tmp",
     "log_path": "./logs",
     "redis_data_prefix": "data",
     "redis_db": 0,

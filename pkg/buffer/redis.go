@@ -32,22 +32,6 @@ func NewRedis(config *config.Config) Buffer {
 	return ret
 }
 
-func NewRedisWithClient(config *config.Config, client *redis.Client) Buffer {
-	ret := &Redis{
-		config: config,
-		client: client,
-	}
-
-	if !ret.IsReady() {
-		slog.Error("Redis is not ready", "module", "buffer", "function", "NewRedisWithClient")
-		return nil
-	}
-
-	slog.Debug("Connected to redis", "module", "buffer", "function", "NewRedisWithClient")
-
-	return ret
-}
-
 func (r *Redis) Close() error {
 	if r.client != nil {
 		err := r.client.Close()
@@ -87,14 +71,15 @@ func (r *Redis) Len(key string) int {
 
 func (r *Redis) Push(key string, item *domain.Record) error {
 	rkey := r.makeDataKey(key)
-	sadd := r.client.SAdd(context.Background(), r.config.RedisKeys, rkey)
+	ctx := context.Background()
+	sadd := r.client.SAdd(ctx, r.config.RedisKeys, rkey)
 
 	if sadd.Err() != nil {
 		slog.Error("Error adding key", "error", sadd.Err())
 		return sadd.Err()
 	}
 
-	lpush := r.client.LPush(context.Background(), rkey, item.ToMsgPack())
+	lpush := r.client.LPush(ctx, rkey, item.ToMsgPack())
 
 	if lpush.Err() != nil {
 		slog.Error("Error pushing to key", "error", lpush.Err())
@@ -105,12 +90,14 @@ func (r *Redis) Push(key string, item *domain.Record) error {
 }
 
 func (r *Redis) Get(key string) []*domain.Record {
+	rkey := r.makeDataKey(key)
 	if r.config.RedisSkipFlush {
 		slog.Info("Skipping buffer get", "key", key, "module", "buffer.redis", "function", "Get")
 		return make([]*domain.Record, 0)
 	}
 
-	cmd := r.client.LLen(context.Background(), key)
+	ctx := context.Background()
+	cmd := r.client.LLen(ctx, rkey)
 
 	if cmd.Err() != nil {
 		slog.Error("Error getting key", "error", cmd.Err())
@@ -119,7 +106,7 @@ func (r *Redis) Get(key string) []*domain.Record {
 
 	size := cmd.Val()
 
-	result := r.client.LRange(context.Background(), key, 0, size-1)
+	result := r.client.LRange(ctx, rkey, 0, size-1)
 
 	if result.Err() != nil {
 		slog.Error("Error getting key", "error", result.Err())
@@ -145,12 +132,13 @@ func (r *Redis) Get(key string) []*domain.Record {
 }
 
 func (r *Redis) Clear(key string, size int) error {
+	rkey := r.makeDataKey(key)
 	if r.config.RedisSkipFlush {
 		slog.Info("Skipping buffer clear", "key", key, "module", "buffer.redis", "function", "Clear")
 		return nil
 	}
 
-	cmd := r.client.LPopCount(context.Background(), key, size)
+	cmd := r.client.LPopCount(context.Background(), rkey, size)
 
 	if cmd.Err() != nil {
 		slog.Error("Error clearing key", "error", cmd.Err())
