@@ -37,12 +37,27 @@ func NewReceiver(config *config.Config) *Receiver {
 		stopSignal: make(chan string),
 	}
 
+	if ret.buffer == nil {
+		slog.Error("Error creating buffer", "module", "receiver", "function", "NewReceiver")
+		return nil
+	}
+
+	if !ret.buffer.IsReady() {
+		slog.Error("Buffer is not ready", "module", "receiver", "function", "NewReceiver")
+		return nil
+	}
+
 	slog.Debug("Initializing receiver", "config", config.ToString(), "module", "receiver", "function", "NewReceiver")
 
 	err := ret.writer.Init()
 
 	if err != nil {
 		slog.Error("Error initializing writer", "error", err, "module", "receiver", "function", "NewReceiver")
+		return nil
+	}
+
+	if !ret.writer.IsReady() {
+		slog.Error("Writer is not ready", "module", "receiver", "function", "NewReceiver")
 		return nil
 	}
 

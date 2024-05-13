@@ -69,6 +69,11 @@ func main() {
 
 	rcv := receiver.NewReceiver(cfg)
 
+	if rcv == nil {
+		slog.Error("Error creating receiver")
+		os.Exit(1)
+	}
+
 	for _, record := range records {
 		err := rcv.Write(record)
 
