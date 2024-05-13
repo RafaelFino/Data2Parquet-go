@@ -37,6 +37,8 @@ func NewReceiver(config *config.Config) *Receiver {
 		stopSignal: make(chan string),
 	}
 
+	slog.Debug("Validating receiver buffer", "module", "receiver", "function", "NewReceiver")
+
 	if ret.buffer == nil {
 		slog.Error("Error creating buffer", "module", "receiver", "function", "NewReceiver")
 		return nil
@@ -48,6 +50,11 @@ func NewReceiver(config *config.Config) *Receiver {
 	}
 
 	slog.Debug("Initializing receiver", "config", config.ToString(), "module", "receiver", "function", "NewReceiver")
+
+	if ret.writer == nil {
+		slog.Error("Error creating writer", "module", "receiver", "function", "NewReceiver")
+		return nil
+	}
 
 	err := ret.writer.Init()
 
