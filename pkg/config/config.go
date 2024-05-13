@@ -205,7 +205,7 @@ func (c *Config) SetDefaults() {
 		c.BufferType = "mem"
 	}
 
-	if c.BufferSize < 1 {
+	if c.BufferSize < 1000 {
 		c.BufferSize = 1000
 	}
 

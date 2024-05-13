@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"sync"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
 	"github.com/oklog/ulid"
+	"gopkg.in/loremipsum.v1"
 )
 
 func main() {
@@ -28,6 +30,16 @@ func main() {
 
 	count := 500000
 	parallel := 4
+
+	if len(os.Args) > 1 {
+		i, err := strconv.Atoi(os.Args[1])
+
+		if err != nil {
+			slog.Error("Error parsing count", "error", err)
+		} else {
+			count = i
+		}
+	}
 
 	start := time.Now()
 	result := make(chan *domain.Record, parallel)
@@ -118,6 +130,7 @@ func GenerateLog(pid int, count int, result chan *domain.Record, wg *sync.WaitGr
 	boolValue := true
 	loggerName := "data2parquet"
 	threadName := "data2parquet.main"
+	words := loremipsum.NewWithSeed(int64(pid * count))
 
 	slog.Info("Starting to generate logs", "pid", pid, "count", count)
 
@@ -125,7 +138,7 @@ func GenerateLog(pid int, count int, result chan *domain.Record, wg *sync.WaitGr
 		duration := time.Since(start).Milliseconds()
 		line := &domain.Record{
 			Level:                       "INFO",
-			Message:                     "My random log message to text to parquet conversion, index " + fmt.Sprintf("%d", i),
+			Message:                     words.Sentences(5),
 			Time:                        time.Now().Format(time.RFC3339Nano),
 			CorrelationId:               GetID(),
 			SessionId:                   GetID(),

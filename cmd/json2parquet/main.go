@@ -21,7 +21,7 @@ func main() {
 	var logLevel = slog.LevelInfo
 
 	if len(os.Args) < 3 {
-		fmt.Printf("Usage: json2parquet <config_file> <input.json>")
+		fmt.Printf("Usage: json2parquet <config_file> <input.json>\n")
 		os.Exit(1)
 	}
 

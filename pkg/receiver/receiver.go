@@ -21,9 +21,10 @@ type Receiver struct {
 }
 
 type BufferControl struct {
-	Last  time.Time
-	Count int
-	mu    *sync.Mutex
+	Last    time.Time
+	Count   int
+	mu      *sync.Mutex
+	running bool
 }
 
 func NewReceiver(config *config.Config) *Receiver {
@@ -56,22 +57,21 @@ func (r *Receiver) Write(record *domain.Record) error {
 		c.Count++
 		r.control[key] = c
 
-		if c.Count >= r.config.BufferSize {
+		if c.Count >= r.config.BufferSize && !c.running {
 			//Call flush on reach buffer size
-			go func() {
-				err := r.FlushKey(key)
+			err := r.FlushKey(key)
 
-				if err != nil {
-					slog.Error("Error flushing buffer", "error", err, "key", key, "module", "receiver", "function", "Write")
-				}
-			}()
+			if err != nil {
+				slog.Error("Error flushing buffer", "error", err, "key", key, "module", "receiver", "function", "Write")
+			}
 		}
 	} else {
 		//Fisrt record for this key
 		r.control[key] = &BufferControl{
-			Last:  time.Now(),
-			Count: 1,
-			mu:    &sync.Mutex{},
+			Last:    time.Now(),
+			Count:   1,
+			mu:      &sync.Mutex{},
+			running: false,
 		}
 
 		go func(r *Receiver, key string) {
@@ -121,8 +121,16 @@ func (r *Receiver) FlushKey(key string) error {
 		}
 	}
 
+	if ctrl.running {
+		return nil
+	}
+
+	ctrl.running = true
 	ctrl.mu.Lock()
-	defer ctrl.mu.Unlock()
+	defer func(ctrl *BufferControl) {
+		ctrl.running = false
+		ctrl.mu.Unlock()
+	}(ctrl)
 
 	data := r.buffer.Get(key)
 
@@ -130,7 +138,7 @@ func (r *Receiver) FlushKey(key string) error {
 		return nil
 	}
 
-	slog.Debug("Flushing buffer", "key", key, "size", len(data), "module", "receiver", "function", "Flush")
+	slog.Info("Flushing buffer", "key", key, "size", len(data), "buffer-size", r.config.BufferSize, "module", "receiver", "function", "Flush")
 	err := r.writer.Write(data)
 
 	if err != nil {
