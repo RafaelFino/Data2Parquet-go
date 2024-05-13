@@ -109,7 +109,7 @@ type Config struct {
 }
 ```
 
-Example:
+#### Example to json2Parquet:
 
 ``` json
 {
@@ -131,3 +131,7 @@ Example:
     "writer_type": "file"
 }
 ```
+
+#### Example to Fluent Out Parquet
+
+To FluentBit, use the main key name, example: `WriterType` instead `writer_type`
