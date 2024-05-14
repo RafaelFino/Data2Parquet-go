@@ -98,6 +98,10 @@ func WriteParquet(key string, data []*domain.Record, w io.Writer, rowGroupSize i
 }
 
 func (w *WriterReturn) IsError() bool {
+	if w == nil {
+		return false
+	}
+
 	return w.Error != nil
 }
 

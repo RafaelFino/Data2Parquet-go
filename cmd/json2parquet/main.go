@@ -16,7 +16,6 @@ import (
 )
 
 func main() {
-	start := time.Now()
 	PrintLogo()
 
 	var logLevel = slog.LevelInfo
@@ -48,7 +47,7 @@ func main() {
 	slog.SetDefault(logger)
 
 	slog.Info("Starting...")
-
+	start := time.Now()
 	file, err := os.Open(os.Args[2])
 
 	if err != nil {
@@ -75,6 +74,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	start = time.Now()
 	for _, record := range records {
 		err := rcv.Write(record)
 
@@ -83,22 +83,23 @@ func main() {
 		}
 	}
 
-	slog.Info("Records sent", "duration", time.Since(start), "count", len(records))
+	slog.Info("Records wrote", "duration", time.Since(start), "count", len(records))
 	start = time.Now()
-
 	err = rcv.Flush()
 
 	if err != nil {
 		slog.Error("Error flushing records", "error", err)
 	}
 
+	slog.Info("Flushed", "duration", time.Since(start))
+	start = time.Now()
 	err = rcv.Close()
 
 	if err != nil {
 		slog.Error("Error closing receiver", "error", err)
 	}
 
-	slog.Info("Finished", "duration", time.Since(start))
+	slog.Info("Close - Finished", "duration", time.Since(start))
 
 	os.Exit(0)
 }

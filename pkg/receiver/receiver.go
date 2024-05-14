@@ -100,7 +100,7 @@ func (r *Receiver) Write(record *domain.Record) error {
 
 		if c.Count >= r.config.BufferSize && !c.running {
 			//Call flush on reach buffer size
-			err := r.FlushKey(key)
+			err := r.FlushKey(key, nil)
 
 			if err != nil {
 				slog.Error("Error flushing buffer", "error", err, "key", key, "module", "receiver", "function", "Write")
@@ -121,14 +121,14 @@ func (r *Receiver) Write(record *domain.Record) error {
 				case k := <-r.stopSignal:
 					{
 						//Soft stop signal
-						slog.Info("Receiving stop signal from key", "module", "receiver", "function", "Write", "key", k)
+						slog.Debug("Receiving stop signal from key", "module", "receiver", "function", "Write", "key", k)
 
 						return
 					}
 				case <-time.After(time.Duration(r.config.FlushInterval) * time.Second):
 					{
 						//Flush on interval
-						err := r.FlushKey(key)
+						err := r.FlushKey(key, nil)
 
 						if err != nil {
 							slog.Error("Error flushing buffer", "error", err, "key", key, "module", "receiver", "function", "Write")
@@ -142,7 +142,11 @@ func (r *Receiver) Write(record *domain.Record) error {
 	return err
 }
 
-func (r *Receiver) FlushKey(key string) error {
+func (r *Receiver) FlushKey(key string, wg *sync.WaitGroup) error {
+	if wg != nil {
+		defer wg.Done()
+	}
+
 	start := time.Now()
 
 	//Get buffer control
@@ -168,6 +172,7 @@ func (r *Receiver) FlushKey(key string) error {
 
 	ctrl.running = true
 	ctrl.mu.Lock()
+
 	defer func(ctrl *BufferControl) {
 		ctrl.running = false
 		ctrl.mu.Unlock()
@@ -179,7 +184,7 @@ func (r *Receiver) FlushKey(key string) error {
 		return nil
 	}
 
-	slog.Info("Flushing buffer", "key", key, "size", len(data), "buffer-size", r.config.BufferSize, "module", "receiver", "function", "Flush")
+	slog.Debug("Starting to flushing buffer", "key", key, "size", len(data), "buffer-size", r.config.BufferSize, "module", "receiver", "function", "Flush", "duration", time.Since(start))
 	writerRet := r.writer.Write(data)
 
 	if writer.CheckWriterError(writerRet) {
@@ -187,7 +192,7 @@ func (r *Receiver) FlushKey(key string) error {
 		defer r.RecoveryWriteError(writerRet)
 	}
 
-	slog.Debug("Clearing buffer", "key", key, "size", len(data), "module", "receiver", "function", "Flush")
+	slog.Debug("Clearing buffer data", "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start))
 	err := r.buffer.Clear(key, len(data))
 
 	if err != nil {
@@ -195,27 +200,43 @@ func (r *Receiver) FlushKey(key string) error {
 		return err
 	}
 
-	slog.Debug("Buffer flushed", "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start))
-
 	//Reset buffer control
 	ctrl.Last = time.Now()
 	ctrl.Count = 0
 
 	r.control[key] = ctrl
 
+	slog.Info("Buffer flushed", "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start))
+
 	return nil
 }
 
 func (r *Receiver) Flush() error {
-	slog.Info("Flushing receiver to all keys", "module", "receiver", "function", "Flush")
-	for key := range r.control {
-		err := r.FlushKey(key)
+	start := time.Now()
+	slog.Info("Flushing all keys", "module", "receiver", "function", "Flush")
 
+	wg := &sync.WaitGroup{}
+	wg.Add(len(r.control))
+	results := make(chan error)
+
+	for key := range r.control {
+		go func(key string, wg *sync.WaitGroup, results chan error) {
+			results <- r.FlushKey(key, wg)
+		}(key, wg, results)
+	}
+
+	slog.Debug("Waiting for buffer flush to complete", "module", "receiver", "function", "Flush")
+	wg.Wait()
+
+	for i := 0; i < len(results); i++ {
+		err := <-results
 		if err != nil {
-			slog.Error("Error flushing buffer", "error", err, "key", key, "module", "receiver", "function", "Flush")
+			slog.Error("Error flushing buffer", "error", err, "module", "receiver", "function", "Flush")
 			return err
 		}
 	}
+
+	slog.Info("Flush finished", "module", "receiver", "function", "Flush", "duration", time.Since(start))
 
 	return nil
 }
@@ -248,17 +269,20 @@ func (r *Receiver) Close() error {
 
 	slog.Info("Stopping receiver, flushing buffers", "module", "receiver", "function", "Close")
 
-	for key := range r.control {
-		r.stopSignal <- key
+	wg := &sync.WaitGroup{}
 
-		//Change buffer control to force flush
+	for key := range r.control {
+		slog.Info("Flushing key on close receiver", "key", key, "module", "receiver", "function", "Close")
 		if ctrl, found := r.control[key]; found {
 			ctrl.Count = r.config.BufferSize
 			ctrl.Last = time.Now().Add(-time.Duration(r.config.FlushInterval) * time.Second)
 			r.control[key] = ctrl
 		}
 
-		err := r.FlushKey(key)
+		wg.Add(1)
+		err := r.FlushKey(key, wg)
+
+		r.stopSignal <- key
 
 		if err != nil {
 			slog.Error("Error flushing buffer to close Receiver", "error", err, "key", key, "module", "receiver", "function", "Close")
@@ -266,6 +290,7 @@ func (r *Receiver) Close() error {
 		}
 	}
 
+	wg.Wait()
 	r.ctx.Done()
 
 	return nil
