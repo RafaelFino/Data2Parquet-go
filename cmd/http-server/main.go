@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/server"
 	"fmt"
@@ -39,8 +40,9 @@ func main() {
 	slog.Debug("Starting", "config", cfg.ToString(), "module", "main", "function", "main")
 
 	fmt.Printf("Starting...")
+	ctx := context.Background()
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(ctx, cfg)
 	go server.Run()
 
 	quitChannel := make(chan os.Signal, 1)

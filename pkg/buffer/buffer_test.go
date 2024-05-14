@@ -72,7 +72,7 @@ func TestRedis(t *testing.T) {
 }
 
 func runTest(t *testing.T, cfg *config.Config) {
-	buf := buffer.New(cfg)
+	buf := buffer.New(context.Background(), cfg)
 
 	if buf == nil {
 		t.Log("Buffer is nil and should not be nil after creation")

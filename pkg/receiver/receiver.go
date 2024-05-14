@@ -1,6 +1,7 @@
 package receiver
 
 import (
+	"context"
 	"data2parquet/pkg/buffer"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
@@ -20,6 +21,7 @@ type Receiver struct {
 	running    bool
 	control    map[string]*BufferControl
 	stopSignal chan string
+	ctx        context.Context
 }
 
 // / BufferControl
@@ -34,14 +36,15 @@ type BufferControl struct {
 // / New receiver
 // / @param config *config.Config
 // / @return Receiver
-func NewReceiver(config *config.Config) *Receiver {
+func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 	ret := &Receiver{
 		config:     config,
 		writer:     writer.New(config),
-		buffer:     buffer.New(config),
+		buffer:     buffer.New(ctx, config),
 		running:    true,
 		control:    make(map[string]*BufferControl),
 		stopSignal: make(chan string),
+		ctx:        ctx,
 	}
 
 	slog.Debug("Validating receiver buffer", "module", "receiver", "function", "NewReceiver")
@@ -236,6 +239,8 @@ func (r *Receiver) Close() error {
 			return err
 		}
 	}
+
+	r.ctx.Done()
 
 	return nil
 }

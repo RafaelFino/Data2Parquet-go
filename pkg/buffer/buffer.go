@@ -1,6 +1,7 @@
 package buffer
 
 import (
+	"context"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
 )
@@ -19,11 +20,11 @@ type Buffer interface {
 // / New buffer
 // / @param config *config.Config
 // / @return Buffer
-func New(config *config.Config) Buffer {
+func New(ctx context.Context, config *config.Config) Buffer {
 	switch config.BufferType {
 	case "redis":
-		return NewRedis(config)
+		return NewRedis(ctx, config)
 	default:
-		return NewMem(config)
+		return NewMem(ctx, config)
 	}
 }

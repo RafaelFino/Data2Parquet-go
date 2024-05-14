@@ -9,6 +9,16 @@ import (
 )
 
 /// Config is the configuration for the application
+/// This struct is used to store the configuration for the application
+/// The configuration can be loaded from a file or from a map
+/// The configuration can be saved to a file
+/// The configuration can be converted to a map
+/// The configuration can be converted to a JSON string
+/// The configuration can be converted to a string
+/// The configuration can be set to the default values
+/// The configuration can be set from a map
+/// The configuration can be set from a JSON string
+/// The configuration can be written to a file
 
 type Config struct {
 	// Address is the address to listen on. Default is "". Json tag is "address"

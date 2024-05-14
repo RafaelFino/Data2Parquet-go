@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/handler"
 	"data2parquet/pkg/receiver"
@@ -16,22 +17,24 @@ import (
 type Server struct {
 	engine *gin.Engine
 	srv    *http.Server
+	ctx    context.Context
 
 	config   *config.Config
 	handler  *handler.LogHandler
 	receiver *receiver.Receiver
 }
 
-func NewServer(config *config.Config) *Server {
+func NewServer(ctx context.Context, config *config.Config) *Server {
 	s := &Server{
 		engine:   gin.Default(),
 		config:   config,
-		receiver: receiver.NewReceiver(config),
+		receiver: receiver.NewReceiver(ctx, config),
+		ctx:      ctx,
 	}
 
 	slog.Debug("Starting server", "config", config.ToString(), "module", "server", "function", "NewServer")
 
-	s.handler = handler.NewRecordHandler(config)
+	s.handler = handler.NewRecordHandler(ctx, config)
 
 	gin.ForceConsoleColor()
 	gin.DefaultWriter = os.Stdout

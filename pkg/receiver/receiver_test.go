@@ -1,6 +1,7 @@
 package receiver_test
 
 import (
+	"context"
 	"data2parquet/pkg/buffer"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
@@ -27,7 +28,7 @@ func TestReceiver(t *testing.T) {
 }
 
 func runTest(t *testing.T, cfg *config.Config) {
-	buf := buffer.NewMem(cfg)
+	buf := buffer.NewMem(context.Background(), cfg)
 
 	if buf == nil {
 		t.Log("Buffer is nil and should not be nil after creation")
@@ -60,7 +61,7 @@ func runTest(t *testing.T, cfg *config.Config) {
 
 	start := time.Now()
 
-	rcv := receiver.NewReceiver(cfg)
+	rcv := receiver.NewReceiver(context.Background(), cfg)
 
 	if rcv == nil {
 		t.Log("Receiver is nil and should not be nil after creation")

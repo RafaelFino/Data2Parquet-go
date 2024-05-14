@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
 	"data2parquet/pkg/receiver"
@@ -14,11 +15,13 @@ import (
 
 type LogHandler struct {
 	rcv *receiver.Receiver
+	ctx context.Context
 }
 
-func NewRecordHandler(config *config.Config) *LogHandler {
+func NewRecordHandler(ctx context.Context, config *config.Config) *LogHandler {
 	return &LogHandler{
-		rcv: receiver.NewReceiver(config),
+		rcv: receiver.NewReceiver(ctx, config),
+		ctx: ctx,
 	}
 }
 

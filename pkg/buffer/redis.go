@@ -16,14 +16,16 @@ import (
 type Redis struct {
 	config *config.Config
 	client *redis.Client
+	ctx    context.Context
 }
 
 // / New redis buffer
 // / @param config *config.Config
 // / @return Buffer
-func NewRedis(config *config.Config) Buffer {
+func NewRedis(ctx context.Context, config *config.Config) Buffer {
 	ret := &Redis{
 		config: config,
+		ctx:    ctx,
 	}
 
 	ret.client = createClient(config)
@@ -65,7 +67,7 @@ func (r *Redis) makeDataKey(key string) string {
 }
 
 func (r *Redis) Len(key string) int {
-	cmd := r.client.LLen(context.Background(), r.makeDataKey(key))
+	cmd := r.client.LLen(r.ctx, r.makeDataKey(key))
 
 	if cmd.Err() != nil {
 		slog.Error("Error getting key length", "error", cmd.Err())
@@ -77,7 +79,7 @@ func (r *Redis) Len(key string) int {
 
 func (r *Redis) Push(key string, item *domain.Record) error {
 	rkey := r.makeDataKey(key)
-	ctx := context.Background()
+	ctx := r.ctx
 	sadd := r.client.SAdd(ctx, r.config.RedisKeys, rkey)
 
 	if sadd.Err() != nil {
@@ -102,7 +104,7 @@ func (r *Redis) Get(key string) []*domain.Record {
 		return make([]*domain.Record, 0)
 	}
 
-	ctx := context.Background()
+	ctx := r.ctx
 	cmd := r.client.LLen(ctx, rkey)
 
 	if cmd.Err() != nil {
@@ -144,7 +146,7 @@ func (r *Redis) Clear(key string, size int) error {
 		return nil
 	}
 
-	cmd := r.client.LPopCount(context.Background(), rkey, size)
+	cmd := r.client.LPopCount(r.ctx, rkey, size)
 
 	if cmd.Err() != nil {
 		slog.Error("Error clearing key", "error", cmd.Err())
@@ -156,7 +158,7 @@ func (r *Redis) Clear(key string, size int) error {
 }
 
 func (r *Redis) Keys() []string {
-	cmd := r.client.SMembers(context.Background(), r.config.RedisKeys)
+	cmd := r.client.SMembers(r.ctx, r.config.RedisKeys)
 
 	if cmd.Err() != nil {
 		slog.Error("Error getting keys", "error", cmd.Err())
@@ -171,7 +173,7 @@ func (r *Redis) Keys() []string {
 }
 
 func (r *Redis) IsReady() bool {
-	cmd := r.client.Ping(context.Background())
+	cmd := r.client.Ping(r.ctx)
 
 	if cmd.Err() != nil {
 		slog.Error("Error pinging redis", "error", cmd.Err())

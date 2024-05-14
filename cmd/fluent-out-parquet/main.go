@@ -12,9 +12,11 @@ import (
 	"data2parquet/pkg/domain"
 	"data2parquet/pkg/receiver"
 )
+import "context"
 
 var cfg = &config.Config{}
 var rcv *receiver.Receiver
+var ctx = context.Background()
 
 func main() {
 	slog.Info("Starting plugin")
@@ -57,7 +59,7 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 
 	slog.Debug("Config loaded", "config", cfg.ToString())
 
-	rcv = receiver.NewReceiver(cfg)
+	rcv = receiver.NewReceiver(ctx, cfg)
 
 	// Gets called only once for each instance you have configured.
 	return output.FLB_OK
@@ -109,5 +111,6 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 //export FLBPluginExit
 func FLBPluginExit() int {
 	slog.Info("Exiting plugin")
+	ctx.Done()
 	return output.FLB_OK
 }

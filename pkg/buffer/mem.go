@@ -1,6 +1,7 @@
 package buffer
 
 import (
+	"context"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
 	"errors"
@@ -17,6 +18,7 @@ type Mem struct {
 	buff   chan BuffItem
 	mu     sync.Mutex
 	Ready  bool
+	ctx    context.Context
 }
 
 type BuffItem struct {
@@ -27,11 +29,12 @@ type BuffItem struct {
 // / New mem buffer
 // / @param config *config.Config
 // / @return Buffer
-func NewMem(config *config.Config) Buffer {
+func NewMem(ctx context.Context, config *config.Config) Buffer {
 	ret := &Mem{
 		data:   make(map[string][]*domain.Record),
 		config: config,
 		buff:   make(chan BuffItem, config.BufferSize),
+		ctx:    ctx,
 	}
 
 	ret.buff = make(chan BuffItem, config.BufferSize)

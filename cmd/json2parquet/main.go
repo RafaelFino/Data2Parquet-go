@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
 	"data2parquet/pkg/receiver"
@@ -67,7 +68,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	rcv := receiver.NewReceiver(cfg)
+	rcv := receiver.NewReceiver(context.Background(), cfg)
 
 	if rcv == nil {
 		slog.Error("Error creating receiver")
