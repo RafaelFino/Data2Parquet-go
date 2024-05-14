@@ -11,7 +11,7 @@
     "redis_keys": "keys",
     "redis_password": "",
     "redis_skip_flush": false,
-    "writer_compression_type": "gzip",
+    "writer_compression_type": "snappy",
     "writer_file_path": "./data",
     "writer_row_group_size": 134217728,
     "writer_type": "file"

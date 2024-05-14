@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	msgp "github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/exp/slog"
@@ -166,6 +167,103 @@ func GetStringP(s interface{}) *string {
 	return &ret
 }
 
+func TryParseRecordTime(v any) time.Time {
+	ret := time.Now()
+
+	if v == nil {
+		return ret
+	}
+
+	val := fmt.Sprint(v)
+
+	parsed, err := time.Parse(time.RFC3339Nano, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	parsed, err = time.Parse(time.RFC3339, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	parsed, err = time.Parse(time.UnixDate, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	parsed, err = time.Parse(time.Stamp, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	parsed, err = time.Parse(time.StampMilli, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	parsed, err = time.Parse(time.StampMicro, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	parsed, err = time.Parse(time.StampNano, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	parsed, err = time.Parse(time.RFC1123, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	parsed, err = time.Parse(time.RFC1123Z, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	parsed, err = time.Parse(time.RFC822, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	parsed, err = time.Parse(time.RFC822Z, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	parsed, err = time.Parse(time.RFC850, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	parsed, err = time.Parse(time.RubyDate, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	parsed, err = time.Parse(time.Kitchen, val)
+	if err == nil {
+		ret = parsed
+		return ret
+	}
+
+	slog.Error("Error parsing time", "time", val)
+	return ret
+}
+
 func (r *Record) Decode(data map[interface{}]interface{}) {
 	for k, v := range data {
 
@@ -173,6 +271,7 @@ func (r *Record) Decode(data map[interface{}]interface{}) {
 
 		switch key {
 		case "time":
+			slog.Debug("Time", "time", v)
 			r.Time = v.(string)
 		case "level":
 			r.Level = v.(string)

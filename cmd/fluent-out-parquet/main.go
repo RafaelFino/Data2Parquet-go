@@ -12,7 +12,13 @@ import (
 	"data2parquet/pkg/domain"
 	"data2parquet/pkg/receiver"
 )
-import "context"
+import (
+	"context"
+	"os"
+
+	"github.com/lmittmann/tint"
+	"github.com/mattn/go-isatty"
+)
 
 var cfg = &config.Config{}
 var rcv *receiver.Receiver
@@ -51,11 +57,28 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 		return output.FLB_ERROR
 	}
 
+	logLevel := slog.LevelInfo.Level()
+
+	if cfg.Debug {
+		logLevel = slog.LevelDebug.Level()
+	}
+
+	logHandler := tint.NewHandler(os.Stdout, &tint.Options{
+		NoColor:    !isatty.IsTerminal(os.Stdout.Fd()),
+		Level:      logLevel,
+		TimeFormat: time.RFC3339Nano,
+		AddSource:  cfg.Debug,
+	})
+
+	logger := slog.New(logHandler)
+
 	if cfg.Debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug.Level())
 	} else {
 		slog.SetLogLoggerLevel(slog.LevelInfo.Level())
 	}
+
+	slog.SetDefault(logger)
 
 	slog.Debug("Config loaded", "config", cfg.ToString())
 

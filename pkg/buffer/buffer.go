@@ -10,6 +10,8 @@ import (
 type Buffer interface {
 	Close() error
 	Push(key string, item *domain.Record) error
+	PushRecovery(key string, item *domain.Record) error
+	RecoveryData() error
 	Get(key string) []*domain.Record
 	Clear(key string, size int) error
 	Len(key string) int

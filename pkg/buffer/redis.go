@@ -66,6 +66,10 @@ func (r *Redis) makeDataKey(key string) string {
 	return fmt.Sprintf("%s:%s", r.config.RedisDataPrefix, key)
 }
 
+func (r *Redis) makeRecoveryKey(key string) string {
+	return fmt.Sprintf("%s:%s", r.config.RedisRecoveryKey, key)
+}
+
 func (r *Redis) Len(key string) int {
 	cmd := r.client.LLen(r.ctx, r.makeDataKey(key))
 
@@ -78,20 +82,73 @@ func (r *Redis) Len(key string) int {
 }
 
 func (r *Redis) Push(key string, item *domain.Record) error {
-	rkey := r.makeDataKey(key)
+	return r.pushRedis(r.makeDataKey(key), item.ToMsgPack())
+}
+
+func (r *Redis) PushRecovery(key string, item *domain.Record) error {
+	return r.pushRedis(r.makeRecoveryKey(key), item.ToMsgPack())
+}
+
+func (r *Redis) pushRedis(key string, data []byte) error {
 	ctx := r.ctx
-	sadd := r.client.SAdd(ctx, r.config.RedisKeys, rkey)
+	sadd := r.client.SAdd(ctx, r.config.RedisKeys, key)
 
 	if sadd.Err() != nil {
 		slog.Error("Error adding key", "error", sadd.Err())
 		return sadd.Err()
 	}
 
-	lpush := r.client.LPush(ctx, rkey, item.ToMsgPack())
+	lpush := r.client.LPush(ctx, key, data)
 
 	if lpush.Err() != nil {
 		slog.Error("Error pushing to key", "error", lpush.Err())
 		return lpush.Err()
+	}
+
+	return nil
+}
+
+func (r *Redis) RecoveryData() error {
+	ctx := r.ctx
+
+	keys := r.client.Keys(ctx, r.makeRecoveryKey("*"))
+
+	if keys.Err() != nil {
+		slog.Error("Error getting keys", "error", keys.Err())
+		return keys.Err()
+	}
+
+	for _, key := range keys.Val() {
+		result := r.client.LRange(ctx, key, 0, -1)
+
+		if result.Err() != nil {
+			slog.Error("Error getting key", "error", result.Err())
+			return result.Err()
+		}
+
+		vals := result.Val()
+
+		for _, v := range vals {
+			record := &domain.Record{}
+			err := record.FromMsgPack([]byte(v))
+			if err != nil {
+				slog.Error("Error decoding record", "error", err, "module", "buffer.redis", "function", "RecoveryData")
+				return err
+			}
+
+			err = r.Push(record.Key(), record)
+			if err != nil {
+				slog.Error("Error pushing record", "error", err, "module", "buffer.redis", "function", "RecoveryData", "record", record.ToString())
+				return err
+			}
+		}
+
+		popRet := r.client.LPopCount(ctx, key, len(vals))
+
+		if popRet.Err() != nil {
+			slog.Error("Error deleting key", "error", popRet.Err())
+			return popRet.Err()
+		}
 	}
 
 	return nil

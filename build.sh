@@ -15,7 +15,7 @@ fi
 
 if [ "$par" == "test" ]; then
     echo ">> Testing..."
-    go test -v ./...
+    go test ./...
     exit 0
 fi
 

@@ -37,9 +37,13 @@ type BufferControl struct {
 // / @param config *config.Config
 // / @return Receiver
 func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	ret := &Receiver{
 		config:     config,
-		writer:     writer.New(config),
+		writer:     writer.New(ctx, config),
 		buffer:     buffer.New(ctx, config),
 		running:    true,
 		control:    make(map[string]*BufferControl),
@@ -176,15 +180,15 @@ func (r *Receiver) FlushKey(key string) error {
 	}
 
 	slog.Info("Flushing buffer", "key", key, "size", len(data), "buffer-size", r.config.BufferSize, "module", "receiver", "function", "Flush")
-	err := r.writer.Write(data)
+	writerRet := r.writer.Write(data)
 
-	if err != nil {
-		slog.Error("Error writing data", "error", err, "key", key, "size", len(data), "module", "receiver", "function", "Flush")
-		return err
+	if writer.CheckWriterError(writerRet) {
+		slog.Error("Error writing data, trying to recovery data", "key", key, "size", len(data), "module", "receiver", "function", "Flush")
+		defer r.RecoveryWriteError(writerRet)
 	}
 
 	slog.Debug("Clearing buffer", "key", key, "size", len(data), "module", "receiver", "function", "Flush")
-	err = r.buffer.Clear(key, len(data))
+	err := r.buffer.Clear(key, len(data))
 
 	if err != nil {
 		slog.Error("Error clearing buffer", "error", err, "key", key, "size", len(data), "module", "receiver")
@@ -214,6 +218,28 @@ func (r *Receiver) Flush() error {
 	}
 
 	return nil
+}
+
+func (r *Receiver) RecoveryWriteError(writerRet []*writer.WriterReturn) {
+	slog.Info("Recovering from write error", "module", "receiver", "function", "RecoveryWriteError")
+	for _, item := range writerRet {
+		if item.Error != nil {
+			slog.Info("Recovery process: error writing record", "error", item.Error, "module", "receiver", "function", "RecoveryWriteError")
+
+			if item.Records != nil {
+				for _, rec := range item.Records {
+					slog.Debug("Recovery process: writing record", "record", rec.ToString(), "module", "receiver", "function", "RecoveryWriteError")
+					err := r.buffer.PushRecovery(rec.Key(), rec)
+
+					if err != nil {
+						slog.Error("Error pushing recovery record", "error", err, "record", rec.ToString(), "module", "receiver", "function", "RecoveryWriteError")
+					}
+				}
+			}
+
+			slog.Debug("Recovery process: clearing buffer", "size", len(item.Records), "source-err", item.Error, "module", "receiver", "function", "RecoveryWriteError")
+		}
+	}
 }
 
 func (r *Receiver) Close() error {

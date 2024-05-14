@@ -2,7 +2,6 @@ package receiver_test
 
 import (
 	"context"
-	"data2parquet/pkg/buffer"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
 	"data2parquet/pkg/receiver"
@@ -22,31 +21,21 @@ func TestReceiver(t *testing.T) {
 
 	cfg.BufferType = "mem"
 	cfg.BufferSize = 5000
-	cfg.WriterType = "none"
+	cfg.WriterType = "file"
+	cfg.WriterFilePath = "/tmp"
 
 	runTest(t, cfg)
 }
 
 func runTest(t *testing.T, cfg *config.Config) {
-	buf := buffer.NewMem(context.Background(), cfg)
-
-	if buf == nil {
-		t.Log("Buffer is nil and should not be nil after creation")
-		t.Error("Buffer is nil")
-	}
-
-	if !buf.IsReady() {
-		t.Log("Buffer is not ready and should be ready")
-		t.Error("Buffer is not ready")
-	}
-
 	data := make([]*domain.Record, 5000)
+	tm := time.Now().Format(time.RFC3339Nano)
 
 	for i := 0; i < 5000; i++ {
 		data[i] = domain.NewRecord(map[interface{}]interface{}{
 			"level":               "info",
 			"message":             fmt.Sprintf("test message %d", i),
-			"time":                "2021-01-01T00:00:00Z",
+			"time":                tm,
 			"correlation_id":      "test",
 			"cloud_provider":      "aws",
 			"region":              "us-east-1",

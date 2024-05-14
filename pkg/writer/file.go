@@ -17,31 +17,19 @@ type File struct {
 
 func NewFile(config *config.Config) Writer {
 	return &File{
-		config: config,
+		config:          config,
+		compressionType: GetCompressionType(config.WriterCompressionType),
 	}
 }
 
 func (f *File) Init() error {
 	slog.Debug("Initializing file writer", "config", f.config.ToString(), "module", "writer.file", "function", "Init")
-
-	switch f.config.WriterCompressionType {
-	case CompressionTypeSnappy:
-		f.compressionType = parquet.CompressionCodec_SNAPPY
-	case CompressionTypeGzip:
-		f.compressionType = parquet.CompressionCodec_GZIP
-	case CompressionTypeNone:
-		f.compressionType = parquet.CompressionCodec_UNCOMPRESSED
-	default:
-		f.compressionType = parquet.CompressionCodec_SNAPPY
-	}
-
-	slog.Debug("Compression type", "compressionType", f.compressionType, "module", "writer.file", "function", "Init")
-
 	return nil
 }
 
-func (f *File) Write(data []*domain.Record) error {
+func (f *File) Write(data []*domain.Record) []*WriterReturn {
 	start := time.Now()
+	ret := make([]*WriterReturn, 0)
 
 	records := make(map[string][]*domain.Record)
 
@@ -59,14 +47,19 @@ func (f *File) Write(data []*domain.Record) error {
 		file, err := os.Create(filePath)
 		if err != nil {
 			slog.Error("Error creating file", "error", err, "module", "writer.file", "function", "Write", "key", key)
-			return err
+			ret = append(ret, &WriterReturn{Error: err})
+			return ret
 		}
 
 		defer file.Close()
 
-		if err := WriteToFile(key, records, file, f.config.WriterRowGroupSize, f.compressionType); err != nil {
-			slog.Error("Error writing to file", "error", err, "module", "writer.file", "function", "Write", "key", key)
-			return err
+		parquetRet := WriteParquet(key, records, file, f.config.WriterRowGroupSize, f.compressionType)
+
+		if CheckWriterError(parquetRet) {
+			for _, r := range parquetRet {
+				slog.Error("Error writing to file", "error", r.Error, "module", "writer.file", "function", "Write", "key", key)
+			}
+			return parquetRet
 		}
 
 		slog.Info("File written", "key", key, "module", "writer.file", "function", "Write", "filePath", filePath, "records", len(records), "duration", time.Since(start))

@@ -1,10 +1,12 @@
 package writer_test
 
 import (
+	"context"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
 	"data2parquet/pkg/writer"
 	"testing"
+	"time"
 )
 
 func TestNone(t *testing.T) {
@@ -36,40 +38,29 @@ func TestFile(t *testing.T) {
 	runTest(t, cfg)
 }
 
-func TestAWSS3(t *testing.T) {
-	t.Log("Testing S3 writer")
-	cfg := config.NewConfig()
-
-	if cfg == nil {
-		t.Error("Config is nil")
-		return
-	}
-
-	cfg.WriterType = "aws-s3"
-
-	runTest(t, cfg)
-}
-
 func runTest(t *testing.T, cfg *config.Config) {
-	w := writer.New(cfg)
+	t.Logf("Testing %s writer", cfg.WriterType)
+	w := writer.New(context.Background(), cfg)
 
 	if w == nil {
 		t.Log("Writer is nil and should not be nil after creation")
-		t.Error("Writer is nil")
+		t.Fatal("Writer is nil")
+
 	}
 
 	if !w.IsReady() {
 		t.Log("Writer is not ready and should be ready")
-		t.Error("Writer is not ready")
+		t.Fatal("Writer is not ready")
 	}
 
 	data := make([]*domain.Record, 5000)
+	tm := time.Now().Format(time.RFC3339Nano)
 
 	for i := 0; i < 5000; i++ {
 		data[i] = domain.NewRecord(map[interface{}]interface{}{
 			"level":               "info",
 			"message":             "test message",
-			"time":                "2021-01-01T00:00:00Z",
+			"time":                tm,
 			"correlation_id":      "test",
 			"cloud_provider":      "aws",
 			"region":              "us-east-1",
@@ -82,14 +73,17 @@ func runTest(t *testing.T, cfg *config.Config) {
 		})
 	}
 
-	err := w.Write(data)
+	ret := w.Write(data)
 
-	if err != nil {
-		t.Log("Error writing data", "error", err)
+	if writer.CheckWriterError(ret) {
+		for _, r := range ret {
+			t.Log("Error writing data", "error", r.Error)
+		}
+
 		t.Error("Error writing data")
 	}
 
-	err = w.Close()
+	err := w.Close()
 
 	if err != nil {
 		t.Log("Error closing writer", "error", err)

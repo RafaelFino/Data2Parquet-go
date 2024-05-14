@@ -3,14 +3,17 @@ package domain_test
 import (
 	"data2parquet/pkg/domain"
 	"testing"
+	"time"
 )
 
 func TestNewRecord(t *testing.T) {
 	t.Log("Testing NewRecord")
+	tm := time.Now().Format(time.RFC3339Nano)
+
 	r := domain.NewRecord(map[interface{}]interface{}{
 		"level":               "info",
 		"message":             "test message",
-		"time":                "2021-01-01T00:00:00Z",
+		"time":                tm,
 		"correlation_id":      "test",
 		"cloud_provider":      "aws",
 		"region":              "us-east-1",
@@ -35,8 +38,8 @@ func TestNewRecord(t *testing.T) {
 		t.Error("Message should be test message")
 	}
 
-	if r.Time != "2021-01-01T00:00:00Z" {
-		t.Error("Time should be 2021-01-01T00:00:00Z")
+	if r.Time != tm {
+		t.Errorf("Time should be now [%s/%s]", r.Time, tm)
 	}
 
 	if r.CorrelationId != nil && string(*r.CorrelationId) != "test" {

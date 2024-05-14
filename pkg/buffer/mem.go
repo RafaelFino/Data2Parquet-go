@@ -13,12 +13,13 @@ import (
 // / @struct Mem
 // / @implements Buffer
 type Mem struct {
-	config *config.Config
-	data   map[string][]*domain.Record
-	buff   chan BuffItem
-	mu     sync.Mutex
-	Ready  bool
-	ctx    context.Context
+	config   *config.Config
+	data     map[string][]*domain.Record
+	recovery map[string][]*domain.Record
+	buff     chan BuffItem
+	mu       sync.Mutex
+	Ready    bool
+	ctx      context.Context
 }
 
 type BuffItem struct {
@@ -31,10 +32,11 @@ type BuffItem struct {
 // / @return Buffer
 func NewMem(ctx context.Context, config *config.Config) Buffer {
 	ret := &Mem{
-		data:   make(map[string][]*domain.Record),
-		config: config,
-		buff:   make(chan BuffItem, config.BufferSize),
-		ctx:    ctx,
+		data:     make(map[string][]*domain.Record),
+		recovery: make(map[string][]*domain.Record),
+		config:   config,
+		buff:     make(chan BuffItem, config.BufferSize),
+		ctx:      ctx,
 	}
 
 	ret.buff = make(chan BuffItem, config.BufferSize)
@@ -87,6 +89,47 @@ func (m *Mem) Push(key string, item *domain.Record) error {
 	m.buff <- BuffItem{
 		key:  key,
 		item: item,
+	}
+
+	return nil
+}
+
+func (m *Mem) PushRecovery(key string, item *domain.Record) error {
+	if item == nil {
+		slog.Warn("Item is nil	", "key", key, "module", "buffer.mem", "function", "Push")
+		return errors.New("item is nil")
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	slog.Debug("Pushing to recovery", "key", key, "record", item, "module", "buffer.mem", "function", "PushRecovery")
+
+	if _, ok := m.recovery[key]; !ok {
+		m.recovery[key] = make([]*domain.Record, 0, m.config.BufferSize)
+	}
+
+	m.recovery[key] = append(m.recovery[key], item)
+
+	return nil
+}
+
+func (m *Mem) RecoveryData() error {
+	slog.Debug("Recovering data", "module", "buffer.mem", "function", "RecoveryData")
+	if m.recovery == nil {
+		return nil
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for key, records := range m.recovery {
+		if _, ok := m.data[key]; !ok {
+			m.data[key] = make([]*domain.Record, 0, m.config.BufferSize)
+		}
+
+		m.data[key] = append(m.data[key], records...)
+		m.recovery[key] = make([]*domain.Record, 0)
 	}
 
 	return nil

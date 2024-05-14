@@ -7,27 +7,24 @@ import (
 )
 
 type None struct {
-	config *config.Config
 }
 
 func NewNone(config *config.Config) Writer {
-	return &S3{
-		config: config,
-	}
+	return &None{}
 }
 
 func (n *None) Init() error {
-	slog.Debug("[writer] Initializing empty writer", "config", n.config.ToString())
+	slog.Info("Waring: None Writer init, no data will be written", "module", "writer.none", "function", "Init")
 	return nil
 }
 
-func (n *None) Write(data []*domain.Record) error {
-	slog.Debug("[writer] Writing logs", "data", data)
+func (n *None) Write(data []*domain.Record) []*WriterReturn {
+	slog.Debug("Waring: None Writer write, no data will be written", "module", "writer.none", "function", "Write")
 	return nil
 }
 
 func (n *None) Close() error {
-	slog.Debug("[writer] Closing S3 writer")
+	slog.Info("Waring: None Writer close, no data will be written", "module", "writer.none", "function", "Close")
 	return nil
 }
 

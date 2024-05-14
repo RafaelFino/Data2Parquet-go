@@ -39,6 +39,8 @@ type Config struct {
 	RedisDataPrefix string `json:"redis_data_prefix,omitempty"`
 	// RedisDB is the redis database to use. Default is 0. Json tag is "redis_db"
 	RedisDB int `json:"redis_db,omitempty"`
+	// RedisRecoveryKey is the key to use for the dead letter queue. Default is "". Json tag is "redis_dlq_key"
+	RedisRecoveryKey string `json:"redis_recovery_key,omitempty"`
 	// RedisHost is the redis host to connect to. Default is "". Json tag is "redis_host"
 	RedisHost string `json:"redis_host,omitempty"`
 	// RedisKeys is the keys to use for the redis buffer. Default is "keys". Json tag is "redis_keys"
@@ -55,6 +57,12 @@ type Config struct {
 	WriterRowGroupSize int64 `json:"writer_row_group_size,omitempty"`
 	// WriterType is the type of writer to use. Default is "file". This field can be "file" or "s3". Json tag is "writer_type"
 	WriterType string `json:"writer_type"`
+	// S3AccessKey is the access key to use for S3. Default is "". Json tag is "s3_access_key"
+	S3BuketName string `json:"s3_bucket_name"`
+	// S3BucketName is the bucket name to use for S3. Default is "". Json tag is "s3_bucket_name"
+	S3Region string `json:"s3_region"`
+	// S3Region is the region to use for S3. Default is "". Json tag is "s3_region"
+	S3StorageClass string `json:"s3_storage_class"`
 }
 
 var keys = []string{
@@ -65,6 +73,7 @@ var keys = []string{
 	"LogPath",
 	"RedisDataPrefix",
 	"RedisDB",
+	"RedisRecoveryKey",
 	"RedisHost",
 	"RedisKeys",
 	"RedisPassword",
@@ -73,6 +82,9 @@ var keys = []string{
 	"WriterFilePath",
 	"WriterRowGroupSize",
 	"WriterType",
+	"S3BucketName",
+	"S3Region",
+	"S3StorageClass",
 }
 
 func NewConfig() *Config {
@@ -166,12 +178,20 @@ func (c *Config) Set(cfg map[string]string) error {
 		case "redis_db":
 			c.RedisDB = 0
 			fmt.Sscanf(value, "%d", &c.RedisDB)
+		case "redis_recovery_key":
+			c.RedisRecoveryKey = value
 		case "redis_flush":
 			c.RedisSkipFlush = strings.ToLower(value) == "true"
 		case "redis_data_prefix":
 			c.RedisDataPrefix = value
 		case "redis_keys":
 			c.RedisKeys = value
+		case "s3_bucket_name":
+			c.S3BuketName = value
+		case "s3_region":
+			c.S3Region = value
+		case "s3_storage_class":
+			c.S3StorageClass = value
 
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
@@ -192,6 +212,7 @@ func (c *Config) Get() map[string]interface{} {
 	ret["Port"] = c.Port
 	ret["RedisDataPrefix"] = c.RedisDataPrefix
 	ret["RedisDB"] = c.RedisDB
+	ret["RedisRecoveryKey"] = c.RedisRecoveryKey
 	ret["RedisHost"] = c.RedisHost
 	ret["RedisKeys"] = c.RedisKeys
 	ret["RedisPassword"] = c.RedisPassword
@@ -200,6 +221,9 @@ func (c *Config) Get() map[string]interface{} {
 	ret["WriterFilePath"] = c.WriterFilePath
 	ret["WriterRowGroupSize"] = c.WriterRowGroupSize
 	ret["WriterType"] = c.WriterType
+	ret["S3BucketName"] = c.S3BuketName
+	ret["S3Region"] = c.S3Region
+	ret["S3StorageClass"] = c.S3StorageClass
 
 	return ret
 }
@@ -247,5 +271,13 @@ func (c *Config) SetDefaults() {
 
 	if len(c.RedisDataPrefix) == 0 {
 		c.RedisDataPrefix = "data"
+	}
+
+	if len(c.RedisRecoveryKey) == 0 {
+		c.RedisRecoveryKey = "recovery"
+	}
+
+	if len(c.S3StorageClass) == 0 {
+		c.S3StorageClass = "STANDARD"
 	}
 }

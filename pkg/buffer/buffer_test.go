@@ -85,12 +85,13 @@ func runTest(t *testing.T, cfg *config.Config) {
 	}
 
 	data := make([]*domain.Record, 5000)
+	tm := time.Now().Format(time.RFC3339Nano)
 
 	for i := 0; i < 5000; i++ {
 		data[i] = domain.NewRecord(map[interface{}]interface{}{
 			"level":               "info",
 			"message":             fmt.Sprintf("test message %d", i),
-			"time":                "2021-01-01T00:00:00Z",
+			"time":                tm,
 			"correlation_id":      "test",
 			"cloud_provider":      "aws",
 			"region":              "us-east-1",
@@ -145,11 +146,6 @@ func runTest(t *testing.T, cfg *config.Config) {
 				t.Log("Level is not info", "level", item.Level)
 				t.Error("Level is not info")
 			}
-		}
-
-		if item.Time != "2021-01-01T00:00:00Z" {
-			t.Log("Time is not correct", "time", item.Time)
-			t.Error("Time is not correct")
 		}
 
 		if item.BusinessCapability != "test" {
