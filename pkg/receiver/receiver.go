@@ -185,7 +185,7 @@ func (r *Receiver) FlushKey(key string, wg *sync.WaitGroup) error {
 	}
 
 	slog.Debug("Starting to flushing buffer", "key", key, "size", len(data), "buffer-size", r.config.BufferSize, "module", "receiver", "function", "Flush", "duration", time.Since(start))
-	writerRet := r.writer.Write(data)
+	writerRet := r.writer.Write(key, data)
 
 	if writer.CheckWriterError(writerRet) {
 		slog.Error("Error writing data, trying to recovery data", "key", key, "size", len(data), "module", "receiver", "function", "Flush")

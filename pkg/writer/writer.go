@@ -15,7 +15,7 @@ import (
 // / @interface Writer
 type Writer interface {
 	Init() error
-	Write(data []*domain.Record) []*WriterReturn
+	Write(key string, data []*domain.Record) []*WriterReturn
 	Close() error
 	IsReady() bool
 }

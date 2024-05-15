@@ -58,49 +58,34 @@ func (s *S3) Init() error {
 	return nil
 }
 
-func (s *S3) Write(data []*domain.Record) []*WriterReturn {
+func (s *S3) Write(key string, data []*domain.Record) []*WriterReturn {
 	start := time.Now()
-	ret := make([]*WriterReturn, 0)
 
-	records := make(map[string][]*domain.Record)
+	buf := &bytes.Buffer{}
 
-	for _, record := range data {
-		key := record.Key()
-		if _, ok := records[key]; !ok {
-			records[key] = make([]*domain.Record, 0, s.config.BufferSize)
+	ret := WriteParquet(key, data, buf, s.config.WriterRowGroupSize, s.compressionType)
+
+	if CheckWriterError(ret) {
+		for _, r := range ret {
+			if r.Error != nil {
+				slog.Error("Error writing parquet file", "error", r.Error, "module", "writer", "function", "Write", "key", key)
+			}
 		}
 
-		records[key] = append(records[key], record)
+		return ret
 	}
 
-	for key, records := range records {
-		buf := &bytes.Buffer{}
+	slog.Debug("Data written on buffer", "key", key, "module", "writer.file", "function", "Write", "records", len(data), "duration", time.Since(start))
 
-		parquetRet := WriteParquet(key, records, buf, s.config.WriterRowGroupSize, s.compressionType)
+	_, err := s.client.PutObject(s.ctx, &s3.PutObjectInput{
+		Bucket: aws.String(s.config.S3BuketName),
+		Key:    aws.String(s.makeBuketName(key)),
+		Body:   buf,
+	})
 
-		if CheckWriterError(parquetRet) {
-			for _, r := range parquetRet {
-				if r.Error != nil {
-					slog.Error("Error writing parquet file", "error", r.Error, "module", "writer", "function", "Write", "key", key)
-				}
-			}
-
-			return parquetRet
-		}
-
-		slog.Debug("Data written on buffer", "key", key, "module", "writer.file", "function", "Write", "records", len(records), "duration", time.Since(start))
-
-		_, err := s.client.PutObject(s.ctx, &s3.PutObjectInput{
-			Bucket: aws.String(s.config.S3BuketName),
-			Key:    aws.String(s.makeBuketName(key)),
-			Body:   buf,
-		})
-
-		if err != nil {
-			slog.Error("Error writing to S3", "error", err, "module", "writer.file", "function", "Write", "key", key)
-			ret = append(ret, &WriterReturn{Error: err})
-			return ret
-		}
+	if err != nil {
+		slog.Error("Error writing to S3", "error", err, "module", "writer.file", "function", "Write", "key", key)
+		ret = append(ret, &WriterReturn{Error: err})
 	}
 
 	return ret

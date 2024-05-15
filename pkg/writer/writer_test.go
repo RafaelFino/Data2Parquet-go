@@ -73,7 +73,9 @@ func runTest(t *testing.T, cfg *config.Config) {
 		})
 	}
 
-	ret := w.Write(data)
+	key := data[0].Key()
+
+	ret := w.Write(key, data)
 
 	if writer.CheckWriterError(ret) {
 		for _, r := range ret {

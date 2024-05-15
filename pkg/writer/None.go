@@ -18,7 +18,7 @@ func (n *None) Init() error {
 	return nil
 }
 
-func (n *None) Write(data []*domain.Record) []*WriterReturn {
+func (n *None) Write(key string, data []*domain.Record) []*WriterReturn {
 	slog.Debug("Waring: None Writer write, no data will be written", "module", "writer.none", "function", "Write")
 	return nil
 }
