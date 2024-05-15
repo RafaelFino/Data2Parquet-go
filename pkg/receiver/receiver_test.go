@@ -49,8 +49,9 @@ func runTest(t *testing.T, cfg *config.Config) {
 	}
 
 	start := time.Now()
+	ctx := context.Background()
 
-	rcv := receiver.NewReceiver(context.Background(), cfg)
+	rcv := receiver.NewReceiver(ctx, cfg)
 
 	if rcv == nil {
 		t.Log("Receiver is nil and should not be nil after creation")

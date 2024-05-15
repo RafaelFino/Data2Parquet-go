@@ -289,8 +289,6 @@ func (r *Receiver) Close() error {
 		}
 	}
 
-	<-r.ctx.Done()
-
 	return nil
 }
 
