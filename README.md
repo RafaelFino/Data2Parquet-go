@@ -15,7 +15,7 @@ A shared object built to works with FluentBit as an Output plugin.
 This is the core for this service, responsable for receive data, buffering, enconde, decode and handle pages to Writers
 
 ### The [Record Type](https://github.com/RafaelFino/Data2Parquet-go/blob/main/pkg/domain/record.go) (/pkg/domain)
-empty string` golang
+``` golang
 type Record struct {
 	Time                        string            `json:"time" parquet:"name=time, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"time"`
 	Level                       string            `json:"level" parquet:"name=level, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"level"`
