@@ -50,7 +50,9 @@ type Config struct {
 	Debug                 bool   `json:"debug,omitempty"`
 	FlushInterval         int    `json:"flush_interval"`
 	LogPath               string `json:"log_path"`
+	JsonSchema            string `json:"json_schema,omitempty"`
 	Port                  int    `json:"port,omitempty"`
+	RecordType            string `json:"record_type"`
 	RecoveryAttempts      int    `json:"recovery_attempts,omitempty"`
 	RedisDataPrefix       string `json:"redis_data_prefix,omitempty"`
 	RedisDB               int    `json:"redis_db,omitempty"`
@@ -75,6 +77,8 @@ var keys = []string{
 	"Debug",
 	"FlushInterval",
 	"LogPath",
+	"JsonSchema",
+	"RecordType",
 	"RecoveryAttempts",
 	"RedisDataPrefix",
 	"RedisDB",
@@ -202,6 +206,10 @@ func (c *Config) Set(cfg map[string]string) error {
 			c.S3Region = value
 		case "s3_storage_class":
 			c.S3StorageClass = value
+		case "json_schema":
+			c.JsonSchema = value
+		case "record_type":
+			c.RecordType = value
 
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
@@ -218,8 +226,10 @@ func (c *Config) Get() map[string]interface{} {
 	ret["BufferType"] = c.BufferType
 	ret["Debug"] = c.Debug
 	ret["FlushInterval"] = c.FlushInterval
+	ret["JsonSchema"] = c.JsonSchema
 	ret["LogPath"] = c.LogPath
 	ret["Port"] = c.Port
+	ret["RecordType"] = c.RecordType
 	ret["RecoveryAttempts"] = c.RecoveryAttempts
 	ret["RedisDataPrefix"] = c.RedisDataPrefix
 	ret["RedisDB"] = c.RedisDB
@@ -296,4 +306,6 @@ func (c *Config) SetDefaults() {
 	if c.RecoveryAttempts < 0 {
 		c.RecoveryAttempts = 0
 	}
+
+	c.RecordType = strings.ToLower(c.RecordType)
 }

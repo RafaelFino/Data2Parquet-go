@@ -5,6 +5,7 @@ import (
 	"data2parquet/pkg/buffer"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
+	"data2parquet/pkg/parquet"
 	"data2parquet/pkg/writer"
 	"errors"
 	"log/slog"
@@ -20,6 +21,7 @@ type Receiver struct {
 	buffer        buffer.Buffer
 	running       bool
 	control       map[string]*BufferControl
+	converter     *parquet.Converter
 	ctx           context.Context
 	recoveryCount int
 }
@@ -49,6 +51,7 @@ func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 		control:       make(map[string]*BufferControl),
 		ctx:           ctx,
 		recoveryCount: 0,
+		converter:     parquet.New(config),
 	}
 
 	slog.Debug("Validating receiver buffer", "module", "receiver", "function", "NewReceiver")
@@ -85,7 +88,7 @@ func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 	return ret
 }
 
-func (r *Receiver) Write(record *domain.Record) error {
+func (r *Receiver) Write(record domain.Record) error {
 	key := record.Key()
 	err := r.buffer.Push(key, record)
 
@@ -221,7 +224,7 @@ func (r *Receiver) Flush() error {
 	return nil
 }
 
-func (r *Receiver) RecoveryWriteError(writerRet []*writer.WriterReturn) {
+func (r *Receiver) RecoveryWriteError(writerRet []*parquet.Result) {
 	slog.Info("Recovering from write error", "module", "receiver", "function", "RecoveryWriteError")
 	resend := false
 

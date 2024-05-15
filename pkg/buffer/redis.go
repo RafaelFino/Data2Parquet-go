@@ -50,8 +50,6 @@ func (r *Redis) Close() error {
 		}
 	}
 
-	<-r.ctx.Done()
-
 	slog.Debug("Closed redis", "module", "buffer.redis", "function", "Close")
 	return nil
 }
@@ -83,11 +81,11 @@ func (r *Redis) Len(key string) int {
 	return int(cmd.Val())
 }
 
-func (r *Redis) Push(key string, item *domain.Record) error {
+func (r *Redis) Push(key string, item domain.Record) error {
 	return r.pushRedis(r.makeDataKey(key), item.ToMsgPack())
 }
 
-func (r *Redis) PushRecovery(key string, item *domain.Record) error {
+func (r *Redis) PushRecovery(key string, item domain.Record) error {
 	return r.pushRedis(r.makeRecoveryKey(key), item.ToMsgPack())
 }
 
@@ -100,7 +98,7 @@ func (r *Redis) pushRedis(key string, data []byte) error {
 		return sadd.Err()
 	}
 
-	lpush := r.client.LPush(ctx, key, data)
+	lpush := r.client.RPush(ctx, key, data)
 
 	if lpush.Err() != nil {
 		slog.Error("Error pushing to key", "error", lpush.Err())
@@ -131,7 +129,7 @@ func (r *Redis) RecoveryData() error {
 		vals := result.Val()
 
 		for _, v := range vals {
-			record := &domain.Record{}
+			record := domain.NewObj(r.config.RecordType)
 			err := record.FromMsgPack([]byte(v))
 			if err != nil {
 				slog.Error("Error decoding record", "error", err, "module", "buffer.redis", "function", "RecoveryData")
@@ -156,11 +154,11 @@ func (r *Redis) RecoveryData() error {
 	return nil
 }
 
-func (r *Redis) Get(key string) []*domain.Record {
+func (r *Redis) Get(key string) []domain.Record {
 	rkey := r.makeDataKey(key)
 	if r.config.RedisSkipFlush {
 		slog.Info("Skipping buffer get", "key", key, "module", "buffer.redis", "function", "Get")
-		return make([]*domain.Record, 0)
+		return make([]domain.Record, 0)
 	}
 
 	ctx := r.ctx
@@ -180,11 +178,11 @@ func (r *Redis) Get(key string) []*domain.Record {
 		return nil
 	}
 
-	ret := make([]*domain.Record, size)
+	ret := make([]domain.Record, size)
 
 	var err error
 	for i, v := range result.Val() {
-		r := &domain.Record{}
+		r := domain.NewObj(r.config.RecordType)
 		err = r.FromMsgPack([]byte(v))
 		if err != nil {
 			slog.Error("Error decoding record", "error", err, "module", "buffer.redis", "function", "Get", "record", v)

@@ -14,14 +14,16 @@ import (
 )
 
 type LogHandler struct {
-	rcv *receiver.Receiver
-	ctx context.Context
+	rcv    *receiver.Receiver
+	ctx    context.Context
+	config *config.Config
 }
 
 func NewRecordHandler(ctx context.Context, config *config.Config) *LogHandler {
 	return &LogHandler{
-		rcv: receiver.NewReceiver(ctx, config),
-		ctx: ctx,
+		rcv:    receiver.NewReceiver(ctx, config),
+		ctx:    ctx,
+		config: config,
 	}
 }
 
@@ -56,7 +58,7 @@ func (h *LogHandler) Write(ctx *gin.Context) {
 		return
 	}
 
-	record := domain.NewRecord(data)
+	record := domain.NewRecord(h.config, data)
 
 	slog.Debug("Writing record", "record", record.ToString(), "module", "handler", "function", "Write")
 

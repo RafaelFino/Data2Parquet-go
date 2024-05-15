@@ -7,21 +7,17 @@ import (
 	"log/slog"
 	"os"
 	"time"
-
-	"github.com/xitongsys/parquet-go/parquet"
 )
 
 type File struct {
-	config          *config.Config
-	compressionType parquet.CompressionCodec
-	ctx             context.Context
+	config *config.Config
+	ctx    context.Context
 }
 
 func NewFile(ctx context.Context, config *config.Config) Writer {
 	return &File{
-		config:          config,
-		compressionType: GetCompressionType(config.WriterCompressionType),
-		ctx:             ctx,
+		config: config,
+		ctx:    ctx,
 	}
 }
 
@@ -30,7 +26,7 @@ func (f *File) Init() error {
 	return nil
 }
 
-func (f *File) Write(key string, data []*domain.Record) []*WriterReturn {
+func (f *File) Write(key string, data []*domain.Record) error {
 	start := time.Now()
 
 	slog.Debug("Data splitted, writing records to file", "module", "writer.file", "function", "Write", "records", len(data), "duration", time.Since(start))
@@ -45,7 +41,7 @@ func (f *File) Write(key string, data []*domain.Record) []*WriterReturn {
 
 	defer file.Close()
 
-	parquetRet := WriteParquet(key, data, file, f.config.WriterRowGroupSize, f.compressionType)
+	parquetRet := WriteParquet(f.config, key, data, file, f.config.WriterRowGroupSize)
 
 	if CheckWriterError(parquetRet) {
 		for _, r := range parquetRet {
@@ -60,7 +56,6 @@ func (f *File) Write(key string, data []*domain.Record) []*WriterReturn {
 
 func (f *File) Close() error {
 	slog.Debug("Closing file writer", "module", "writer.file", "function", "Close")
-	<-f.ctx.Done()
 	return nil
 }
 

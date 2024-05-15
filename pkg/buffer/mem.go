@@ -14,8 +14,8 @@ import (
 // / @implements Buffer
 type Mem struct {
 	config   *config.Config
-	data     map[string][]*domain.Record
-	recovery map[string][]*domain.Record
+	data     map[string][]domain.Record
+	recovery map[string][]domain.Record
 	buff     chan BuffItem
 	mu       sync.Mutex
 	Ready    bool
@@ -24,7 +24,7 @@ type Mem struct {
 
 type BuffItem struct {
 	key  string
-	item *domain.Record
+	item domain.Record
 }
 
 // / New mem buffer
@@ -32,8 +32,8 @@ type BuffItem struct {
 // / @return Buffer
 func NewMem(ctx context.Context, config *config.Config) Buffer {
 	ret := &Mem{
-		data:     make(map[string][]*domain.Record),
-		recovery: make(map[string][]*domain.Record),
+		data:     make(map[string][]domain.Record),
+		recovery: make(map[string][]domain.Record),
 		config:   config,
 		buff:     make(chan BuffItem, config.BufferSize),
 		ctx:      ctx,
@@ -47,7 +47,7 @@ func NewMem(ctx context.Context, config *config.Config) Buffer {
 		for item := range m.buff {
 			m.mu.Lock()
 			if _, ok := m.data[item.key]; !ok {
-				m.data[item.key] = make([]*domain.Record, 0, m.config.BufferSize)
+				m.data[item.key] = make([]domain.Record, 0, m.config.BufferSize)
 			}
 
 			m.data[item.key] = append(m.data[item.key], item.item)
@@ -80,7 +80,7 @@ func (m *Mem) Len(key string) int {
 	return len(m.data[key])
 }
 
-func (m *Mem) Push(key string, item *domain.Record) error {
+func (m *Mem) Push(key string, item domain.Record) error {
 	if item == nil {
 		slog.Warn("Item is nil	", "key", key, "module", "buffer.mem", "function", "Push")
 		return errors.New("item is nil")
@@ -94,7 +94,7 @@ func (m *Mem) Push(key string, item *domain.Record) error {
 	return nil
 }
 
-func (m *Mem) PushRecovery(key string, item *domain.Record) error {
+func (m *Mem) PushRecovery(key string, item domain.Record) error {
 	if item == nil {
 		slog.Warn("Item is nil	", "key", key, "module", "buffer.mem", "function", "Push")
 		return errors.New("item is nil")
@@ -106,7 +106,7 @@ func (m *Mem) PushRecovery(key string, item *domain.Record) error {
 	slog.Debug("Pushing to recovery", "key", key, "record", item, "module", "buffer.mem", "function", "PushRecovery")
 
 	if _, ok := m.recovery[key]; !ok {
-		m.recovery[key] = make([]*domain.Record, 0, m.config.BufferSize)
+		m.recovery[key] = make([]domain.Record, 0, m.config.BufferSize)
 	}
 
 	m.recovery[key] = append(m.recovery[key], item)
@@ -125,17 +125,17 @@ func (m *Mem) RecoveryData() error {
 
 	for key, records := range m.recovery {
 		if _, ok := m.data[key]; !ok {
-			m.data[key] = make([]*domain.Record, 0, m.config.BufferSize)
+			m.data[key] = make([]domain.Record, 0, m.config.BufferSize)
 		}
 
 		m.data[key] = append(m.data[key], records...)
-		m.recovery[key] = make([]*domain.Record, 0)
+		m.recovery[key] = make([]domain.Record, 0)
 	}
 
 	return nil
 }
 
-func (m *Mem) Get(key string) []*domain.Record {
+func (m *Mem) Get(key string) []domain.Record {
 	slog.Debug("Getting buffer", "key", key, "module", "buffer.mem", "function", "Get")
 
 	if m.data == nil {

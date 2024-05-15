@@ -39,7 +39,6 @@ if [ "$par" == "current" ]; then
     exit 0
 fi
 
-
 if [ "$par" == "all" ]; then
     os="linux"
     arch="amd64"
