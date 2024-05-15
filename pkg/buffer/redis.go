@@ -239,3 +239,14 @@ func (r *Redis) IsReady() bool {
 
 	return true
 }
+
+func (r *Redis) HasRecovery() bool {
+	cmd := r.client.Keys(r.ctx, r.makeRecoveryKey("*"))
+
+	if cmd.Err() != nil {
+		slog.Error("Error getting keys", "error", cmd.Err())
+		return false
+	}
+
+	return len(cmd.Val()) > 0
+}

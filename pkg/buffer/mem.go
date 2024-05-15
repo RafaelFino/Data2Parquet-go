@@ -184,3 +184,7 @@ func (m *Mem) Keys() []string {
 func (m *Mem) IsReady() bool {
 	return m.Ready
 }
+
+func (m *Mem) HasRecovery() bool {
+	return len(m.recovery) > 0
+}

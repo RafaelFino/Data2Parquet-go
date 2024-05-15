@@ -17,6 +17,7 @@ type Buffer interface {
 	Len(key string) int
 	Keys() []string
 	IsReady() bool
+	HasRecovery() bool
 }
 
 // / New buffer

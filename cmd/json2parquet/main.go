@@ -60,8 +60,6 @@ func main() {
 	records, err := ReadJSON(file)
 
 	slog.Info("Read records", "count", len(records), "duration", time.Since(start))
-	start = time.Now()
-
 	if err != nil {
 		slog.Error("Error reading JSON file", "error", err)
 		os.Exit(1)

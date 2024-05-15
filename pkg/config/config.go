@@ -22,47 +22,51 @@ import (
 
 type Config struct {
 	// Address is the address to listen on. Default is "". Json tag is "address"
-	Address string `json:"address,omitempty"`
 	// BufferSize is the size of the buffer. Default is 1000. Json tag is "buffer_size"
-	BufferSize int `json:"buffer_size"`
 	// BufferType is the type of buffer to use. Can be "mem" or "redis". Default is "mem". Json tag is "buffer_type"
-	BufferType string `json:"buffer_type"`
 	// Debug is the debug flag. Default is false. Json tag is "debug"
-	Debug bool `json:"debug,omitempty"`
 	// FlushInterval is the interval to flush the buffer. Default is 60. This value is in seconds. Json tag is "flush_interval"
-	FlushInterval int `json:"flush_interval"`
 	// LogPath is the path to the log files. Default is "./logs". Json tag is "log_path"
-	LogPath string `json:"log_path"`
 	// Port is the port to listen on. Default is 0. Json tag is "port"
-	Port int `json:"port,omitempty"`
+	// RecoveryAttempts is the number of recovery attempts. Default is 0. Json tag is "recovery_attempts", dependency on TryAutoRecover
 	// RedisDataPrefix is the prefix to use for the redis keys. Default is "data". Json tag is "redis_data_prefix"
-	RedisDataPrefix string `json:"redis_data_prefix,omitempty"`
 	// RedisDB is the redis database to use. Default is 0. Json tag is "redis_db"
-	RedisDB int `json:"redis_db,omitempty"`
-	// RedisRecoveryKey is the key to use for the dead letter queue. Default is "". Json tag is "redis_dlq_key"
-	RedisRecoveryKey string `json:"redis_recovery_key,omitempty"`
 	// RedisHost is the redis host to connect to. Default is "". Json tag is "redis_host"
-	RedisHost string `json:"redis_host,omitempty"`
 	// RedisKeys is the keys to use for the redis buffer. Default is "keys". Json tag is "redis_keys"
-	RedisKeys string `json:"redis_keys,omitempty"`
 	// RedisPassword is the redis password to use. Default is "". Json tag is "redis_password"
-	RedisPassword string `json:"redis_password,omitempty"`
+	// RedisRecoveryKey is the key to use for the dead letter queue. Default is "". Json tag is "redis_dlq_key"
 	// RedisSkipFlush is the flag to skip flushing the redis buffer. Default is false. Json tag is "redis_skip_flush"
-	RedisSkipFlush bool `json:"redis_skip_flush,omitempty"`
-	// WriterCompressionType is the compression type to use for the writer. Default is "snappy". This field can be "snappy", "gzip", or "none". Json tag is "writer_compression_type"
-	WriterCompressionType string `json:"writer_compression_type,omitempty"`
-	// WriterFilePath is the path to write the files to. Default is "./out". Json tag is "writer_file_path"
-	WriterFilePath string `json:"writer_file_path,omitempty"`
-	// WriterRowGroupSize is the size of the row group. Default is 128M. This value is in bytes. Json tag is "writer_row_group_size"
-	WriterRowGroupSize int64 `json:"writer_row_group_size,omitempty"`
-	// WriterType is the type of writer to use. Default is "file". This field can be "file" or "s3". Json tag is "writer_type"
-	WriterType string `json:"writer_type"`
 	// S3AccessKey is the access key to use for S3. Default is "". Json tag is "s3_access_key"
-	S3BuketName string `json:"s3_bucket_name"`
 	// S3BucketName is the bucket name to use for S3. Default is "". Json tag is "s3_bucket_name"
-	S3Region string `json:"s3_region"`
 	// S3Region is the region to use for S3. Default is "". Json tag is "s3_region"
-	S3StorageClass string `json:"s3_storage_class"`
+	// TryAutoRecover is the flag to try to auto recover. Default is false. Json tag is "try_auto_recover"
+	// WriterCompressionType is the compression type to use for the writer. Default is "snappy". This field can be "snappy", "gzip", or "none". Json tag is "writer_compression_type"
+	// WriterFilePath is the path to write the files to. Default is "./out". Json tag is "writer_file_path"
+	// WriterRowGroupSize is the size of the row group. Default is 128M. This value is in bytes. Json tag is "writer_row_group_size"
+	// WriterType is the type of writer to use. Default is "file". This field can be "file" or "s3". Json tag is "writer_type"
+	Address               string `json:"address,omitempty"`
+	BufferSize            int    `json:"buffer_size"`
+	BufferType            string `json:"buffer_type"`
+	Debug                 bool   `json:"debug,omitempty"`
+	FlushInterval         int    `json:"flush_interval"`
+	LogPath               string `json:"log_path"`
+	Port                  int    `json:"port,omitempty"`
+	RecoveryAttempts      int    `json:"recovery_attempts,omitempty"`
+	RedisDataPrefix       string `json:"redis_data_prefix,omitempty"`
+	RedisDB               int    `json:"redis_db,omitempty"`
+	RedisHost             string `json:"redis_host,omitempty"`
+	RedisKeys             string `json:"redis_keys,omitempty"`
+	RedisPassword         string `json:"redis_password,omitempty"`
+	RedisRecoveryKey      string `json:"redis_recovery_key,omitempty"`
+	RedisSkipFlush        bool   `json:"redis_skip_flush,omitempty"`
+	S3BuketName           string `json:"s3_bucket_name"`
+	S3Region              string `json:"s3_region"`
+	S3StorageClass        string `json:"s3_storage_class"`
+	TryAutoRecover        bool   `json:"try_auto_recover,omitempty"`
+	WriterCompressionType string `json:"writer_compression_type,omitempty"`
+	WriterFilePath        string `json:"writer_file_path,omitempty"`
+	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
+	WriterType            string `json:"writer_type"`
 }
 
 var keys = []string{
@@ -71,20 +75,22 @@ var keys = []string{
 	"Debug",
 	"FlushInterval",
 	"LogPath",
+	"RecoveryAttempts",
 	"RedisDataPrefix",
 	"RedisDB",
-	"RedisRecoveryKey",
 	"RedisHost",
 	"RedisKeys",
 	"RedisPassword",
+	"RedisRecoveryKey",
 	"RedisSkipFlush",
+	"S3BucketName",
+	"S3Region",
+	"S3StorageClass",
+	"TryAutoRecover",
 	"WriterCompressionType",
 	"WriterFilePath",
 	"WriterRowGroupSize",
 	"WriterType",
-	"S3BucketName",
-	"S3Region",
-	"S3StorageClass",
 }
 
 func NewConfig() *Config {
@@ -149,6 +155,10 @@ func (c *Config) Set(cfg map[string]string) error {
 			c.Debug = strings.ToLower(value) == "true"
 		case "log_path":
 			c.LogPath = value
+		case "try_auto_recover":
+			c.TryAutoRecover = strings.ToLower(value) == "true"
+		case "recovery_attempts":
+			c.RecoveryAttempts = 0
 		case "writer_type":
 			c.WriterType = value
 		case "buffer_type":
@@ -210,20 +220,22 @@ func (c *Config) Get() map[string]interface{} {
 	ret["FlushInterval"] = c.FlushInterval
 	ret["LogPath"] = c.LogPath
 	ret["Port"] = c.Port
+	ret["RecoveryAttempts"] = c.RecoveryAttempts
 	ret["RedisDataPrefix"] = c.RedisDataPrefix
 	ret["RedisDB"] = c.RedisDB
-	ret["RedisRecoveryKey"] = c.RedisRecoveryKey
 	ret["RedisHost"] = c.RedisHost
 	ret["RedisKeys"] = c.RedisKeys
 	ret["RedisPassword"] = c.RedisPassword
+	ret["RedisRecoveryKey"] = c.RedisRecoveryKey
 	ret["RedisSkipFlush"] = c.RedisSkipFlush
+	ret["S3BucketName"] = c.S3BuketName
+	ret["S3Region"] = c.S3Region
+	ret["S3StorageClass"] = c.S3StorageClass
+	ret["TryAutoRecover"] = c.TryAutoRecover
 	ret["WriterCompressionType"] = c.WriterCompressionType
 	ret["WriterFilePath"] = c.WriterFilePath
 	ret["WriterRowGroupSize"] = c.WriterRowGroupSize
 	ret["WriterType"] = c.WriterType
-	ret["S3BucketName"] = c.S3BuketName
-	ret["S3Region"] = c.S3Region
-	ret["S3StorageClass"] = c.S3StorageClass
 
 	return ret
 }
@@ -279,5 +291,9 @@ func (c *Config) SetDefaults() {
 
 	if len(c.S3StorageClass) == 0 {
 		c.S3StorageClass = "STANDARD"
+	}
+
+	if c.RecoveryAttempts < 0 {
+		c.RecoveryAttempts = 0
 	}
 }
