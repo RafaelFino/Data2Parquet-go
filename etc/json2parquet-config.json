@@ -1,6 +1,6 @@
 {
     "buffer_size": 1000,
-    "buffer_type": "mem",
+    "buffer_type": "redis",
     "debug": false,
     "flush_interval": 60,
     "ledis_path": "/tmp",
@@ -12,7 +12,8 @@
     "redis_password": "",
     "redis_skip_flush": false,
     "_writer_compression_type": "gzip",
-    "writer_compression_type": "snappy",
+    "__writer_compression_type": "snappy",
+    "writer_compression_type": "none",
     "writer_file_path": "./data",
     "writer_row_group_size": 134217728,
     "writer_type": "file"

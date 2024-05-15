@@ -134,6 +134,12 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 //export FLBPluginExit
 func FLBPluginExit() int {
 	slog.Info("Exiting plugin")
-	ctx.Done()
+	err := rcv.Close()
+
+	if err != nil {
+		slog.Error("Error on try close receiver", "err", err)
+		return output.FLB_ERROR
+	}
+
 	return output.FLB_OK
 }

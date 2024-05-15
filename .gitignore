@@ -20,11 +20,6 @@
 # Go workspace file
 go.work
 
-./data/*.json
-./data/*.parquet
-
-data/*.json
-data/*.parquet
-
-bin/*
-bin/*/*
+/data/*
+/bin
+/.vscode

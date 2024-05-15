@@ -40,14 +40,12 @@ func main() {
 	slog.Debug("Starting", "config", cfg.ToString(), "module", "main", "function", "main")
 
 	fmt.Printf("Starting...")
-	ctx := context.Background()
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	server := server.NewServer(ctx, cfg)
-	go server.Run()
-
-	quitChannel := make(chan os.Signal, 1)
-	signal.Notify(quitChannel, syscall.SIGINT, syscall.SIGTERM)
-	<-quitChannel
+	server.Run()
 
 	slog.Info("Stopping...")
 }

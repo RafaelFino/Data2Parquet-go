@@ -60,13 +60,14 @@ func NewServer(ctx context.Context, config *config.Config) *Server {
 	return s
 }
 
-func (s *Server) Run() {
+func (s *Server) Run() error {
 	slog.Debug("Starting server", "address", s.makeAddress(), "module", "server", "function", "Run")
 	err := s.srv.ListenAndServe()
 	if err != nil {
-		slog.Error("Error starting server", "error", err, "module", "server", "function", "Run")
-		panic(err)
+		slog.Error("Error on server", "error", err, "module", "server", "function", "Run")
 	}
+
+	return err
 }
 
 func (s *Server) Stop() error {
