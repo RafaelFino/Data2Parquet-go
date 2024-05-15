@@ -37,7 +37,7 @@ func New(ctx context.Context, config *config.Config) Writer {
 	case "aws-s3":
 		return NewS3(ctx, config)
 	case "file":
-		return NewFile(config)
+		return NewFile(ctx, config)
 
 	default:
 		return NewNone(config)

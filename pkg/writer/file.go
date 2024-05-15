@@ -1,6 +1,7 @@
 package writer
 
 import (
+	"context"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
 	"log/slog"
@@ -13,12 +14,14 @@ import (
 type File struct {
 	config          *config.Config
 	compressionType parquet.CompressionCodec
+	ctx             context.Context
 }
 
-func NewFile(config *config.Config) Writer {
+func NewFile(ctx context.Context, config *config.Config) Writer {
 	return &File{
 		config:          config,
 		compressionType: GetCompressionType(config.WriterCompressionType),
+		ctx:             ctx,
 	}
 }
 
@@ -57,6 +60,7 @@ func (f *File) Write(key string, data []*domain.Record) []*WriterReturn {
 
 func (f *File) Close() error {
 	slog.Debug("Closing file writer", "module", "writer.file", "function", "Close")
+	<-f.ctx.Done()
 	return nil
 }
 

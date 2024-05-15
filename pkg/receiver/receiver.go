@@ -289,7 +289,7 @@ func (r *Receiver) Close() error {
 		}
 	}
 
-	r.ctx.Done()
+	<-r.ctx.Done()
 
 	return nil
 }

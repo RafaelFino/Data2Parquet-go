@@ -50,6 +50,8 @@ func (r *Redis) Close() error {
 		}
 	}
 
+	<-r.ctx.Done()
+
 	slog.Debug("Closed redis", "module", "buffer.redis", "function", "Close")
 	return nil
 }

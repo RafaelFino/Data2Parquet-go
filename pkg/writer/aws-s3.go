@@ -101,6 +101,8 @@ func (s *S3) makeBuketName(key string) string {
 
 func (s *S3) Close() error {
 	slog.Debug("Closing AWS-S3 writer")
+
+	<-s.ctx.Done()
 	return nil
 }
 
