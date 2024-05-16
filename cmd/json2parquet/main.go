@@ -57,7 +57,7 @@ func main() {
 
 	defer file.Close()
 
-	records, err := ReadJSON(file)
+	records, err := ReadJSON(cfg.RecordType, file)
 
 	slog.Info("Read records", "count", len(records), "duration", time.Since(start))
 	if err != nil {
@@ -113,7 +113,7 @@ func PrintLogo() {
 `)
 }
 
-func ReadJSON(file *os.File) ([]domain.Record, error) {
+func ReadJSON(recordType string, file *os.File) ([]domain.Record, error) {
 	decoder := json.NewDecoder(file)
 
 	data := map[string]interface{}{}
@@ -134,7 +134,7 @@ func ReadJSON(file *os.File) ([]domain.Record, error) {
 				line[k] = v
 			}
 
-			ret = append(ret, domain.NewLog(line))
+			ret = append(ret, domain.NewRecord(recordType, line))
 		}
 	}
 

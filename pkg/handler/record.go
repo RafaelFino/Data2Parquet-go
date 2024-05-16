@@ -58,7 +58,7 @@ func (h *LogHandler) Write(ctx *gin.Context) {
 		return
 	}
 
-	record := domain.NewRecord(h.config, data)
+	record := domain.NewRecord(h.config.RecordType, data)
 
 	slog.Debug("Writing record", "record", record.ToString(), "module", "handler", "function", "Write")
 

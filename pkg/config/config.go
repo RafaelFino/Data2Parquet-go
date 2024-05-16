@@ -50,7 +50,7 @@ type Config struct {
 	Debug                 bool   `json:"debug,omitempty"`
 	FlushInterval         int    `json:"flush_interval"`
 	LogPath               string `json:"log_path"`
-	JsonSchema            string `json:"json_schema,omitempty"`
+	JsonSchemaPath        string `json:"json_schema_path,omitempty"`
 	Port                  int    `json:"port,omitempty"`
 	RecordType            string `json:"record_type"`
 	RecoveryAttempts      int    `json:"recovery_attempts,omitempty"`
@@ -77,7 +77,7 @@ var keys = []string{
 	"Debug",
 	"FlushInterval",
 	"LogPath",
-	"JsonSchema",
+	"JsonSchemaPath",
 	"RecordType",
 	"RecoveryAttempts",
 	"RedisDataPrefix",
@@ -206,8 +206,8 @@ func (c *Config) Set(cfg map[string]string) error {
 			c.S3Region = value
 		case "s3_storage_class":
 			c.S3StorageClass = value
-		case "json_schema":
-			c.JsonSchema = value
+		case "json_schema_path":
+			c.JsonSchemaPath = value
 		case "record_type":
 			c.RecordType = value
 
@@ -226,7 +226,7 @@ func (c *Config) Get() map[string]interface{} {
 	ret["BufferType"] = c.BufferType
 	ret["Debug"] = c.Debug
 	ret["FlushInterval"] = c.FlushInterval
-	ret["JsonSchema"] = c.JsonSchema
+	ret["JsonSchemaPath"] = c.JsonSchemaPath
 	ret["LogPath"] = c.LogPath
 	ret["Port"] = c.Port
 	ret["RecordType"] = c.RecordType
@@ -275,8 +275,8 @@ func (c *Config) SetDefaults() {
 		c.BufferType = "mem"
 	}
 
-	if c.BufferSize < 1000 {
-		c.BufferSize = 1000
+	if c.BufferSize < 100 {
+		c.BufferSize = 100
 	}
 
 	if c.FlushInterval < 60 {

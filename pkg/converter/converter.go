@@ -5,6 +5,7 @@ import (
 	"data2parquet/pkg/domain"
 	"io"
 	"log/slog"
+	"os"
 
 	"github.com/xitongsys/parquet-go/parquet"
 	"github.com/xitongsys/parquet-go/writer"
@@ -38,14 +39,72 @@ type Converter struct {
 	config          *config.Config
 	compressionType parquet.CompressionCodec
 	rowGroupSize    int64
+	recordType      string
+	jsonSchemaPath  string
+	jsonSchemaData  string
+	np              int64
 }
 
 func New(config *config.Config) *Converter {
-	return &Converter{
+	ret := &Converter{
 		config:          config,
 		compressionType: GetCompressionType(config.WriterCompressionType),
 		rowGroupSize:    config.WriterRowGroupSize,
+		recordType:      config.RecordType,
+		jsonSchemaPath:  config.JsonSchemaPath,
+		np:              4,
 	}
+
+	if len(config.JsonSchemaPath) != 0 {
+		err := ret.loadJsonSchema()
+
+		if err != nil {
+			slog.Error("Error loading json schema", "error", err, "module", "converter", "function", "New")
+		} else {
+			slog.Info("Json schema loaded", "module", "converter", "function", "New", "path", config.JsonSchemaPath, "schema", ret.jsonSchemaData)
+		}
+	}
+
+	return ret
+}
+
+func (c *Converter) loadJsonSchema() error {
+	if len(c.jsonSchemaPath) == 0 {
+		return nil
+	}
+
+	data, err := os.ReadFile(c.jsonSchemaPath)
+
+	if err != nil {
+		slog.Error("Error reading json schema", "error", err, "module", "converter", "function", "loadJsonSchema", "path", c.jsonSchemaPath)
+		return err
+	}
+
+	c.jsonSchemaData = string(data)
+	slog.Debug("Json schema loaded", "module", "converter", "function", "loadJsonSchema", "path", c.jsonSchemaPath, "schema", c.jsonSchemaData)
+
+	return nil
+}
+
+func (c *Converter) createParquetWriter(w io.Writer) (*writer.ParquetWriter, error) {
+	var pw *writer.ParquetWriter
+	var err error
+
+	if c.config.RecordType == domain.RecordTypeDynamic {
+		pw, err = writer.NewParquetWriterFromWriter(w, c.jsonSchemaData, c.np)
+	} else {
+		pw, err = writer.NewParquetWriterFromWriter(w, domain.NewObj(c.config.RecordType), c.np)
+	}
+
+	if err != nil {
+		slog.Error("Error creating parquet writer", "error", err, "module", "converter", "function", "createParquetWriter", "recordType", c.config.RecordType, "jsonSchemaData", c.jsonSchemaData)
+		return nil, err
+	}
+
+	pw.RowGroupSize = c.rowGroupSize
+	pw.CompressionType = c.compressionType
+
+	return pw, err
 }
 
 func (c *Converter) Write(key string, data []domain.Record, w io.Writer) []*Result {
@@ -60,7 +119,7 @@ func (c *Converter) Write(key string, data []domain.Record, w io.Writer) []*Resu
 		return ret
 	}
 
-	pw, err := writer.NewParquetWriterFromWriter(w, domain.NewObj(c.config.RecordType), 4)
+	pw, err := c.createParquetWriter(w)
 	if err != nil {
 		slog.Error("Error creating parquet writer", "error", err, "module", "writer", "function", "writeToFile", "key", key)
 		ret = append(ret, &Result{Key: key, Error: err})
@@ -69,12 +128,9 @@ func (c *Converter) Write(key string, data []domain.Record, w io.Writer) []*Resu
 
 	defer pw.PFile.Close()
 
-	pw.RowGroupSize = c.rowGroupSize
-	pw.CompressionType = c.compressionType
-
 	for _, record := range data {
 		if err = pw.Write(record); err != nil {
-			slog.Error("Error writing parquet file", "error", err, "module", "writer", "function", "writeToFile", "key", key, "record", record)
+			slog.Error("Error writing parquet file", "error", err, "module", "writer", "function", "writeToFile", "key", key, "record", record.ToJson())
 
 			ret = append(ret, &Result{Key: key, Error: err, Record: record})
 		}

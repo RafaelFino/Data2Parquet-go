@@ -33,7 +33,7 @@ func (f *File) Write(key string, buf *bytes.Buffer) error {
 
 	file, err := os.Create(filePath)
 	if err != nil {
-		slog.Error("Error creating file", "error", err, "module", "writer.file", "function", "Write", "key", key)
+		slog.Error("Error creating file", "error", err, "module", "writer.file", "function", "Write", "key", key, "file", filePath)
 		return err
 	}
 

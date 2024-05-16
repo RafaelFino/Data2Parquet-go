@@ -1,41 +1,20 @@
 package domain
 
 import (
-	"data2parquet/pkg/config"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	msgp "github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/exp/slog"
 )
 
-var schemas = make(map[string]string)
-
 type Dynamic struct {
-	jsonSchema string
+	Data map[string]interface{} `msg:"data" json:"data"`
 }
 
-func NewDynamic(config *config.Config, data map[interface{}]interface{}) Record {
-	ret := &Dynamic{}
-
-	if len(config.JsonSchema) == 0 {
-		slog.Error("Dynamic schema is empty", "module", "domain.record", "function", "NewDynamic")
-		return nil
-	}
-
-	if schema, ok := schemas[config.JsonSchema]; ok {
-		ret.jsonSchema = schema
-	} else {
-		file, err := os.ReadFile(config.JsonSchema)
-
-		if err != nil {
-			slog.Error("Error reading schema file", "error", err, "module", "domain.record", "function", "NewDynamic")
-			return nil
-		}
-
-		ret.jsonSchema = string(file)
-		schemas[config.JsonSchema] = ret.jsonSchema
+func NewDynamic(data map[interface{}]interface{}) Record {
+	ret := &Dynamic{
+		Data: make(map[string]interface{}),
 	}
 
 	ret.Decode(data)
@@ -44,7 +23,9 @@ func NewDynamic(config *config.Config, data map[interface{}]interface{}) Record 
 }
 
 func (d *Dynamic) Decode(data map[interface{}]interface{}) {
-
+	for k, v := range data {
+		d.Data[fmt.Sprint(k)] = v
+	}
 }
 
 func (d *Dynamic) Key() string {

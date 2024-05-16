@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"data2parquet/pkg/config"
 	"fmt"
 	"strings"
 	"time"
@@ -26,11 +25,11 @@ var RecordTypes = map[string]int{
 	RecordTypeDynamic: 2,
 }
 
-func NewRecord(config *config.Config, data map[interface{}]interface{}) Record {
+func NewRecord(recordType string, data map[interface{}]interface{}) Record {
 	var ret Record
-	switch strings.ToLower(config.RecordType) {
+	switch strings.ToLower(recordType) {
 	case RecordTypeDynamic:
-		ret = NewDynamic(config, data)
+		ret = NewDynamic(data)
 	default:
 		ret = NewLog(data)
 	}

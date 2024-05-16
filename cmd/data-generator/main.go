@@ -41,13 +41,17 @@ func main() {
 		}
 	}
 
+	if count < 100 {
+		count = 100
+	}
+
 	start := time.Now()
 	result := make(chan domain.Record, parallel)
 	wg := &sync.WaitGroup{}
 	wg.Add(parallel)
 
 	for i := 0; i < parallel; i++ {
-		go GenerateLog(i, count/parallel, result, wg)
+		go GenerateLog(i, count/parallel, result, wg, parallel)
 	}
 
 	buf := make([]domain.Record, count)
@@ -120,7 +124,7 @@ func main() {
 
 }
 
-func GenerateLog(pid int, count int, result chan domain.Record, wg *sync.WaitGroup) {
+func GenerateLog(pid int, count int, result chan domain.Record, wg *sync.WaitGroup, parallel int) {
 	defer wg.Done()
 
 	resType := "ec2"
@@ -172,7 +176,7 @@ func GenerateLog(pid int, count int, result chan domain.Record, wg *sync.WaitGro
 			TraceIP:                     []string{"192.168.0.1", "0.0.0.1"},
 		}
 
-		if i%(count/4) == 0 {
+		if i%(count/parallel) == 0 {
 			slog.Info("Running", "pid", pid, "count", i)
 		}
 
