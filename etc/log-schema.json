@@ -1,0 +1,20 @@
+{
+  "Tag": "name=root, repetitiontype=REQUIRED",
+  "Fields": 
+  { 
+    "Tag": "name=data, repetitiontype=REPEATED",
+    "Fields":
+    [
+      {"Tag": "name=time, type=BYTE_ARRAY, convertedtype=UTF8, repetitiontype=REQUIRED, inname=time"},
+      {"Tag": "name=level, type=BYTE_ARRAY, convertedtype=UTF8, repetitiontype=REQUIRED, inname=level"},
+      {"Tag": "name=logger, type=BYTE_ARRAY, convertedtype=UTF8, repetitiontype=REQUIRED, inname=logger"},
+      {"Tag": "name=thread_name, type=BYTE_ARRAY, convertedtype=UTF8, repetitiontype=REQUIRED, inname=thread_name"},
+      {"Tag": "name=message, type=BYTE_ARRAY, convertedtype=UTF8, repetitiontype=REQUIRED, inname=message"},
+      {"Tag": "name=business_capability, type=BYTE_ARRAY, convertedtype=UTF8, repetitiontype=REQUIRED, inname=business_capability"},
+      {"Tag": "name=business_domain, type=BYTE_ARRAY, convertedtype=UTF8, repetitiontype=REQUIRED, inname=business_domain"},
+      {"Tag": "name=business_process, type=BYTE_ARRAY, convertedtype=UTF8, repetitiontype=REQUIRED, inname=business_process"},
+      {"Tag": "name=business_step, type=BYTE_ARRAY, convertedtype=UTF8, repetitiontype=REQUIRED, inname=business_step"},
+      {"Tag": "name=correlation_id, type=BYTE_ARRAY, convertedtype=UTF8, repetitiontype=REQUIRED, inname=correlation_id"}
+    ]
+  }
+}
