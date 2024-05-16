@@ -1,6 +1,7 @@
 package config
 
 import (
+	"data2parquet/pkg/domain"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -44,6 +45,10 @@ type Config struct {
 	// WriterFilePath is the path to write the files to. Default is "./out". Json tag is "writer_file_path"
 	// WriterRowGroupSize is the size of the row group. Default is 128M. This value is in bytes. Json tag is "writer_row_group_size"
 	// WriterType is the type of writer to use. Default is "file". This field can be "file" or "s3". Json tag is "writer_type"
+	// JsonSchemaPath is the path to the JSON schema file. Default is "". Json tag is "json_schema_path"
+	// RecordType is the type of record to use. Default is "log". Json tag is "record_type"
+	// RedisDLQPrefix is the prefix to use for the dead letter queue. Default is "dlq". Json tag is "redis_dlq_prefix"
+
 	Address               string `json:"address,omitempty"`
 	BufferSize            int    `json:"buffer_size"`
 	BufferType            string `json:"buffer_type"`
@@ -314,6 +319,10 @@ func (c *Config) SetDefaults() {
 
 	if c.RecoveryAttempts < 0 {
 		c.RecoveryAttempts = 0
+	}
+
+	if len(c.RecordType) == 0 {
+		c.RecordType = domain.RecordTypeLog
 	}
 
 	c.RecordType = strings.ToLower(c.RecordType)

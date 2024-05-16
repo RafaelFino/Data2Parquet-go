@@ -70,42 +70,48 @@ Write data in a local file, use the tag `WriterFilePath` to choose path to store
 ### [AWS-S3](https://github.com/RafaelFino/Data2Parquet-go/blob/main/pkg/writer/aws-s3.go) (`WriterType` = `aws-s3`)
 
 ## [Config](https://github.com/RafaelFino/Data2Parquet-go/blob/main/pkg/config/config.go) (/pkg/config)
-- Address is the address to listen on. Default is empty string. Json tag is `address`
+- Address is the address to listen on. Default is **empty string**. Json tag is `address`
 - BufferSize is the size of the buffer. Default is 1000. Json tag is `buffer_size`
 - BufferType is the type of buffer to use. Can be `mem` or `redis`. Default is `mem`. Json tag is `buffer_type`
 - Debug is the debug flag. Default is false. Json tag is `debug`
 - FlushInterval is the interval to flush the buffer. Default is 60. This value is in seconds. Json tag is `flush_interval`
+- JsonSchemaPath is the path to the JSON schema file. Default is **empty string**. Json tag is `json_schema_path`
 - LogPath is the path to the log files. Default is `./logs`. Json tag is `log_path`
 - Port is the port to listen on. Default is 0. Json tag is `port`
+- RecordType is the type of record to use. Default is `log`. Json tag is `record_type`
 - RecoveryAttempts is the number of recovery attempts. Default is 0. Json tag is `recovery_attempts`, dependency on TryAutoRecover
 - RedisDataPrefix is the prefix to use for the redis keys. Default is `data`. Json tag is `redis_data_prefix`
 - RedisDB is the redis database to use. Default is 0. Json tag is `redis_db`
-- RedisHost is the redis host to connect to. Default is empty string. Json tag is `redis_host`
+- RedisDLQPrefix is the prefix to use for the dead letter queue. Default is `dlq`. Json tag is `redis_dlq_prefix`
+- RedisHost is the redis host to connect to. Default is **empty string**. Json tag is `redis_host`
 - RedisKeys is the keys to use for the redis buffer. Default is `keys`. Json tag is `redis_keys`
-- RedisPassword is the redis password to use. Default is empty string. Json tag is `redis_password`
-- RedisRecoveryKey is the key to use for the dead letter queue. Default is empty string. Json tag is `redis_dlq_key`
+- RedisPassword is the redis password to use. Default is **empty string**. Json tag is `redis_password`
+- RedisRecoveryKey is the key to use for the dead letter queue. Default is **empty string**. Json tag is `redis_dlq_key`
 - RedisSkipFlush is the flag to skip flushing the redis buffer. Default is false. Json tag is `redis_skip_flush`
-- S3AccessKey is the access key to use for S3. Default is empty string. Json tag is `s3_access_key`
-- S3BucketName is the bucket name to use for S3. Default is empty string. Json tag is `s3_bucket_name`
-- S3Region is the region to use for S3. Default is empty string. Json tag is `s3_region`
+- S3AccessKey is the access key to use for S3. Default is **empty string**. Json tag is `s3_access_key`
+- S3BucketName is the bucket name to use for S3. Default is **empty string**. Json tag is `s3_bucket_name`
+- S3Region is the region to use for S3. Default is **empty string**. Json tag is `s3_region`
 - TryAutoRecover is the flag to try to auto recover. Default is false. Json tag is `try_auto_recover`
 - WriterCompressionType is the compression type to use for the writer. Default is `snappy`. This field can be `snappy`, `gzip`, or `none`. Json tag is `writer_compression_type`
 - WriterFilePath is the path to write the files to. Default is `./out`. Json tag is `writer_file_path`
 - WriterRowGroupSize is the size of the row group. Default is 128M. This value is in bytes. Json tag is `writer_row_group_size`
-- WriterType is the type of writer to use. Default is `file`. This field can be `file` or `s3`. Json tag is `writer_type`
+- WriterType is the type of writer to use. Default is `file`. This field can be `file` or `s3`. Json tag is `writer_type`	
 
 ``` golang
 type Config struct {
-	Address               string `json:"address,omitempty"`
+Address               string `json:"address,omitempty"`
 	BufferSize            int    `json:"buffer_size"`
 	BufferType            string `json:"buffer_type"`
 	Debug                 bool   `json:"debug,omitempty"`
 	FlushInterval         int    `json:"flush_interval"`
+	JsonSchemaPath        string `json:"json_schema_path,omitempty"`
 	LogPath               string `json:"log_path"`
 	Port                  int    `json:"port,omitempty"`
+	RecordType            string `json:"record_type"`
 	RecoveryAttempts      int    `json:"recovery_attempts,omitempty"`
 	RedisDataPrefix       string `json:"redis_data_prefix,omitempty"`
 	RedisDB               int    `json:"redis_db,omitempty"`
+	RedisDLQPrefix        string `json:"redis_dlq_prefix,omitempty"`
 	RedisHost             string `json:"redis_host,omitempty"`
 	RedisKeys             string `json:"redis_keys,omitempty"`
 	RedisPassword         string `json:"redis_password,omitempty"`
