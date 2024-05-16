@@ -1,4 +1,4 @@
-package parquet
+package converter
 
 import (
 	"data2parquet/pkg/config"
@@ -29,9 +29,9 @@ func GetCompressionType(compressionType string) parquet.CompressionCodec {
 }
 
 type Result struct {
-	Key     string
-	Error   error
-	Records []domain.Record
+	Key    string
+	Error  error
+	Record domain.Record
 }
 
 type Converter struct {
@@ -63,7 +63,7 @@ func (c *Converter) Write(key string, data []domain.Record, w io.Writer) []*Resu
 	pw, err := writer.NewParquetWriterFromWriter(w, domain.NewObj(c.config.RecordType), 4)
 	if err != nil {
 		slog.Error("Error creating parquet writer", "error", err, "module", "writer", "function", "writeToFile", "key", key)
-		ret = append(ret, &Result{Error: err})
+		ret = append(ret, &Result{Key: key, Error: err})
 		return ret
 	}
 
@@ -76,7 +76,7 @@ func (c *Converter) Write(key string, data []domain.Record, w io.Writer) []*Resu
 		if err = pw.Write(record); err != nil {
 			slog.Error("Error writing parquet file", "error", err, "module", "writer", "function", "writeToFile", "key", key, "record", record)
 
-			ret = append(ret, &Result{Error: err, Records: []domain.Record{record}})
+			ret = append(ret, &Result{Key: key, Error: err, Record: record})
 		}
 	}
 

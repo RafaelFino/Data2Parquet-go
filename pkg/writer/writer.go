@@ -1,14 +1,14 @@
 package writer
 
 import (
+	"bytes"
 	"context"
 	"data2parquet/pkg/config"
-	"io"
 )
 
 type Writer interface {
 	Init() error
-	Write(key string, buffer io.Reader) error
+	Write(key string, buf *bytes.Buffer) error
 	Close() error
 	IsReady() bool
 }
@@ -25,6 +25,6 @@ func New(ctx context.Context, config *config.Config) Writer {
 		return NewFile(ctx, config)
 
 	default:
-		return NewNone(config)
+		return NewFile(ctx, config)
 	}
 }

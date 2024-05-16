@@ -113,7 +113,7 @@ func PrintLogo() {
 `)
 }
 
-func ReadJSON(file *os.File) ([]*domain.Record, error) {
+func ReadJSON(file *os.File) ([]domain.Record, error) {
 	decoder := json.NewDecoder(file)
 
 	data := map[string]interface{}{}
@@ -123,7 +123,7 @@ func ReadJSON(file *os.File) ([]*domain.Record, error) {
 		return nil, err
 	}
 
-	ret := make([]*domain.Record, 0)
+	ret := make([]domain.Record, 0)
 
 	if lines, ok := data["logs"]; ok {
 		records := lines.([]interface{})
@@ -134,7 +134,7 @@ func ReadJSON(file *os.File) ([]*domain.Record, error) {
 				line[k] = v
 			}
 
-			ret = append(ret, domain.NewRecord(line))
+			ret = append(ret, domain.NewLog(line))
 		}
 	}
 

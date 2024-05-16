@@ -1,11 +1,12 @@
 package receiver
 
 import (
+	"bytes"
 	"context"
 	"data2parquet/pkg/buffer"
 	"data2parquet/pkg/config"
+	"data2parquet/pkg/converter"
 	"data2parquet/pkg/domain"
-	"data2parquet/pkg/parquet"
 	"data2parquet/pkg/writer"
 	"errors"
 	"log/slog"
@@ -13,21 +14,17 @@ import (
 	"time"
 )
 
-// / Receiver
-// / @struct Receiver
 type Receiver struct {
 	config        *config.Config
 	writer        writer.Writer
 	buffer        buffer.Buffer
 	running       bool
 	control       map[string]*BufferControl
-	converter     *parquet.Converter
+	converter     *converter.Converter
 	ctx           context.Context
 	recoveryCount int
 }
 
-// / BufferControl
-// / @struct BufferControl
 type BufferControl struct {
 	Last    time.Time
 	Count   int
@@ -35,9 +32,6 @@ type BufferControl struct {
 	mu      *sync.Mutex
 }
 
-// / New receiver
-// / @param config *config.Config
-// / @return Receiver
 func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 	if ctx == nil {
 		ctx = context.Background()
@@ -51,7 +45,7 @@ func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 		control:       make(map[string]*BufferControl),
 		ctx:           ctx,
 		recoveryCount: 0,
-		converter:     parquet.New(config),
+		converter:     converter.New(config),
 	}
 
 	slog.Debug("Validating receiver buffer", "module", "receiver", "function", "NewReceiver")
@@ -138,6 +132,7 @@ func (r *Receiver) Write(record domain.Record) error {
 }
 
 func (r *Receiver) FlushKey(key string) error {
+	metrics := make(map[string]any)
 	start := time.Now()
 
 	//Get buffer control
@@ -175,22 +170,45 @@ func (r *Receiver) FlushKey(key string) error {
 		r.control[key] = ctrl
 	}(key, ctrl)
 
+	metrics["ctrl-time"] = time.Since(start)
+	start = time.Now()
+
 	data := r.buffer.Get(key)
 
 	if len(data) == 0 {
 		return nil
 	}
 
-	slog.Debug("Starting to flushing buffer", "key", key, "size", len(data), "buffer-size", r.config.BufferSize, "module", "receiver", "function", "Flush", "duration", time.Since(start))
-	writerRet := r.writer.Write(key, data)
+	metrics["data-len"] = len(data)
+	metrics["get-time"] = time.Since(start)
+	start = time.Now()
 
-	if writer.CheckWriterError(writerRet) && r.config.TryAutoRecover && r.recoveryCount < r.config.RecoveryAttempts {
+	buf := new(bytes.Buffer)
+	result := r.converter.Write(key, data, buf)
+
+	metrics["convert-time"] = time.Since(start)
+	metrics["buffer-size"] = buf.Len()
+	start = time.Now()
+
+	if converter.CheckWriterError(result) && r.config.TryAutoRecover && r.recoveryCount < r.config.RecoveryAttempts {
 		slog.Error("Error writing data, handle process to recovery data async", "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start), "recovery-count", r.recoveryCount)
-		go r.RecoveryWriteError(writerRet)
+		go r.RecoveryWriteError(result)
 	}
 
-	slog.Debug("Clearing buffer data", "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start))
-	err := r.buffer.Clear(key, len(data))
+	err := r.writer.Write(key, buf)
+
+	metrics["write-time"] = time.Since(start)
+	start = time.Now()
+
+	if err != nil {
+		slog.Error("Error writing data", "error", err, "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start))
+		return err
+	}
+
+	err = r.buffer.Clear(key, len(data))
+
+	metrics["clear-time"] = time.Since(start)
+	start = time.Now()
 
 	if err != nil {
 		slog.Error("Error clearing buffer", "error", err, "key", key, "size", len(data), "module", "receiver")
@@ -201,7 +219,9 @@ func (r *Receiver) FlushKey(key string) error {
 	ctrl.Count = 0
 	r.control[key] = ctrl
 
-	slog.Info("Buffer flushed", "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start))
+	metrics["ctrl-last"] = ctrl.Last
+
+	slog.Info("Buffer flushed", "key", key, "module", "receiver", "function", "Flush", "total-duration", time.Since(start), "metrics", metrics)
 
 	return nil
 }
@@ -224,7 +244,7 @@ func (r *Receiver) Flush() error {
 	return nil
 }
 
-func (r *Receiver) RecoveryWriteError(writerRet []*parquet.Result) {
+func (r *Receiver) RecoveryWriteError(writerRet []*converter.Result) {
 	slog.Info("Recovering from write error", "module", "receiver", "function", "RecoveryWriteError")
 	resend := false
 
@@ -232,20 +252,18 @@ func (r *Receiver) RecoveryWriteError(writerRet []*parquet.Result) {
 		if item.Error != nil {
 			slog.Info("Recovery process: error writing record", "error", item.Error, "module", "receiver", "function", "RecoveryWriteError")
 
-			if item.Records != nil {
-				for _, rec := range item.Records {
-					slog.Debug("Recovery process: writing record", "record", rec.ToString(), "module", "receiver", "function", "RecoveryWriteError")
-					err := r.buffer.PushRecovery(rec.Key(), rec)
+			if item.Record != nil {
+				slog.Debug("Recovery process: writing record", "record", item.Record.ToString(), "module", "receiver", "function", "RecoveryWriteError")
+				err := r.buffer.PushRecovery(item.Key, item.Record)
 
-					if err != nil {
-						slog.Error("Error pushing recovery record", "error", err, "record", rec.ToString(), "module", "receiver", "function", "RecoveryWriteError")
-					} else {
-						resend = true
-					}
+				if err != nil {
+					slog.Error("Error pushing recovery record", "error", err, "record", item.Record.ToString(), "module", "receiver", "function", "RecoveryWriteError")
+				} else {
+					resend = true
 				}
 			}
 
-			slog.Debug("Recovery process: clearing buffer", "size", len(item.Records), "source-err", item.Error, "module", "receiver", "function", "RecoveryWriteError")
+			slog.Debug("Recovery process: clearing buffer", "source-err", item.Error, "module", "receiver", "function", "RecoveryWriteError")
 		}
 	}
 

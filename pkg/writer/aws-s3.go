@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"data2parquet/pkg/config"
-	"data2parquet/pkg/domain"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -13,14 +12,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/xitongsys/parquet-go/parquet"
 )
 
 type S3 struct {
-	config          *config.Config
-	client          *s3.Client
-	ctx             context.Context
-	compressionType parquet.CompressionCodec
+	config *config.Config
+	client *s3.Client
+	ctx    context.Context
 }
 
 func NewS3(ctx context.Context, config *config.Config) Writer {
@@ -29,9 +26,8 @@ func NewS3(ctx context.Context, config *config.Config) Writer {
 	}
 
 	ret := &S3{
-		config:          config,
-		ctx:             ctx,
-		compressionType: GetCompressionType(config.WriterCompressionType),
+		config: config,
+		ctx:    ctx,
 	}
 
 	return ret
@@ -58,24 +54,8 @@ func (s *S3) Init() error {
 	return nil
 }
 
-func (s *S3) Write(key string, data []*domain.Record) []*WriterReturn {
+func (s *S3) Write(key string, buf *bytes.Buffer) error {
 	start := time.Now()
-
-	buf := &bytes.Buffer{}
-
-	ret := WriteParquet(key, data, buf, s.config.WriterRowGroupSize, s.compressionType)
-
-	if CheckWriterError(ret) {
-		for _, r := range ret {
-			if r.Error != nil {
-				slog.Error("Error writing parquet file", "error", r.Error, "module", "writer", "function", "Write", "key", key)
-			}
-		}
-
-		return ret
-	}
-
-	slog.Debug("Data written on buffer", "key", key, "module", "writer.file", "function", "Write", "records", len(data), "duration", time.Since(start))
 
 	_, err := s.client.PutObject(s.ctx, &s3.PutObjectInput{
 		Bucket: aws.String(s.config.S3BuketName),
@@ -85,10 +65,11 @@ func (s *S3) Write(key string, data []*domain.Record) []*WriterReturn {
 
 	if err != nil {
 		slog.Error("Error writing to S3", "error", err, "module", "writer.file", "function", "Write", "key", key)
-		ret = append(ret, &WriterReturn{Error: err})
 	}
 
-	return ret
+	slog.Info("S3 written", "module", "writer.file", "function", "Write", "key", key, "duration", time.Since(start), "file-size", buf.Len())
+
+	return err
 }
 
 func (s *S3) makeBuketName(key string) string {

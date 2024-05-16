@@ -29,7 +29,7 @@ func main() {
 	slog.SetDefault(logger)
 
 	count := 500000
-	parallel := 4
+	parallel := 10
 
 	if len(os.Args) > 1 {
 		i, err := strconv.Atoi(os.Args[1])
@@ -42,7 +42,7 @@ func main() {
 	}
 
 	start := time.Now()
-	result := make(chan *domain.Record, parallel)
+	result := make(chan domain.Record, parallel)
 	wg := &sync.WaitGroup{}
 	wg.Add(parallel)
 
@@ -50,8 +50,7 @@ func main() {
 		go GenerateLog(i, count/parallel, result, wg)
 	}
 
-	data := map[string][]*domain.Record{}
-	data["logs"] = make([]*domain.Record, 0, count)
+	buf := make([]domain.Record, count)
 
 	signal := make(chan bool)
 
@@ -67,12 +66,12 @@ func main() {
 		select {
 		case l := <-result:
 			{
-				data["logs"] = append(data["logs"], l)
+				buf[received] = l
 				received++
 			}
 		case <-signal:
 			{
-				slog.Info("Received signal to close", "count", len(data["logs"]))
+				slog.Info("Received signal to close", "count", len(buf))
 				break
 			}
 		}
@@ -84,6 +83,10 @@ func main() {
 				slog.Info("Received logs", "received", received, "total", count)
 			}
 		}
+	}
+
+	data := map[string][]domain.Record{
+		"logs": buf,
 	}
 
 	slog.Info("Data generated", "duration", time.Since(start), "count", len(data["logs"]))
@@ -117,7 +120,7 @@ func main() {
 
 }
 
-func GenerateLog(pid int, count int, result chan *domain.Record, wg *sync.WaitGroup) {
+func GenerateLog(pid int, count int, result chan domain.Record, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	resType := "ec2"
@@ -136,7 +139,7 @@ func GenerateLog(pid int, count int, result chan *domain.Record, wg *sync.WaitGr
 
 	for i := 0; i < count; i++ {
 		duration := time.Since(start).Milliseconds()
-		line := &domain.Record{
+		line := &domain.Log{
 			Level:                       "INFO",
 			Message:                     words.Sentences(5),
 			Time:                        time.Now().Format(time.RFC3339Nano),
@@ -146,10 +149,10 @@ func GenerateLog(pid int, count int, result chan *domain.Record, wg *sync.WaitGr
 			PersonId:                    GetID(),
 			UserId:                      GetID(),
 			DeviceId:                    GetID(),
-			BusinessCapability:          "business_capability" + fmt.Sprintf("%d", i%10),
-			BusinessDomain:              "business_domain" + fmt.Sprintf("%d", i%10),
-			BusinessService:             "business_service" + fmt.Sprintf("%d", i%20),
-			ApplicationService:          "application_service" + fmt.Sprintf("%d", i%30),
+			BusinessCapability:          "business_capability" + fmt.Sprintf("%02d", i%10),
+			BusinessDomain:              "business_domain" + fmt.Sprintf("%02d", i%10),
+			BusinessService:             "business_service" + fmt.Sprintf("%02d", i%20),
+			ApplicationService:          "application_service" + fmt.Sprintf("%02d", i%30),
 			ResourceType:                &resType,
 			CloudProvider:               &cloudProvider,
 			SourceId:                    GetID(),

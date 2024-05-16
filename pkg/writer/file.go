@@ -1,9 +1,9 @@
 package writer
 
 import (
+	"bytes"
 	"context"
 	"data2parquet/pkg/config"
-	"data2parquet/pkg/domain"
 	"log/slog"
 	"os"
 	"time"
@@ -26,32 +26,25 @@ func (f *File) Init() error {
 	return nil
 }
 
-func (f *File) Write(key string, data []*domain.Record) error {
+func (f *File) Write(key string, buf *bytes.Buffer) error {
 	start := time.Now()
-
-	slog.Debug("Data splitted, writing records to file", "module", "writer.file", "function", "Write", "records", len(data), "duration", time.Since(start))
 
 	filePath := f.config.WriterFilePath + "/" + key + ".parquet"
 
 	file, err := os.Create(filePath)
 	if err != nil {
 		slog.Error("Error creating file", "error", err, "module", "writer.file", "function", "Write", "key", key)
-		return []*WriterReturn{{Error: err, Records: data}}
+		return err
 	}
 
 	defer file.Close()
 
-	parquetRet := WriteParquet(f.config, key, data, file, f.config.WriterRowGroupSize)
+	data := buf.Bytes()
+	err = os.WriteFile(filePath, data, 0644)
 
-	if CheckWriterError(parquetRet) {
-		for _, r := range parquetRet {
-			slog.Error("Error writing to file", "error", r.Error, "module", "writer.file", "function", "Write", "key", key)
-		}
-	}
+	slog.Info("File written", "module", "writer.file", "function", "Write", "key", key, "file", filePath, "duration", time.Since(start), "file-size", len(data))
 
-	slog.Info("File written", "key", key, "module", "writer.file", "function", "WriteRecord", "filePath", filePath, "records", len(data), "duration", time.Since(start))
-
-	return parquetRet
+	return err
 }
 
 func (f *File) Close() error {
