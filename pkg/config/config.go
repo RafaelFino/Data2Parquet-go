@@ -61,6 +61,7 @@ type Config struct {
 	RedisPassword         string `json:"redis_password,omitempty"`
 	RedisRecoveryKey      string `json:"redis_recovery_key,omitempty"`
 	RedisSkipFlush        bool   `json:"redis_skip_flush,omitempty"`
+	RedisDLQPrefix        string `json:"redis_dlq_prefix,omitempty"`
 	S3BuketName           string `json:"s3_bucket_name"`
 	S3Region              string `json:"s3_region"`
 	S3StorageClass        string `json:"s3_storage_class"`
@@ -86,6 +87,7 @@ var keys = []string{
 	"RedisKeys",
 	"RedisPassword",
 	"RedisRecoveryKey",
+	"RedisSQLPrefix",
 	"RedisSkipFlush",
 	"S3BucketName",
 	"S3Region",
@@ -210,6 +212,8 @@ func (c *Config) Set(cfg map[string]string) error {
 			c.JsonSchemaPath = value
 		case "record_type":
 			c.RecordType = value
+		case "redis_dlq_prefix":
+			c.RedisDLQPrefix = value
 
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
@@ -237,6 +241,7 @@ func (c *Config) Get() map[string]interface{} {
 	ret["RedisKeys"] = c.RedisKeys
 	ret["RedisPassword"] = c.RedisPassword
 	ret["RedisRecoveryKey"] = c.RedisRecoveryKey
+	ret["RedisSQLPrefix"] = c.RedisDLQPrefix
 	ret["RedisSkipFlush"] = c.RedisSkipFlush
 	ret["S3BucketName"] = c.S3BuketName
 	ret["S3Region"] = c.S3Region
@@ -285,6 +290,10 @@ func (c *Config) SetDefaults() {
 
 	if len(c.RedisKeys) == 0 {
 		c.RedisKeys = "keys"
+	}
+
+	if len(c.RedisDLQPrefix) == 0 {
+		c.RedisDLQPrefix = "dlq"
 	}
 
 	if c.RedisDB < 0 {

@@ -201,7 +201,8 @@ func (r *Receiver) FlushKey(key string) error {
 	start = time.Now()
 
 	if err != nil {
-		slog.Error("Error writing data", "error", err, "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start))
+		slog.Error("Error writing data, pushing to DLQ Buffer", "error", err, "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start))
+		defer r.buffer.PushDLQ(key, buf)
 		return err
 	}
 

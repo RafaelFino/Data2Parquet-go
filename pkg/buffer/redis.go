@@ -1,11 +1,13 @@
 package buffer
 
 import (
+	"bytes"
 	"context"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -68,6 +70,10 @@ func (r *Redis) makeDataKey(key string) string {
 
 func (r *Redis) makeRecoveryKey(key string) string {
 	return fmt.Sprintf("%s:%s", r.config.RedisRecoveryKey, key)
+}
+
+func (r *Redis) makeDLQKey(key string) string {
+	return fmt.Sprintf("%s:%s", r.config.RedisDLQPrefix, key)
 }
 
 func (r *Redis) Len(key string) int {
@@ -249,4 +255,72 @@ func (r *Redis) HasRecovery() bool {
 	}
 
 	return len(cmd.Val()) > 0
+}
+
+func (r *Redis) PushDLQ(key string, buf *bytes.Buffer) error {
+	slog.Debug("Pushing to DLQ", "key", key, "module", "buffer.redis", "function", "PushDLQ", "size", buf.Len())
+	data := &DLQData{
+		Key:       key,
+		Data:      buf.Bytes(),
+		Timestamp: time.Now(),
+	}
+	return r.pushRedis(r.makeDLQKey(key), data.ToMsgPack())
+}
+
+func (r *Redis) GetDLQ() []*DLQData {
+	keys := r.client.Keys(r.ctx, r.makeDLQKey("*"))
+
+	if keys.Err() != nil {
+		slog.Error("Error getting keys", "error", keys.Err())
+		return []*DLQData{}
+	}
+
+	recKeys := keys.Val()
+	ret := make([]*DLQData, len(recKeys))
+
+	for i, key := range recKeys {
+		result := r.client.LRange(r.ctx, key, 0, -1)
+
+		if result.Err() != nil {
+			slog.Error("Error getting key", "error", result.Err())
+			return []*DLQData{}
+		}
+
+		vals := result.Val()
+		item := &DLQData{}
+
+		for _, v := range vals {
+			err := item.FromMsgPack([]byte(v))
+
+			if err != nil {
+				slog.Error("Error decoding record", "error", err, "module", "buffer.redis", "function", "GetDLQ", "record", v)
+			}
+
+			ret[i] = item
+		}
+	}
+
+	return ret
+}
+
+func (r *Redis) ClearDLQ() error {
+	keys := r.client.Keys(r.ctx, r.makeDLQKey("*"))
+
+	if keys.Err() != nil {
+		slog.Error("Error getting keys", "error", keys.Err())
+		return keys.Err()
+	}
+
+	recKeys := keys.Val()
+
+	for _, key := range recKeys {
+		popRet := r.client.Del(r.ctx, key)
+
+		if popRet.Err() != nil {
+			slog.Error("Error deleting key", "error", popRet.Err())
+			return popRet.Err()
+		}
+	}
+
+	return nil
 }

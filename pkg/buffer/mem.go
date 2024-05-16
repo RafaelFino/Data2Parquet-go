@@ -1,12 +1,14 @@
 package buffer
 
 import (
+	"bytes"
 	"context"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
 	"errors"
 	"log/slog"
 	"sync"
+	"time"
 )
 
 // / Mem buffer
@@ -16,6 +18,7 @@ type Mem struct {
 	config   *config.Config
 	data     map[string][]domain.Record
 	recovery map[string][]domain.Record
+	dlq      []*DLQData
 	buff     chan BuffItem
 	mu       sync.Mutex
 	Ready    bool
@@ -37,6 +40,7 @@ func NewMem(ctx context.Context, config *config.Config) Buffer {
 		config:   config,
 		buff:     make(chan BuffItem, config.BufferSize),
 		ctx:      ctx,
+		dlq:      make([]*DLQData, 0),
 	}
 
 	ret.buff = make(chan BuffItem, config.BufferSize)
@@ -187,4 +191,36 @@ func (m *Mem) IsReady() bool {
 
 func (m *Mem) HasRecovery() bool {
 	return len(m.recovery) > 0
+}
+
+func (m *Mem) PushDLQ(key string, buf *bytes.Buffer) error {
+	slog.Debug("Pushing to DLQ", "key", key, "module", "buffer.mem", "function", "PushDLQ")
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.dlq = append(m.dlq, &DLQData{
+		Key:       key,
+		Data:      buf.Bytes(),
+		Timestamp: time.Now(),
+	})
+
+	return nil
+}
+
+func (m *Mem) GetDLQ() []*DLQData {
+	slog.Debug("Getting DLQ", "module", "buffer.mem", "function", "GetDLQ")
+
+	return m.dlq
+}
+
+func (m *Mem) ClearDLQ() error {
+	slog.Debug("Clearing DLQ", "module", "buffer.mem", "function", "ClearDLQ")
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.dlq = make([]*DLQData, 0)
+
+	return nil
 }
