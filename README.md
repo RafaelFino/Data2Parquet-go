@@ -78,8 +78,8 @@ Write data in a local file, use the tag `WriterFilePath` to choose path to store
 - LogPath is the path to the log files. Default is `./logs`. Json tag is `log_path`
 - Port is the port to listen on. Default is 0. Json tag is `port`
 - RecordType is the type of record to use. Default is `log`. Json tag is `record_type`
--- RecordTypeLog = `log`
--- RecordTypeDynamic = `dynamic`
+	- RecordTypeLog = `log`
+	- RecordTypeDynamic = `dynamic`
 - RecoveryAttempts is the number of recovery attempts. Default is 0. Json tag is `recovery_attempts`, dependency on TryAutoRecover
 - RedisDataPrefix is the prefix to use for the redis keys. Default is `data`. Json tag is `redis_data_prefix`
 - RedisDB is the redis database to use. Default is 0. Json tag is `redis_db`
@@ -94,9 +94,9 @@ Write data in a local file, use the tag `WriterFilePath` to choose path to store
 - S3Region is the region to use for S3. Default is **empty string**. Json tag is `s3_region`
 - TryAutoRecover is the flag to try to auto recover. Default is `false`. Json tag is `try_auto_recover`
 - WriterCompressionType is the compression type to use for the writer. Default is `snappy`. This field can be `snappy`, `gzip`, or `none`. Json tag is `writer_compression_type`
--- CompressionTypeSnappy = `snappy`
--- CompressionTypeGzip = `gzip`
--- CompressionTypeNone = `none`
+	- CompressionTypeSnappy = `snappy`
+	- CompressionTypeGzip = `gzip`
+	- CompressionTypeNone = `none`
 - WriterFilePath is the path to write the files to. Default is `./out`. Json tag is `writer_file_path`
 - WriterRowGroupSize is the size of the row group. Default is `128M`. This value is in bytes. Json tag is `writer_row_group_size`
 - WriterType is the type of writer to use. Default is `file`. This field can be `file` or `s3`. Json tag is `writer_type`	
