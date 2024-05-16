@@ -55,7 +55,7 @@ func New(config *config.Config) *Converter {
 		np:              4,
 	}
 
-	if len(config.JsonSchemaPath) != 0 {
+	if config.RecordType == domain.RecordTypeDynamic && len(config.JsonSchemaPath) != 0 {
 		err := ret.loadJsonSchema()
 
 		if err != nil {

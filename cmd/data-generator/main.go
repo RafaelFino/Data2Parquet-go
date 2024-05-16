@@ -41,8 +41,8 @@ func main() {
 		}
 	}
 
-	if count < 100 {
-		count = 100
+	if count < (parallel * 4) {
+		count = parallel * 4
 	}
 
 	start := time.Now()
@@ -176,8 +176,8 @@ func GenerateLog(pid int, count int, result chan domain.Record, wg *sync.WaitGro
 			TraceIP:                     []string{"192.168.0.1", "0.0.0.1"},
 		}
 
-		if i%(count/parallel) == 0 {
-			slog.Info("Running", "pid", pid, "count", i)
+		if i%(count+1) == 0 {
+			slog.Info("Running", "pid", pid, "count", count)
 		}
 
 		result <- line
