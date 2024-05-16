@@ -45,7 +45,11 @@ func main() {
 	defer cancel()
 
 	server := server.NewServer(ctx, cfg)
-	server.Run()
+	err = server.Run()
+
+	if err != nil {
+		slog.Error("Error running server", "module", "main", "function", "main", "error", err)
+	}
 
 	slog.Info("Stopping...")
 }

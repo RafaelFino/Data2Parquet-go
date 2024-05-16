@@ -96,6 +96,7 @@ func (r *Receiver) Write(record domain.Record) error {
 		r.control[key] = c
 
 		if c.Count >= r.config.BufferSize && !c.running {
+			slog.Debug("Buffer size reached, flushing buffer", "key", key, "module", "receiver", "function", "Write")
 			//Call flush on reach buffer size
 			err := r.FlushKey(key)
 
@@ -114,10 +115,11 @@ func (r *Receiver) Write(record domain.Record) error {
 
 		go func(r *Receiver, key string) {
 			for r.running {
+				slog.Debug("Waiting interval to flush buffer", "key", key, "module", "receiver", "function", "Write", "interval", r.config.FlushInterval)
 				time.Sleep(time.Duration(r.config.FlushInterval) * time.Second)
 
-				if !r.running {
-					//Flush on interval
+				if r.running {
+					slog.Info("Interval reached, flushing buffer", "key", key, "module", "receiver", "function", "Write")
 					err := r.FlushKey(key)
 
 					if err != nil {
@@ -138,9 +140,10 @@ func (r *Receiver) FlushKey(key string) error {
 	//Get buffer control
 	var ctrl *BufferControl
 	ctrl, found := r.control[key]
-	if found {
-		if time.Since(ctrl.Last) < time.Duration(r.config.FlushInterval)*time.Second {
-			slog.Debug("Skipping buffer flush, interval not reached", "key", key, "module", "receiver", "function", "FlushKey")
+	if found && ctrl.Count < r.config.BufferSize {
+		nextInterval := time.Since(ctrl.Last)
+		if nextInterval < time.Duration(r.config.FlushInterval)*time.Second {
+			slog.Debug("Skipping buffer flush, interval reached but buffer already reached about size, waiting for next check", "key", key, "module", "receiver", "function", "FlushKey", "next-interval", nextInterval)
 			return nil
 		}
 	}
@@ -159,11 +162,12 @@ func (r *Receiver) FlushKey(key string) error {
 		return nil
 	}
 
-	ctrl.running = true
 	ctrl.mu.Lock()
+	ctrl.running = true
+	ctrl.Last = time.Now()
+	r.control[key] = ctrl
 
 	defer func(key string, ctrl *BufferControl) {
-		ctrl.Last = time.Now()
 		ctrl.running = false
 		ctrl.mu.Unlock()
 
@@ -191,7 +195,7 @@ func (r *Receiver) FlushKey(key string) error {
 	start = time.Now()
 
 	if converter.CheckWriterError(result) && r.config.TryAutoRecover && r.recoveryCount < r.config.RecoveryAttempts {
-		slog.Error("Error writing data, handle process to recovery data async", "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start), "recovery-count", r.recoveryCount)
+		slog.Debug("Error writing data, handle process to recovery data async", "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start), "recovery-count", r.recoveryCount)
 		go r.RecoveryWriteError(result)
 	}
 
@@ -202,7 +206,12 @@ func (r *Receiver) FlushKey(key string) error {
 
 	if err != nil {
 		slog.Error("Error writing data, pushing to DLQ Buffer", "error", err, "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start))
-		defer r.buffer.PushDLQ(key, buf)
+		errDlq := r.buffer.PushDLQ(key, buf)
+
+		if errDlq != nil {
+			slog.Error("Error pushing to DLQ Buffer", "error", errDlq, "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start))
+		}
+
 		return err
 	}
 
@@ -222,14 +231,14 @@ func (r *Receiver) FlushKey(key string) error {
 
 	metrics["ctrl-last"] = ctrl.Last
 
-	slog.Info("Buffer flushed", "key", key, "module", "receiver", "function", "Flush", "total-duration", time.Since(start), "metrics", metrics)
+	slog.Debug("Buffer flushed", "key", key, "module", "receiver", "function", "Flush", "total-duration", time.Since(start), "metrics", metrics)
 
 	return nil
 }
 
 func (r *Receiver) Flush() error {
 	start := time.Now()
-	slog.Info("Flushing all keys", "module", "receiver", "function", "Flush")
+	slog.Debug("Flushing all keys", "module", "receiver", "function", "Flush")
 
 	for key := range r.control {
 		err := r.FlushKey(key)
@@ -270,7 +279,7 @@ func (r *Receiver) RecoveryWriteError(writerRet []*converter.Result) {
 
 	//try resend data
 	if resend && r.recoveryCount < r.config.RecoveryAttempts && r.config.TryAutoRecover {
-		slog.Info("Recovery process: trying to resend data", "module", "receiver", "function", "RecoveryWriteError")
+		slog.Debug("Recovery process: trying to resend data", "module", "receiver", "function", "RecoveryWriteError")
 		r.recoveryCount++
 		err := r.buffer.RecoveryData()
 
@@ -285,19 +294,19 @@ func (r *Receiver) RecoveryWriteError(writerRet []*converter.Result) {
 			return
 		}
 
-		slog.Info("Recovery process finished", "module", "receiver", "function", "RecoveryWriteError")
+		slog.Debug("Recovery process finished", "module", "receiver", "function", "RecoveryWriteError")
 		r.recoveryCount = 0
 	}
 }
 
 func (r *Receiver) Close() error {
-	slog.Info("Closing receiver", "module", "receiver", "function", "Close")
+	slog.Debug("Closing receiver", "module", "receiver", "function", "Close")
 	r.running = false
 
 	slog.Info("Stopping receiver, flushing buffers", "module", "receiver", "function", "Close")
 
 	for key := range r.control {
-		slog.Info("Flushing key on close receiver", "key", key, "module", "receiver", "function", "Close")
+		slog.Debug("Flushing key on close receiver", "key", key, "module", "receiver", "function", "Close")
 		if ctrl, found := r.control[key]; found {
 			ctrl.Count = r.config.BufferSize
 			ctrl.Last = time.Now().Add(-time.Duration(r.config.FlushInterval) * time.Second)

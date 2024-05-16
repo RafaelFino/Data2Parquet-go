@@ -205,7 +205,7 @@ func (r *Redis) Get(key string) []domain.Record {
 func (r *Redis) Clear(key string, size int) error {
 	rkey := r.makeDataKey(key)
 	if r.config.RedisSkipFlush {
-		slog.Info("Skipping buffer clear", "key", key, "module", "buffer.redis", "function", "Clear")
+		slog.Debug("Skipping buffer clear", "key", key, "module", "buffer.redis", "function", "Clear")
 		return nil
 	}
 
@@ -230,7 +230,7 @@ func (r *Redis) Keys() []string {
 
 	keys := cmd.Val()
 
-	slog.Info("Got keys", "keys", keys, "module", "buffer.redis", "function", "Keys")
+	slog.Debug("Got keys", "keys", keys, "module", "buffer.redis", "function", "Keys")
 
 	return keys
 }

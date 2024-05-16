@@ -11,13 +11,13 @@ import (
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
 	"data2parquet/pkg/receiver"
-)
-import (
-	"context"
-	"os"
 
-	"github.com/lmittmann/tint"
-	"github.com/mattn/go-isatty"
+	"context"
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/phsym/console-slog"
 )
 
 var cfg = &config.Config{}
@@ -36,41 +36,29 @@ func FLBPluginRegister(def unsafe.Pointer) int {
 
 //export FLBPluginInit
 func FLBPluginInit(plugin unsafe.Pointer) int {
-	slog.Info("Initializing plugin")
+	logLevel := slog.LevelInfo.Level()
 
-	cfg = &config.Config{}
+	logHandler := console.NewHandler(os.Stderr, &console.HandlerOptions{Level: logLevel})
+
+	logger := slog.New(logHandler)
+
+	logger.Info("Initializing plugin")
+
 	cfgMap := make(map[string]string, 0)
 
 	for _, key := range cfg.GetKeys() {
 		val := output.FLBPluginConfigKey(plugin, key)
 		if len(val) != 0 {
 			cfgMap[key] = val
-		} else {
-			slog.Debug("Key not found", "key", key)
 		}
 	}
 
 	err := cfg.Set(cfgMap)
 
 	if err != nil {
-		slog.Error("Error setting config", "error", err)
+		logger.Error("Error setting config", "error", err)
 		return output.FLB_ERROR
 	}
-
-	logLevel := slog.LevelInfo.Level()
-
-	if cfg.Debug {
-		logLevel = slog.LevelDebug.Level()
-	}
-
-	logHandler := tint.NewHandler(os.Stdout, &tint.Options{
-		NoColor:    !isatty.IsTerminal(os.Stdout.Fd()),
-		Level:      logLevel,
-		TimeFormat: time.RFC3339Nano,
-		AddSource:  cfg.Debug,
-	})
-
-	logger := slog.New(logHandler)
 
 	if cfg.Debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug.Level())
@@ -79,8 +67,6 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 	}
 
 	slog.SetDefault(logger)
-
-	slog.Debug("Config loaded", "config", cfg.ToString())
 
 	rcv = receiver.NewReceiver(ctx, cfg)
 
@@ -115,12 +101,7 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 			timestamp = time.Now()
 		}
 
-		record["fluent_timestamp"] = timestamp
-		record["fluent_tag"] = C.GoString(tag)
-
-		slog.Debug("Receive record", "record", record)
-
-		err := rcv.Write(domain.NewLog(record))
+		err := rcv.Write(NewRecord(record, timestamp, C.GoString(tag)))
 
 		if err != nil {
 			slog.Error("Error writing record", "error", err)
@@ -142,4 +123,61 @@ func FLBPluginExit() int {
 	}
 
 	return output.FLB_OK
+}
+
+func NewRecord(data map[interface{}]interface{}, tm time.Time, tag string) domain.Record {
+	logData := make(map[string]interface{})
+
+	logData["fluent_timestamp"] = tm
+	logData["fluent_tag"] = tag
+
+	for k, v := range data {
+		key := strings.ToLower(fmt.Sprintf("%v", k))
+
+		var value interface{}
+
+		t := fmt.Sprintf("%T", v)
+
+		switch t {
+		case "[]uint8":
+			value = string(v.([]byte))
+		case "bool":
+			value = v.(bool)
+		case "uint64":
+			value = v.(uint64)
+		case "int64":
+			value = v.(int64)
+		case "float64":
+			value = v.(float64)
+		case "string":
+			value = v.(string)
+		case "int":
+			value = v.(int)
+		case "map[interface {}]interface {}":
+			if key == "args" {
+				args := make(map[string]string)
+				for arg_key, arg_val := range v.(map[interface{}]interface{}) {
+					args[arg_key.(string)] = string(arg_val.([]byte))
+				}
+				value = args
+			} else {
+				value = fmt.Sprintf("%v", v)
+			}
+		case "[]interface {}":
+			if key == "tags" || key == "trace_ip" {
+				tags := make([]string, 0)
+				for _, tag := range v.([]interface{}) {
+					tags = append(tags, string(tag.([]byte)))
+				}
+				value = tags
+			} else {
+				value = fmt.Sprintf("%v", v)
+			}
+		default:
+			value = fmt.Sprintf("%s", v)
+		}
+		logData[key] = value
+	}
+
+	return domain.NewRecord(domain.RecordTypeLog, logData)
 }

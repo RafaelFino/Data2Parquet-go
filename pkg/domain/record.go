@@ -25,7 +25,7 @@ var RecordTypes = map[string]int{
 	RecordTypeDynamic: 2,
 }
 
-func NewRecord(recordType string, data map[interface{}]interface{}) Record {
+func NewRecord(recordType string, data map[string]interface{}) Record {
 	var ret Record
 	switch strings.ToLower(recordType) {
 	case RecordTypeDynamic:

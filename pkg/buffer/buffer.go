@@ -11,7 +11,6 @@ import (
 	msgp "github.com/vmihailenco/msgpack/v5"
 )
 
-// / Buffer interface
 type Buffer interface {
 	Close() error
 	Push(key string, item domain.Record) error
@@ -28,9 +27,6 @@ type Buffer interface {
 	ClearDLQ() error
 }
 
-// / New buffer
-// / @param config *config.Config
-// / @return Buffer
 func New(ctx context.Context, config *config.Config) Buffer {
 	switch config.BufferType {
 	case "redis":

@@ -12,18 +12,14 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
-	"github.com/lmittmann/tint"
-	"github.com/mattn/go-isatty"
 	"github.com/oklog/ulid"
+	"github.com/phsym/console-slog"
 	"gopkg.in/loremipsum.v1"
 )
 
 func main() {
-	logHandler := tint.NewHandler(os.Stdout, &tint.Options{
-		NoColor:    !isatty.IsTerminal(os.Stdout.Fd()),
-		Level:      slog.LevelDebug.Level(),
-		TimeFormat: time.RFC3339Nano,
-	})
+	var logLevel = slog.LevelInfo
+	logHandler := console.NewHandler(os.Stderr, &console.HandlerOptions{Level: logLevel})
 
 	logger := slog.New(logHandler)
 	slog.SetDefault(logger)

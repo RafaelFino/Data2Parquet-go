@@ -44,7 +44,7 @@ func (h *LogHandler) Write(ctx *gin.Context) {
 		return
 	}
 
-	data := make(map[interface{}]interface{})
+	data := make(map[string]interface{})
 
 	err = json.Unmarshal([]byte(body), &data)
 

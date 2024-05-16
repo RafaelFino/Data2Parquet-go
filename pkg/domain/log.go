@@ -94,7 +94,7 @@ var LogLevel = map[string]int{
 	LevelDebug:     6,
 }
 
-func NewLog(data map[interface{}]interface{}) Record {
+func NewLog(data map[string]interface{}) Record {
 	ret := &Log{
 		ExtraFields: make(map[string]string),
 		TraceIP:     make([]string, 0),
@@ -114,13 +114,49 @@ func (l *Log) ToString() string {
 	return fmt.Sprintf("%+v", l)
 }
 
-func (l *Log) Decode(data map[interface{}]interface{}) {
+func GetInt64(n interface{}) int64 {
+	if n == nil {
+		return 0
+	}
+
+	switch v := n.(type) {
+	case int64:
+		return v
+	case int:
+		return int64(v)
+	case float64:
+		return int64(v)
+	case uint64:
+		return int64(v)
+	case uint:
+		return int64(v)
+	case int32:
+		return int64(v)
+	case uint32:
+		return int64(v)
+	case int16:
+		return int64(v)
+	case uint16:
+		return int64(v)
+	case int8:
+		return int64(v)
+	case uint8:
+		return int64(v)
+	case float32:
+		return int64(v)
+	case string:
+		return 0
+	default:
+		return 0
+	}
+}
+
+func (l *Log) Decode(data map[string]interface{}) {
 	for k, v := range data {
 		key := strings.ToLower(fmt.Sprintf("%v", k))
 
 		switch key {
 		case "time":
-			slog.Debug("Time", "time", v)
 			l.Time = v.(string)
 		case "level":
 			l.Level = v.(string)
@@ -156,39 +192,56 @@ func (l *Log) Decode(data map[interface{}]interface{}) {
 		case "source_id":
 			l.SourceId = GetStringP(v)
 		case "http_response":
-			val := int64(v.(float64))
+			val := GetInt64(v)
 			l.HTTPResponse = &val
 		case "error_code":
 			l.ErrorCode = GetStringP(v)
 		case "stack_trace":
 			l.StackTrace = GetStringP(v)
 		case "duration":
-			val := int64(v.(float64))
+			val := GetInt64(v)
 			l.Duration = &val
 		case "trace_ip":
-			l.TraceIP = make([]string, len(v.([]interface{})))
-
-			for p, ip := range v.([]interface{}) {
-				l.TraceIP[p] = ip.(string)
+			switch valueType := v.(type) {
+			case []string:
+				l.TraceIP = append(l.TraceIP, valueType...)
+			case []interface{}:
+				for _, ip := range valueType {
+					l.TraceIP = append(l.TraceIP, ip.(string))
+				}
 			}
 		case "region":
 			l.Region = GetStringP(v)
 		case "az":
 			l.AZ = GetStringP(v)
 		case "tags":
-			l.Tags = make([]string, len(v.([]interface{})))
-
-			for p, tag := range v.([]interface{}) {
-				l.Tags[p] = tag.(string)
+			switch valueType := v.(type) {
+			case []string:
+				l.Tags = append(l.Tags, valueType...)
+			case []interface{}:
+				for _, tag := range valueType {
+					l.Tags = append(l.Tags, tag.(string))
+				}
 			}
 		case "args":
-			for arg_key, arg_val := range v.(map[string]interface{}) {
-				l.Args[arg_key] = arg_val.(string)
+			switch valueType := v.(type) {
+			case map[string]string:
+				for arg_key, arg_val := range valueType {
+					l.Args[arg_key] = arg_val
+				}
+			case map[interface{}]interface{}:
+				for arg_key, arg_val := range valueType {
+					l.Args[arg_key.(string)] = arg_val.(string)
+				}
+			case map[string]interface{}:
+				for arg_key, arg_val := range valueType {
+					l.Args[arg_key] = arg_val.(string)
+				}
 			}
 		case "transaction_message_reference":
 			l.TransactionMessageReference = GetStringP(v)
 		case "ttl":
-			val := int64(v.(float64))
+			val := GetInt64(v)
 			l.Ttl = &val
 		case "auto_index":
 			val := v.(bool)
@@ -198,7 +251,7 @@ func (l *Log) Decode(data map[interface{}]interface{}) {
 		case "thread_name":
 			l.ThreadName = GetStringP(v)
 		default:
-			l.ExtraFields[k.(string)] = v.(string)
+			l.ExtraFields[k] = fmt.Sprintf("%s", v)
 		}
 	}
 }

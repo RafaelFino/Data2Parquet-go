@@ -161,68 +161,66 @@ func (c *Config) WriteToFile(filename string) error {
 func (c *Config) Set(cfg map[string]string) error {
 	for key, value := range cfg {
 		switch key {
-		case "debug":
+		case "Debug":
 			c.Debug = strings.ToLower(value) == "true"
-		case "log_path":
+		case "LogPath":
 			c.LogPath = value
-		case "try_auto_recover":
+		case "TryAutoRecover":
 			c.TryAutoRecover = strings.ToLower(value) == "true"
-		case "recovery_attempts":
-			c.RecoveryAttempts = 0
-		case "writer_type":
+		case "RecoveryAttempts":
+		case "WriterType":
 			c.WriterType = value
-		case "buffer_type":
+		case "BufferType":
 			c.BufferType = value
-		case "flush_interval":
-			c.FlushInterval = 60
+		case "FlushInterval":
 			fmt.Sscanf(value, "%d", &c.FlushInterval)
-		case "buffer_size":
-			c.BufferSize = 1000
+		case "BufferSize":
 			fmt.Sscanf(value, "%d", &c.BufferSize)
-		case "writer_file_path":
+		case "WriterFilePath":
 			c.WriterFilePath = value
-		case "writer_compression_type":
+		case "WriterCompression_type":
 			c.WriterCompressionType = value
-		case "writer_row_group_size":
-			c.WriterRowGroupSize = 128 * 1024 * 1024
+		case "WriterRowGroupSize":
 			fmt.Sscanf(value, "%d", &c.WriterRowGroupSize)
-		case "address":
+		case "Address":
 			c.Address = value
-		case "port":
+		case "Port":
 			c.Port = 0
 			fmt.Sscanf(value, "%d", &c.Port)
-		case "redis_host":
+		case "RedisHost":
 			c.RedisHost = value
-		case "redis_password":
+		case "RedisPassword":
 			c.RedisPassword = value
-		case "redis_db":
-			c.RedisDB = 0
+		case "RedisDB":
 			fmt.Sscanf(value, "%d", &c.RedisDB)
-		case "redis_recovery_key":
+		case "RedisRecoveryKey":
 			c.RedisRecoveryKey = value
-		case "redis_flush":
+		case "RedisFlush":
 			c.RedisSkipFlush = strings.ToLower(value) == "true"
-		case "redis_data_prefix":
+		case "RedisDataPrefix":
 			c.RedisDataPrefix = value
-		case "redis_keys":
+		case "RedisKeys":
 			c.RedisKeys = value
-		case "s3_bucket_name":
+		case "S3BucketName":
 			c.S3BuketName = value
-		case "s3_region":
+		case "S3Region":
 			c.S3Region = value
-		case "s3_storage_class":
+		case "S3StorageClass":
 			c.S3StorageClass = value
-		case "json_schema_path":
+		case "JsonSchemaPath":
 			c.JsonSchemaPath = value
-		case "record_type":
+		case "RecordType":
 			c.RecordType = value
-		case "redis_dlq_prefix":
+		case "RedisDLQPrefix":
 			c.RedisDLQPrefix = value
 
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
 		}
 	}
+
+	c.SetDefaults()
+
 	return nil
 }
 
@@ -284,12 +282,12 @@ func (c *Config) SetDefaults() {
 		c.BufferType = "mem"
 	}
 
-	if c.BufferSize < 100 {
-		c.BufferSize = 100
+	if c.BufferSize < 10 {
+		c.BufferSize = 10
 	}
 
-	if c.FlushInterval < 60 {
-		c.FlushInterval = 60
+	if c.FlushInterval < 10 {
+		c.FlushInterval = 10
 	}
 
 	if len(c.RedisKeys) == 0 {

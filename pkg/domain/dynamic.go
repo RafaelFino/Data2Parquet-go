@@ -12,7 +12,7 @@ type Dynamic struct {
 	Data map[string]interface{} `msg:"data" json:"data"`
 }
 
-func NewDynamic(data map[interface{}]interface{}) Record {
+func NewDynamic(data map[string]interface{}) Record {
 	ret := &Dynamic{
 		Data: make(map[string]interface{}),
 	}
@@ -22,7 +22,7 @@ func NewDynamic(data map[interface{}]interface{}) Record {
 	return ret
 }
 
-func (d *Dynamic) Decode(data map[interface{}]interface{}) {
+func (d *Dynamic) Decode(data map[string]interface{}) {
 	for k, v := range data {
 		d.Data[fmt.Sprint(k)] = v
 	}

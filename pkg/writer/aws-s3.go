@@ -67,7 +67,7 @@ func (s *S3) Write(key string, buf *bytes.Buffer) error {
 		slog.Error("Error writing to S3", "error", err, "module", "writer.file", "function", "Write", "key", key)
 	}
 
-	slog.Info("S3 written", "module", "writer.file", "function", "Write", "key", key, "duration", time.Since(start), "file-size", buf.Len())
+	slog.Debug("S3 written", "module", "writer.file", "function", "Write", "key", key, "duration", time.Since(start), "file-size", buf.Len())
 
 	return err
 }

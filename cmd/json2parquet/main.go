@@ -11,14 +11,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/lmittmann/tint"
-	"github.com/mattn/go-isatty"
+	"github.com/phsym/console-slog"
 )
 
 func main() {
 	PrintLogo()
-
-	var logLevel = slog.LevelInfo
 
 	if len(os.Args) < 3 {
 		fmt.Printf("Usage: json2parquet <config_file> <input.json>\n")
@@ -32,16 +29,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	var logLevel = slog.LevelInfo
 	if cfg.Debug {
 		logLevel = slog.LevelDebug.Level()
 	}
 
-	logHandler := tint.NewHandler(os.Stdout, &tint.Options{
-		NoColor:    !isatty.IsTerminal(os.Stdout.Fd()),
-		Level:      logLevel,
-		TimeFormat: time.RFC3339Nano,
-		AddSource:  cfg.Debug,
-	})
+	logHandler := console.NewHandler(os.Stderr, &console.HandlerOptions{Level: logLevel})
 
 	logger := slog.New(logHandler)
 	slog.SetDefault(logger)
@@ -129,7 +122,7 @@ func ReadJSON(recordType string, file *os.File) ([]domain.Record, error) {
 		records := lines.([]interface{})
 
 		for _, r := range records {
-			line := make(map[interface{}]interface{})
+			line := make(map[string]interface{})
 			for k, v := range r.(map[string]interface{}) {
 				line[k] = v
 			}

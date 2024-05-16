@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"data2parquet/pkg/config"
+	"fmt"
 	"log/slog"
 	"os"
 	"time"
@@ -29,8 +30,7 @@ func (f *File) Init() error {
 func (f *File) Write(key string, buf *bytes.Buffer) error {
 	start := time.Now()
 
-	filePath := f.config.WriterFilePath + "/" + key + ".parquet"
-
+	filePath := f.makeFilePath(key)
 	file, err := os.Create(filePath)
 	if err != nil {
 		slog.Error("Error creating file", "error", err, "module", "writer.file", "function", "Write", "key", key, "file", filePath)
@@ -54,4 +54,12 @@ func (f *File) Close() error {
 
 func (f *File) IsReady() bool {
 	return true
+}
+
+func (f *File) makeFilePath(key string) string {
+	tm := time.Now()
+	year, month, day := tm.Date()
+	hour, min, sec := tm.Clock()
+
+	return fmt.Sprintf("%s/%d%02d%02d-%02d%02d%02d %s.parquet", f.config.WriterFilePath, year, month, day, hour, min, sec, key)
 }
