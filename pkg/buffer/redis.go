@@ -88,14 +88,7 @@ func (r *Redis) Len(key string) int {
 }
 
 func (r *Redis) Push(key string, item domain.Record) error {
-	return r.pushRedis(r.makeDataKey(key), item.ToMsgPack())
-}
 
-func (r *Redis) PushRecovery(key string, item domain.Record) error {
-	return r.pushRedis(r.makeRecoveryKey(key), item.ToMsgPack())
-}
-
-func (r *Redis) pushRedis(key string, data []byte) error {
 	ctx := r.ctx
 	sadd := r.client.SAdd(ctx, r.config.RedisKeys, key)
 
@@ -104,7 +97,10 @@ func (r *Redis) pushRedis(key string, data []byte) error {
 		return sadd.Err()
 	}
 
-	lpush := r.client.RPush(ctx, key, data)
+	rkey := r.makeDataKey(key)
+	data := item.ToMsgPack()
+
+	lpush := r.client.RPush(ctx, rkey, data)
 
 	if lpush.Err() != nil {
 		slog.Error("Error pushing to key", "error", lpush.Err())
@@ -114,50 +110,61 @@ func (r *Redis) pushRedis(key string, data []byte) error {
 	return nil
 }
 
-func (r *Redis) RecoveryData() error {
+func (r *Redis) PushDLQ(key string, item domain.Record) error {
+	rKey := r.makeDLQKey(key)
+
+	msg := item.ToMsgPack()
+	slog.Debug("Pushing to DLQ", "key", key, "module", "buffer.redis", "function", "PushDLQ", "size", len(msg))
+
+	cmd := r.client.RPush(r.ctx, rKey, msg)
+
+	if cmd.Err() != nil {
+		slog.Error("Error pushing to DLQ", "error", cmd.Err())
+		return cmd.Err()
+	}
+
+	return nil
+}
+
+func (r *Redis) GetDLQ() (map[string][]domain.Record, error) {
 	ctx := r.ctx
 
-	keys := r.client.Keys(ctx, r.makeRecoveryKey("*"))
+	keys := r.client.Keys(ctx, r.makeDLQKey("*"))
 
 	if keys.Err() != nil {
-		slog.Error("Error getting keys", "error", keys.Err())
-		return keys.Err()
+		slog.Error("GetDLQ - Error getting keys", "error", keys.Err())
+		return nil, keys.Err()
 	}
+
+	ret := make(map[string][]domain.Record)
 
 	for _, key := range keys.Val() {
 		result := r.client.LRange(ctx, key, 0, -1)
 
 		if result.Err() != nil {
-			slog.Error("Error getting key", "error", result.Err())
-			return result.Err()
+			slog.Error("GetDLQ - Error getting key", "error", result.Err())
+			return nil, result.Err()
 		}
 
 		vals := result.Val()
 
-		for _, v := range vals {
+		items := make([]domain.Record, len(vals))
+
+		for i, v := range vals {
 			record := domain.NewObj(r.config.RecordType)
 			err := record.FromMsgPack([]byte(v))
 			if err != nil {
-				slog.Error("Error decoding record", "error", err, "module", "buffer.redis", "function", "RecoveryData")
-				return err
+				slog.Error("Get DLQ - Error decoding record", "error", err, "module", "buffer.redis", "function", "RecoveryData")
+				return nil, err
 			}
 
-			err = r.Push(record.Key(), record)
-			if err != nil {
-				slog.Error("Error pushing record", "error", err, "module", "buffer.redis", "function", "RecoveryData", "record", record.ToString())
-				return err
-			}
+			items[i] = record
 		}
 
-		popRet := r.client.LPopCount(ctx, key, len(vals))
-
-		if popRet.Err() != nil {
-			slog.Error("Error deleting key", "error", popRet.Err())
-			return popRet.Err()
-		}
+		ret[key] = append(ret[key], items...)
 	}
 
-	return nil
+	return ret, nil
 }
 
 func (r *Redis) Get(key string) []domain.Record {
@@ -257,57 +264,79 @@ func (r *Redis) HasRecovery() bool {
 	return len(cmd.Val()) > 0
 }
 
-func (r *Redis) PushDLQ(key string, buf *bytes.Buffer) error {
-	slog.Debug("Pushing to DLQ", "key", key, "module", "buffer.redis", "function", "PushDLQ", "size", buf.Len())
-	data := &DLQData{
+func (r *Redis) PushRecovery(key string, buf *bytes.Buffer) error {
+	slog.Debug("Pushing data to post recovery", "key", key, "module", "buffer.redis", "function", "PushRecovery", "size", buf.Len())
+	data := &RecoveryData{
 		Key:       key,
 		Data:      buf.Bytes(),
 		Timestamp: time.Now(),
 	}
-	return r.pushRedis(r.makeDLQKey(key), data.ToMsgPack())
+
+	if data.Data == nil {
+		slog.Error("PushRecovery - No data to push", "key", key)
+		return nil
+	}
+
+	if r.client == nil {
+		slog.Error("PushRecovery - No client", "key", key)
+		return fmt.Errorf("No redis client")
+	}
+
+	cmd := r.client.LPush(r.ctx, r.makeRecoveryKey(key), data.ToMsgPack())
+
+	if cmd.Err() != nil {
+		slog.Error("PushRecovery - Error pushing to recovery", "error", cmd.Err())
+		return cmd.Err()
+	}
+
+	return nil
 }
 
-func (r *Redis) GetDLQ() []*DLQData {
-	keys := r.client.Keys(r.ctx, r.makeDLQKey("*"))
+func (r *Redis) GetRecovery() ([]*RecoveryData, error) {
+	keys := r.client.Keys(r.ctx, r.makeRecoveryKey("*"))
 
 	if keys.Err() != nil {
-		slog.Error("Error getting keys", "error", keys.Err())
-		return []*DLQData{}
+		slog.Error("GetRecovery - Error getting keys", "error", keys.Err())
+		return []*RecoveryData{}, keys.Err()
 	}
 
 	recKeys := keys.Val()
-	ret := make([]*DLQData, len(recKeys))
+	ret := make([]*RecoveryData, 0)
 
 	for i, key := range recKeys {
 		result := r.client.LRange(r.ctx, key, 0, -1)
 
 		if result.Err() != nil {
-			slog.Error("Error getting key", "error", result.Err())
-			return []*DLQData{}
+			slog.Error("GetRecovery - Error getting key", "error", result.Err(), "key", key)
+			return ret, result.Err()
 		}
 
 		vals := result.Val()
-		item := &DLQData{}
+		item := &RecoveryData{}
+		items := make([]*RecoveryData, len(vals))
 
 		for _, v := range vals {
 			err := item.FromMsgPack([]byte(v))
 
 			if err != nil {
-				slog.Error("Error decoding record", "error", err, "module", "buffer.redis", "function", "GetDLQ", "record", v)
+				slog.Error("Error decoding record", "error", err, "key", key)
+				return ret, err
 			}
 
-			ret[i] = item
+			items[i] = item
 		}
+
+		ret = append(ret, items...)
 	}
 
-	return ret
+	return ret, nil
 }
 
-func (r *Redis) ClearDLQ() error {
-	keys := r.client.Keys(r.ctx, r.makeDLQKey("*"))
+func (r *Redis) ClearRecoveryData() error {
+	keys := r.client.Keys(r.ctx, r.makeRecoveryKey("*"))
 
 	if keys.Err() != nil {
-		slog.Error("Error getting keys", "error", keys.Err())
+		slog.Error("ClearRecoveryData - Error getting keys", "error", keys.Err())
 		return keys.Err()
 	}
 
@@ -317,10 +346,36 @@ func (r *Redis) ClearDLQ() error {
 		popRet := r.client.Del(r.ctx, key)
 
 		if popRet.Err() != nil {
-			slog.Error("Error deleting key", "error", popRet.Err())
+			slog.Error("Error deleting key from recovery data", "error", popRet.Err())
 			return popRet.Err()
 		}
 	}
+
+	slog.Debug("Cleared recovery data", "module", "buffer.redis", "function", "ClearRecoveryData")
+
+	return nil
+}
+
+func (r *Redis) ClearDLQ() error {
+	keys := r.client.Keys(r.ctx, r.makeDLQKey("*"))
+
+	if keys.Err() != nil {
+		slog.Error("ClearDLQ - Error getting keys", "error", keys.Err())
+		return keys.Err()
+	}
+
+	recKeys := keys.Val()
+
+	for _, key := range recKeys {
+		popRet := r.client.Del(r.ctx, key)
+
+		if popRet.Err() != nil {
+			slog.Error("Error deleting key from DLQ", "error", popRet.Err())
+			return popRet.Err()
+		}
+	}
+
+	slog.Debug("Cleared DLQ", "module", "buffer.redis", "function", "ClearDLQ")
 
 	return nil
 }

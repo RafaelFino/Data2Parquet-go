@@ -14,17 +14,18 @@ import (
 type Buffer interface {
 	Close() error
 	Push(key string, item domain.Record) error
-	PushRecovery(key string, item domain.Record) error
-	RecoveryData() error
+	PushDLQ(key string, item domain.Record) error
+	GetDLQ() (map[string][]domain.Record, error)
+	ClearDLQ() error
 	Get(key string) []domain.Record
 	Clear(key string, size int) error
 	Len(key string) int
 	Keys() []string
 	IsReady() bool
 	HasRecovery() bool
-	PushDLQ(key string, buf *bytes.Buffer) error
-	GetDLQ() []*DLQData
-	ClearDLQ() error
+	PushRecovery(key string, buf *bytes.Buffer) error
+	GetRecovery() ([]*RecoveryData, error)
+	ClearRecoveryData() error
 }
 
 func New(ctx context.Context, config *config.Config) Buffer {
@@ -36,13 +37,13 @@ func New(ctx context.Context, config *config.Config) Buffer {
 	}
 }
 
-type DLQData struct {
+type RecoveryData struct {
 	Key       string    `msg:"key"`
 	Data      []byte    `msg:"data"`
 	Timestamp time.Time `msg:"timestamp"`
 }
 
-func (l *DLQData) ToMsgPack() []byte {
+func (l *RecoveryData) ToMsgPack() []byte {
 	data, err := msgp.Marshal(l)
 
 	if err != nil {
@@ -53,7 +54,7 @@ func (l *DLQData) ToMsgPack() []byte {
 	return data
 }
 
-func (l *DLQData) FromMsgPack(data []byte) error {
+func (l *RecoveryData) FromMsgPack(data []byte) error {
 	err := msgp.Unmarshal(data, l)
 
 	if err != nil {

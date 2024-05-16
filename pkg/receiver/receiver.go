@@ -193,10 +193,22 @@ func (r *Receiver) FlushKey(key string) error {
 	metrics["convert-time"] = time.Since(start)
 	metrics["buffer-size"] = buf.Len()
 	start = time.Now()
+	errCount := 0
 
-	if converter.CheckWriterError(result) && r.config.TryAutoRecover && r.recoveryCount < r.config.RecoveryAttempts {
-		slog.Debug("Error writing data, handle process to recovery data async", "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start), "recovery-count", r.recoveryCount)
-		go r.RecoveryWriteError(result)
+	for _, item := range result {
+		if item.Error != nil {
+			errCount++
+			slog.Error("Error converting data", "error", item.Error, "key", key, "module", "receiver", "function", "Flush")
+			err := r.buffer.PushDLQ(item.Key, item.Record)
+
+			if err != nil {
+				slog.Error("Error pushing to DLQ Buffer", "error", err, "key", key, "module", "receiver", "function", "Flush")
+			}
+		}
+	}
+
+	if errCount > 0 {
+		metrics["convert-error"] = errCount
 	}
 
 	err := r.writer.Write(key, buf)
@@ -205,14 +217,17 @@ func (r *Receiver) FlushKey(key string) error {
 	start = time.Now()
 
 	if err != nil {
-		slog.Error("Error writing data, pushing to DLQ Buffer", "error", err, "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start))
-		errDlq := r.buffer.PushDLQ(key, buf)
+		slog.Error("Error writing data, pushing to DLQ Buffer", "error", err, "key", key, "size", len(data), "duration", time.Since(start))
+		errWr := r.buffer.PushRecovery(key, buf)
 
-		if errDlq != nil {
-			slog.Error("Error pushing to DLQ Buffer", "error", errDlq, "key", key, "size", len(data), "module", "receiver", "function", "Flush", "duration", time.Since(start))
+		if errWr != nil {
+			slog.Error("Error pushing to recovery buffer", "error", errWr, "key", key, "size", len(data), "duration", time.Since(start))
 		}
 
-		return err
+		if r.config.TryAutoRecover && r.config.RecoveryAttempts > r.recoveryCount {
+			slog.Error("Recovery limit reached, stopping receiver", "module", "receiver", "function", "Flush")
+			go r.TryResendData()
+		}
 	}
 
 	err = r.buffer.Clear(key, len(data))
@@ -236,6 +251,42 @@ func (r *Receiver) FlushKey(key string) error {
 	return nil
 }
 
+func (r *Receiver) TryResendData() {
+	start := time.Now()
+	slog.Debug("Trying to resend data", "module", "receiver", "function", "TryResendData")
+	r.recoveryCount++
+
+	if r.recoveryCount > r.config.RecoveryAttempts {
+		slog.Error("Recovery limit reached, stopping receiver", "module", "receiver", "function", "TryResendData")
+		return
+	}
+
+	resendCount := 0
+
+	if r.buffer.HasRecovery() {
+		recovery, err := r.buffer.GetRecovery()
+
+		if err != nil {
+			slog.Error("Error getting recovery data", "error", err, "module", "receiver", "function", "TryResendData")
+			return
+		}
+
+		for _, item := range recovery {
+			buf := bytes.NewBuffer(item.Data)
+			err := r.writer.Write(item.Key, buf)
+
+			if err != nil {
+				slog.Error("Error to try write recovery data", "error", err, "key", item.Key)
+			} else {
+				resendCount++
+			}
+		}
+	}
+
+	slog.Info("Recovery finished", "module", "receiver", "function", "TryResendData", "recovery-count", resendCount, "duration", time.Since(start))
+	r.recoveryCount = 0
+}
+
 func (r *Receiver) Flush() error {
 	start := time.Now()
 	slog.Debug("Flushing all keys", "module", "receiver", "function", "Flush")
@@ -252,51 +303,6 @@ func (r *Receiver) Flush() error {
 	slog.Info("Flush finished", "module", "receiver", "function", "Flush", "duration", time.Since(start))
 
 	return nil
-}
-
-func (r *Receiver) RecoveryWriteError(writerRet []*converter.Result) {
-	slog.Info("Recovering from write error", "module", "receiver", "function", "RecoveryWriteError")
-	resend := false
-
-	for _, item := range writerRet {
-		if item.Error != nil {
-			slog.Info("Recovery process: error writing record", "error", item.Error, "module", "receiver", "function", "RecoveryWriteError")
-
-			if item.Record != nil {
-				slog.Debug("Recovery process: writing record", "record", item.Record.ToString(), "module", "receiver", "function", "RecoveryWriteError")
-				err := r.buffer.PushRecovery(item.Key, item.Record)
-
-				if err != nil {
-					slog.Error("Error pushing recovery record", "error", err, "record", item.Record.ToString(), "module", "receiver", "function", "RecoveryWriteError")
-				} else {
-					resend = true
-				}
-			}
-
-			slog.Debug("Recovery process: clearing buffer", "source-err", item.Error, "module", "receiver", "function", "RecoveryWriteError")
-		}
-	}
-
-	//try resend data
-	if resend && r.recoveryCount < r.config.RecoveryAttempts && r.config.TryAutoRecover {
-		slog.Debug("Recovery process: trying to resend data", "module", "receiver", "function", "RecoveryWriteError")
-		r.recoveryCount++
-		err := r.buffer.RecoveryData()
-
-		if err != nil {
-			slog.Error("Error recovering data", "error", err, "module", "receiver", "function", "RecoveryWriteError")
-		}
-
-		err = r.Flush()
-
-		if err != nil {
-			slog.Error("Error flushing recovered data", "error", err, "module", "receiver", "function", "RecoveryWriteError")
-			return
-		}
-
-		slog.Debug("Recovery process finished", "module", "receiver", "function", "RecoveryWriteError")
-		r.recoveryCount = 0
-	}
 }
 
 func (r *Receiver) Close() error {
