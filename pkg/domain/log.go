@@ -114,7 +114,7 @@ func (l *Log) ToString() string {
 	return fmt.Sprintf("%+v", l)
 }
 
-func GetInt64(n interface{}) int64 {
+func GetInt64(n any) int64 {
 	if n == nil {
 		return 0
 	}
@@ -144,8 +144,6 @@ func GetInt64(n interface{}) int64 {
 		return int64(v)
 	case float32:
 		return int64(v)
-	case string:
-		return 0
 	default:
 		return 0
 	}

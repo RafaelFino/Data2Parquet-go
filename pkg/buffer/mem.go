@@ -142,6 +142,9 @@ func (m *Mem) RecoveryData() error {
 func (m *Mem) Get(key string) []domain.Record {
 	slog.Debug("Getting buffer", "key", key, "module", "buffer.mem", "function", "Get")
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.data == nil {
 		return nil
 	}
