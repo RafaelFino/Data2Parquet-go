@@ -39,7 +39,6 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 	logLevel := slog.LevelInfo.Level()
 
 	logHandler := console.NewHandler(os.Stderr, &console.HandlerOptions{Level: logLevel})
-
 	logger := slog.New(logHandler)
 
 	logger.Info("Initializing plugin")
