@@ -96,12 +96,12 @@ func (r *Receiver) Write(record domain.Record) error {
 		r.control[key] = c
 
 		if c.Count >= r.config.BufferSize && !c.running {
-			slog.Debug("Buffer size reached, flushing buffer", "key", key, "module", "receiver", "function", "Write")
+			slog.Debug("Buffer size reached, flushing buffer", "key", key)
 			//Call flush on reach buffer size
 			err := r.FlushKey(key)
 
 			if err != nil {
-				slog.Error("Error flushing buffer", "error", err, "key", key, "module", "receiver", "function", "Write")
+				slog.Error("Error flushing buffer", "error", err, "key", key)
 			}
 		}
 	} else {
@@ -115,11 +115,11 @@ func (r *Receiver) Write(record domain.Record) error {
 
 		go func(r *Receiver, key string) {
 			for r.running {
-				slog.Debug("Waiting interval to flush buffer", "key", key, "module", "receiver", "function", "Write", "interval", r.config.FlushInterval)
+				slog.Debug("Waiting interval to flush buffer", "key", key, "interval", r.config.FlushInterval)
 				time.Sleep(time.Duration(r.config.FlushInterval) * time.Second)
 
 				if r.running {
-					slog.Info("Interval reached, flushing buffer", "key", key, "module", "receiver", "function", "Write")
+					slog.Debug("Interval reached, trying to flush buffer", "key", key)
 					err := r.FlushKey(key)
 
 					if err != nil {
@@ -140,13 +140,21 @@ func (r *Receiver) FlushKey(key string) error {
 	//Get buffer control
 	var ctrl *BufferControl
 	ctrl, found := r.control[key]
-	if found && ctrl.Count < r.config.BufferSize {
-		nextInterval := time.Since(ctrl.Last)
-		if nextInterval < time.Duration(r.config.FlushInterval)*time.Second {
-			slog.Debug("Skipping buffer flush, interval reached but buffer already reached about size, waiting for next check", "key", key, "module", "receiver", "function", "FlushKey", "next-interval", nextInterval)
-			return nil
+	if found {
+		metrics["last-flush"] = ctrl.Last.Format(time.RFC3339)
+		metrics["ctrl-count"] = ctrl.Count
+
+		if ctrl.Count < r.config.BufferSize {
+			nextInterval := time.Since(ctrl.Last)
+
+			if nextInterval < time.Duration(r.config.FlushInterval)*time.Second {
+				slog.Debug("Skipping buffer flush, interval reached but buffer already reached about size, waiting for next check", "key", key, "next-interval-flush", time.Duration(r.config.FlushInterval)*time.Second-nextInterval)
+				return nil
+			}
 		}
 	}
+
+	slog.Info("Flushing buffer", "key", key, "metrics", metrics)
 
 	//Create buffer control if not found - should not happen
 	if !found || ctrl == nil {

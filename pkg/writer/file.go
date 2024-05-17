@@ -23,7 +23,7 @@ func NewFile(ctx context.Context, config *config.Config) Writer {
 }
 
 func (f *File) Init() error {
-	slog.Debug("Initializing file writer", "config", f.config.ToString(), "module", "writer.file", "function", "Init")
+	slog.Debug("Initializing file writer", "config", f.config.ToString())
 	return nil
 }
 
@@ -33,7 +33,7 @@ func (f *File) Write(key string, buf *bytes.Buffer) error {
 	filePath := f.makeFilePath(key)
 	file, err := os.Create(filePath)
 	if err != nil {
-		slog.Error("Error creating file", "error", err, "module", "writer.file", "function", "Write", "key", key, "file", filePath)
+		slog.Error("Error creating file", "error", err, "key", key, "file", filePath)
 		return err
 	}
 
@@ -42,13 +42,13 @@ func (f *File) Write(key string, buf *bytes.Buffer) error {
 	data := buf.Bytes()
 	err = os.WriteFile(filePath, data, 0644)
 
-	slog.Info("File written", "module", "writer.file", "function", "Write", "key", key, "file", filePath, "duration", time.Since(start), "file-size", len(data))
+	slog.Info("File written", "key", key, "file", filePath, "duration", time.Since(start), "file-size", len(data))
 
 	return err
 }
 
 func (f *File) Close() error {
-	slog.Debug("Closing file writer", "module", "writer.file", "function", "Close")
+	slog.Debug("Closing file writer")
 	return nil
 }
 
