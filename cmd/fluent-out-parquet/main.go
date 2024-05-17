@@ -9,7 +9,6 @@ import (
 	"github.com/fluent/fluent-bit-go/output"
 
 	"data2parquet/pkg/config"
-	"data2parquet/pkg/domain"
 	"data2parquet/pkg/receiver"
 
 	"context"
@@ -19,6 +18,7 @@ import (
 
 	"github.com/phsym/console-slog"
 )
+import "data2parquet/pkg/domain"
 
 var cfg = &config.Config{}
 var rcv *receiver.Receiver
@@ -100,7 +100,15 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 			timestamp = time.Now()
 		}
 
-		err := rcv.Write(NewRecord(record, timestamp, C.GoString(tag)))
+		logData := CreateDataMap(record, timestamp, C.GoString(tag))
+
+		if !IsLogRecord(logData) {
+			slog.Warn("Invalid log record", "record", logData)
+			continue
+		}
+		record := domain.NewLog(logData)
+
+		err := rcv.Write(record)
 
 		if err != nil {
 			slog.Error("Error writing record", "error", err)
@@ -124,8 +132,20 @@ func FLBPluginExit() int {
 	return output.FLB_OK
 }
 
-func NewRecord(data map[interface{}]interface{}, tm time.Time, tag string) domain.Record {
-	logData := make(map[string]interface{})
+func IsLogRecord(data map[string]interface{}) bool {
+	var ret bool = true
+	_, ok := data["message"]
+	ret = ok && ret
+
+	_, ok = data["level"]
+	ret = ok && ret
+
+	_, ok = data["time"]
+	return ok && ret
+}
+
+func CreateDataMap(data map[interface{}]interface{}, tm time.Time, tag string) map[string]any {
+	logData := make(map[string]any)
 
 	logData["fluent_timestamp"] = tm
 	logData["fluent_tag"] = tag
@@ -178,5 +198,5 @@ func NewRecord(data map[interface{}]interface{}, tm time.Time, tag string) domai
 		logData[key] = value
 	}
 
-	return domain.NewRecord(domain.RecordTypeLog, logData)
+	return logData
 }
