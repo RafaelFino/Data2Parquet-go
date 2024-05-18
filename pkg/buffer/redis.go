@@ -12,18 +12,12 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-// / Redis buffer
-// / @struct Redis
-// / @implements Buffer
 type Redis struct {
 	config *config.Config
 	client *redis.Client
 	ctx    context.Context
 }
 
-// / New redis buffer
-// / @param config *config.Config
-// / @return Buffer
 func NewRedis(ctx context.Context, config *config.Config) Buffer {
 	ret := &Redis{
 		config: config,
@@ -88,7 +82,6 @@ func (r *Redis) Len(key string) int {
 }
 
 func (r *Redis) Push(key string, item domain.Record) error {
-
 	ctx := r.ctx
 	sadd := r.client.SAdd(ctx, r.config.RedisKeys, key)
 
@@ -204,7 +197,7 @@ func (r *Redis) Get(key string) []domain.Record {
 		ret[i] = r
 	}
 
-	slog.Debug("Got buffer", "key", key, "size", size, "module", "buffer.redis", "function", "Get", "records", len(ret))
+	slog.Debug("Got buffer", "key", key, "size", size, "records", len(ret))
 
 	return ret
 }
