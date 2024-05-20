@@ -6,6 +6,7 @@ import (
 	"data2parquet/pkg/config"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"time"
 
@@ -45,6 +46,7 @@ func (s *S3) Init() error {
 
 	cfg, err := awsConfig.LoadDefaultConfig(s.ctx,
 		awsConfig.WithRegion(s.config.S3Region),
+		//awsConfig.WithClientLogMode(aws.LogRetries|aws.LogRequest|aws.LogResponse|aws.LogResponseWithBody),
 		awsConfig.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(func(service, region string, _ ...interface{}) (aws.Endpoint, error) {
 			if endpoint, ok := endpoints[service]; ok {
 				return aws.Endpoint{
@@ -58,6 +60,11 @@ func (s *S3) Init() error {
 		})),
 	)
 
+	if err != nil {
+		slog.Error("Error loading AWS config", "error", err, "module", "writer.s3", "function", "Init")
+		return err
+	}
+
 	roleARN := fmt.Sprintf("arn:aws:iam::%s:role/%s", s.config.S3Account, s.config.S3RoleName)
 
 	stsClient := sts.NewFromConfig(cfg)
@@ -68,36 +75,42 @@ func (s *S3) Init() error {
 		}),
 	)
 
-	if err != nil {
-		slog.Error("Error loading AWS config", "error", err, "module", "writer.file", "function", "Init")
-		return err
-	}
-
 	// Create an Amazon S3 service client
-	s.client = s3.NewFromConfig(cfg)
+	s.client = s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.UsePathStyle = true
+	})
 
 	if s.client == nil {
-		slog.Error("Error creating S3 client", "module", "writer.file", "function", "Init")
+		slog.Error("Error creating S3 client", "module", "writer.s3", "function", "Init")
 		return errors.New("error creating S3 client")
 	}
 
 	return nil
 }
 
-func (s *S3) Write(key string, buf *bytes.Buffer) error {
+func (s *S3) Write(key string, buf io.Reader) error {
 	start := time.Now()
 
-	_, err := s.client.PutObject(s.ctx, &s3.PutObjectInput{
-		Bucket: aws.String(s.config.S3BuketName),
-		Key:    aws.String(s.makeBuketName(key)),
-		Body:   buf,
-	})
+	b := &bytes.Buffer{}
+
+	b.ReadFrom(buf)
+
+	r := bytes.NewReader(b.Bytes())
+
+	_, err := s.client.PutObject(
+		s.ctx,
+		&s3.PutObjectInput{
+			Bucket: aws.String(s.config.S3BuketName),
+			Key:    aws.String(s.makeBuketName(key)),
+			Body:   r,
+		},
+	)
 
 	if err != nil {
-		slog.Error("Error writing to S3", "error", err, "module", "writer.file", "function", "Write", "key", key)
+		slog.Error("Error writing to S3", "error", err, "module", "writer.s3", "function", "Write", "key", key)
 	}
 
-	slog.Debug("S3 written", "module", "writer.file", "function", "Write", "key", key, "duration", time.Since(start), "file-size", buf.Len())
+	slog.Debug("S3 written", "module", "writer.file", "function", "Write", "key", key, "duration", time.Since(start))
 
 	return err
 }
@@ -107,7 +120,7 @@ func (s *S3) makeBuketName(key string) string {
 	year, month, day := tm.Date()
 	hour, min, sec := tm.Clock()
 
-	return fmt.Sprintf("%s/%d/%02d/%02d/%02d%02d%02d %s.parquet", s.config.S3BuketName, year, month, day, hour, min, sec, key)
+	return fmt.Sprintf("%d/%02d/%02d/%02d%02d%02d-%s.parquet", year, month, day, hour, min, sec, key)
 }
 
 func (s *S3) Close() error {

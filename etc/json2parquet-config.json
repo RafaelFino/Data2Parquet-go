@@ -20,5 +20,12 @@
     "__writer_compression_type": "none",
     "writer_file_path": "./data",
     "writer_row_group_size": 134217728,
-    "writer_type": "file"
+    "_writer_type": "file",
+    "writer_type" : "aws-s3",
+    "s3_bucket_name": "data2parquet",
+	"s3_region": "us-east-2",
+	"s3_role_name": "localstack",
+	"s3_sts_endpoint": "http://localhost:4566",
+	"s3_endpoint":"http://localhost:4566",
+	"s3_account": "localstack"
 }

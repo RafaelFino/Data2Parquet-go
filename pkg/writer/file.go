@@ -1,10 +1,10 @@
 package writer
 
 import (
-	"bytes"
 	"context"
 	"data2parquet/pkg/config"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"time"
@@ -27,7 +27,7 @@ func (f *File) Init() error {
 	return nil
 }
 
-func (f *File) Write(key string, buf *bytes.Buffer) error {
+func (f *File) Write(key string, buf io.Reader) error {
 	start := time.Now()
 
 	filePath := f.makeFilePath(key)
@@ -39,10 +39,14 @@ func (f *File) Write(key string, buf *bytes.Buffer) error {
 
 	defer file.Close()
 
-	data := buf.Bytes()
-	err = os.WriteFile(filePath, data, 0644)
+	l, err := file.ReadFrom(buf)
 
-	slog.Info("File written", "key", key, "file", filePath, "duration", time.Since(start), "file-size", len(data))
+	if err != nil {
+		slog.Error("Error writing to file", "error", err, "key", key, "file", filePath)
+		return err
+	}
+
+	slog.Info("File written", "key", key, "file", filePath, "duration", time.Since(start), "file-size", l)
 
 	return err
 }

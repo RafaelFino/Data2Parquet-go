@@ -1,14 +1,14 @@
 package writer
 
 import (
-	"bytes"
 	"context"
 	"data2parquet/pkg/config"
+	"io"
 )
 
 type Writer interface {
 	Init() error
-	Write(key string, buf *bytes.Buffer) error
+	Write(key string, buf io.Reader) error
 	Close() error
 	IsReady() bool
 }
