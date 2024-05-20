@@ -11,7 +11,9 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
 type S3 struct {
@@ -36,8 +38,36 @@ func NewS3(ctx context.Context, config *config.Config) Writer {
 func (s *S3) Init() error {
 	slog.Debug("Initializing S3 writer", "config", s.config.ToString())
 
-	// Load the Shared AWS Configuration (~/.aws/config)]
-	cfg, err := awsConfig.LoadDefaultConfig(s.ctx, awsConfig.WithRegion(s.config.S3Region))
+	endpoints := map[string]string{
+		"S3":  s.config.S3Endpoint,
+		"STS": s.config.S3STSEndpoint,
+	}
+
+	cfg, err := awsConfig.LoadDefaultConfig(s.ctx,
+		awsConfig.WithRegion(s.config.S3Region),
+		awsConfig.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(func(service, region string, _ ...interface{}) (aws.Endpoint, error) {
+			if endpoint, ok := endpoints[service]; ok {
+				return aws.Endpoint{
+					PartitionID:   "aws",
+					URL:           endpoint,
+					SigningRegion: s.config.S3Region,
+				}, nil
+			}
+			// returning EndpointNotFoundError will allow the service to fallback to its default resolution
+			return aws.Endpoint{}, &aws.EndpointNotFoundError{}
+		})),
+	)
+
+	roleARN := fmt.Sprintf("arn:aws:iam::%s:role/%s", s.config.S3Account, s.config.S3RoleName)
+
+	stsClient := sts.NewFromConfig(cfg)
+
+	cfg.Credentials = aws.NewCredentialsCache(
+		stscreds.NewAssumeRoleProvider(stsClient, roleARN, func(aro *stscreds.AssumeRoleOptions) {
+			aro.RoleSessionName = s.config.S3RoleName
+		}),
+	)
+
 	if err != nil {
 		slog.Error("Error loading AWS config", "error", err, "module", "writer.file", "function", "Init")
 		return err

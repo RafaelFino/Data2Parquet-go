@@ -1,5 +1,5 @@
 services:
-  buffer:
+  redis:
     image: redis:latest
     restart: always
     environment:
@@ -8,3 +8,11 @@ services:
       - '6379:6379'
     volumes: 
       - ./data/buffer:/data
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:4510-4559:4510-4559"
+    environment:
+      - SERVICES=s3,sts
+      - DEFAULT_REGION=us-east-2  

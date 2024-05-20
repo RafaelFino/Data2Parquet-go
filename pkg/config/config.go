@@ -68,7 +68,10 @@ type Config struct {
 	RedisSkipFlush        bool   `json:"redis_skip_flush,omitempty"`
 	S3BuketName           string `json:"s3_bucket_name"`
 	S3Region              string `json:"s3_region"`
-	S3StorageClass        string `json:"s3_storage_class"`
+	S3RoleName            string `json:"s3_role_name,omitempty"`
+	S3STSEndpoint         string `json:"s3_sts_endpoint,omitempty"`
+	S3Endpoint            string `json:"s3_endpoint,omitempty"`
+	S3Account             string `json:"s3_account,omitempty"`
 	TryAutoRecover        bool   `json:"try_auto_recover,omitempty"`
 	WriterCompressionType string `json:"writer_compression_type,omitempty"`
 	WriterFilePath        string `json:"writer_file_path,omitempty"`
@@ -95,7 +98,10 @@ var keys = []string{
 	"RedisSkipFlush",
 	"S3BucketName",
 	"S3Region",
-	"S3StorageClass",
+	"S3RoleName",
+	"S3STSEndpoint",
+	"S3Endpoint",
+	"S3Account",
 	"TryAutoRecover",
 	"WriterCompressionType",
 	"WriterFilePath",
@@ -205,8 +211,14 @@ func (c *Config) Set(cfg map[string]string) error {
 			c.S3BuketName = value
 		case "S3Region":
 			c.S3Region = value
-		case "S3StorageClass":
-			c.S3StorageClass = value
+		case "S3RoleName":
+			c.S3RoleName = value
+		case "S3STSEndpoint":
+			c.S3STSEndpoint = value
+		case "S3Endpoint":
+			c.S3Endpoint = value
+		case "S3Account":
+			c.S3Account = value
 		case "JsonSchemaPath":
 			c.JsonSchemaPath = value
 		case "RecordType":
@@ -247,7 +259,10 @@ func (c *Config) Get() map[string]interface{} {
 	ret["RedisSkipFlush"] = c.RedisSkipFlush
 	ret["S3BucketName"] = c.S3BuketName
 	ret["S3Region"] = c.S3Region
-	ret["S3StorageClass"] = c.S3StorageClass
+	ret["S3RoleName"] = c.S3RoleName
+	ret["S3STSEndpoint"] = c.S3STSEndpoint
+	ret["S3Endpoint"] = c.S3Endpoint
+	ret["S3Account"] = c.S3Account
 	ret["TryAutoRecover"] = c.TryAutoRecover
 	ret["WriterCompressionType"] = c.WriterCompressionType
 	ret["WriterFilePath"] = c.WriterFilePath
@@ -308,10 +323,6 @@ func (c *Config) SetDefaults() {
 
 	if len(c.RedisRecoveryKey) == 0 {
 		c.RedisRecoveryKey = "recovery"
-	}
-
-	if len(c.S3StorageClass) == 0 {
-		c.S3StorageClass = "STANDARD"
 	}
 
 	if c.RecoveryAttempts < 0 {
