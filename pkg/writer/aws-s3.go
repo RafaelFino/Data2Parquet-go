@@ -136,12 +136,13 @@ func (s *S3) CheckBucket() error {
 
 func (s *S3) Write(key string, buf *bytes.Buffer) error {
 	start := time.Now()
+	s3Key := s.makeBuketName(key)
 
 	_, err := s.client.PutObject(
 		s.ctx,
 		&s3.PutObjectInput{
 			Bucket: aws.String(s.config.S3BuketName),
-			Key:    aws.String(s.makeBuketName(key)),
+			Key:    aws.String(s3Key),
 			Body:   bytes.NewReader(buf.Bytes()),
 		},
 	)
@@ -150,7 +151,7 @@ func (s *S3) Write(key string, buf *bytes.Buffer) error {
 		slog.Error("Error writing to S3", "error", err, "module", "writer.s3", "function", "Write", "key", key)
 	}
 
-	slog.Info("S3 written", "module", "writer.file", "function", "Write", "key", key, "duration", time.Since(start), "file-size", buf.Len(), "bucket", s.config.S3BuketName)
+	slog.Info("S3 written", "duration", time.Since(start), "file-size", buf.Len(), "bucket", s.config.S3BuketName, "file", s3Key)
 
 	return err
 }
