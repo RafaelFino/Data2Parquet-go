@@ -72,6 +72,7 @@ type Config struct {
 	S3STSEndpoint         string `json:"s3_sts_endpoint,omitempty"`
 	S3Endpoint            string `json:"s3_endpoint,omitempty"`
 	S3Account             string `json:"s3_account,omitempty"`
+	S3TryCreateBucket     bool   `json:"s3_try_create_bucket,omitempty"`
 	TryAutoRecover        bool   `json:"try_auto_recover,omitempty"`
 	WriterCompressionType string `json:"writer_compression_type,omitempty"`
 	WriterFilePath        string `json:"writer_file_path,omitempty"`
@@ -102,6 +103,7 @@ var keys = []string{
 	"S3STSEndpoint",
 	"S3Endpoint",
 	"S3Account",
+	"S3TryCreateBucket",
 	"TryAutoRecover",
 	"WriterCompressionType",
 	"WriterFilePath",
@@ -219,6 +221,8 @@ func (c *Config) Set(cfg map[string]string) error {
 			c.S3Endpoint = value
 		case "S3Account":
 			c.S3Account = value
+		case "S3TryCreateBucket":
+			c.S3TryCreateBucket = strings.ToLower(value) == "true"
 		case "JsonSchemaPath":
 			c.JsonSchemaPath = value
 		case "RecordType":
@@ -263,6 +267,7 @@ func (c *Config) Get() map[string]interface{} {
 	ret["S3STSEndpoint"] = c.S3STSEndpoint
 	ret["S3Endpoint"] = c.S3Endpoint
 	ret["S3Account"] = c.S3Account
+	ret["S3TryCreateBucket"] = c.S3TryCreateBucket
 	ret["TryAutoRecover"] = c.TryAutoRecover
 	ret["WriterCompressionType"] = c.WriterCompressionType
 	ret["WriterFilePath"] = c.WriterFilePath

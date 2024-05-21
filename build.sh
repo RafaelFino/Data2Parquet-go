@@ -69,7 +69,7 @@ if [ "$par" == "all" ]; then
 
     echo ">>   [$os $arch] Building fluent-out-parquet -> ./bin/$os-$arch/fluent-out-parquet.so"
     GOOS=$os GOARCH=$arch CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc go build -buildmode=c-shared -o bin/$os-$arch/fluent-out-parquet.so -ldflags="-s -w" -trimpath cmd/fluent-out-parquet/main.go
-    #
+    
     #os="darwin"
     #arch="arm64"
     #echo ">> Building for $os $arch"
@@ -84,7 +84,7 @@ if [ "$par" == "all" ]; then
     #
     #echo ">>   [$os $arch] Building fluent-out-parquet -> ./bin/$os-$arch/fluent-out-parquet.so"
     #GOOS=$os GOARCH=$arch CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc go build -buildmode=c-shared -o bin/$os-$arch/fluent-out-parquet.so -ldflags="-s -w" -trimpath cmd/fluent-out-parquet/main.go
-    #
+    
     exit 0    
 fi
 

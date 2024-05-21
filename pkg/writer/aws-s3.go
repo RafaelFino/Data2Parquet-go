@@ -6,7 +6,6 @@ import (
 	"data2parquet/pkg/config"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"time"
 
@@ -14,7 +13,9 @@ import (
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	"github.com/aws/smithy-go"
 )
 
 type S3 struct {
@@ -85,24 +86,63 @@ func (s *S3) Init() error {
 		return errors.New("error creating S3 client")
 	}
 
+	err = s.CheckBucket()
+
+	if err != nil {
+		slog.Error("Error checking S3 bucket", "error", err, "module", "writer.s3", "function", "Init")
+		return err
+	}
+
 	return nil
 }
 
-func (s *S3) Write(key string, buf io.Reader) error {
+func (s *S3) CheckBucket() error {
+	_, err := s.client.HeadBucket(s.ctx, &s3.HeadBucketInput{
+		Bucket: aws.String(s.config.S3BuketName),
+	})
+
+	if err != nil {
+		var apiError smithy.APIError
+		if errors.As(err, &apiError) {
+			switch apiError.(type) {
+			case *types.NotFound:
+				slog.Info("S3 bucket not found", "module", "writer.s3", "function", "CheckBucket", "bucket", s.config.S3BuketName, "region", s.config.S3Region)
+				err = nil
+			}
+		}
+	} else {
+		slog.Info("S3 bucket already exists", "module", "writer.s3", "function", "CheckBucket", "bucket", s.config.S3BuketName, "region", s.config.S3Region)
+		return nil
+	}
+
+	ret, err := s.client.CreateBucket(s.ctx, &s3.CreateBucketInput{
+		Bucket: aws.String(s.config.S3BuketName),
+		CreateBucketConfiguration: &types.CreateBucketConfiguration{
+			LocationConstraint: types.BucketLocationConstraint(s.config.S3Region),
+		},
+	})
+
+	if ret != nil {
+		slog.Info("S3 bucket created", "module", "writer.s3", "function", "CheckBucket", "bucket", s.config.S3BuketName, "region", s.config.S3Region)
+		return nil
+	}
+
+	if err != nil {
+		slog.Warn("Warning to check S3 bucket", "error", err, "module", "writer.s3", "function", "CheckBucket", "bucket", s.config.S3BuketName, "region", s.config.S3Region)
+	}
+
+	return nil
+}
+
+func (s *S3) Write(key string, buf *bytes.Buffer) error {
 	start := time.Now()
-
-	b := &bytes.Buffer{}
-
-	b.ReadFrom(buf)
-
-	r := bytes.NewReader(b.Bytes())
 
 	_, err := s.client.PutObject(
 		s.ctx,
 		&s3.PutObjectInput{
 			Bucket: aws.String(s.config.S3BuketName),
 			Key:    aws.String(s.makeBuketName(key)),
-			Body:   r,
+			Body:   bytes.NewReader(buf.Bytes()),
 		},
 	)
 
@@ -110,7 +150,7 @@ func (s *S3) Write(key string, buf io.Reader) error {
 		slog.Error("Error writing to S3", "error", err, "module", "writer.s3", "function", "Write", "key", key)
 	}
 
-	slog.Debug("S3 written", "module", "writer.file", "function", "Write", "key", key, "duration", time.Since(start))
+	slog.Info("S3 written", "module", "writer.file", "function", "Write", "key", key, "duration", time.Since(start), "file-size", buf.Len(), "bucket", s.config.S3BuketName)
 
 	return err
 }
