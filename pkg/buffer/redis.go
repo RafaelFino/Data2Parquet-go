@@ -29,8 +29,7 @@ func NewRedis(ctx context.Context, config *config.Config) Buffer {
 
 	ret.client = createClient(config)
 
-	entropy := rand.New(rand.NewSource(time.Now().UnixNano()))
-	ret.instanceId = ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String()
+	ret.makeInstanceName()
 
 	if !ret.IsReady() {
 		slog.Error("Redis is not ready", "module", "buffer", "function", "NewRedis")
@@ -62,6 +61,11 @@ func createClient(cfg *config.Config) *redis.Client {
 		Password: cfg.RedisPassword,
 		DB:       cfg.RedisDB,
 	})
+}
+
+func (r *Redis) makeInstanceName() {
+	entropy := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r.instanceId = fmt.Sprintf("%s-%s", r.config.RedisLockInstanceName, ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String())
 }
 
 func (r *Redis) makeDataKey(key string) string {
@@ -187,7 +191,7 @@ func (r *Redis) checkLock(key string) bool {
 	ctx := r.ctx
 	lockKey := r.makeLockKey(key)
 
-	createLock := r.client.SetNX(ctx, lockKey, r.instanceId, time.Duration(r.config.FlushInterval+r.config.FlushInterval/2)*time.Second)
+	createLock := r.client.SetNX(ctx, lockKey, r.instanceId, time.Duration(r.config.RedisLockTTL)*time.Second)
 
 	if createLock.Err() != nil {
 		slog.Error("Error setting lock", "error", createLock.Err(), "key", key, "id", r.instanceId)

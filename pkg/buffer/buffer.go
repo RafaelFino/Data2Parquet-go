@@ -28,10 +28,15 @@ type Buffer interface {
 	ClearRecoveryData() error
 }
 
+const BufferTypeMem = "mem"
+const BufferTypeRedis = "redis"
+
 func New(ctx context.Context, config *config.Config) Buffer {
 	switch config.BufferType {
-	case "redis":
+	case BufferTypeRedis:
 		return NewRedis(ctx, config)
+	case BufferTypeMem:
+		return NewMem(ctx, config)
 	default:
 		return NewMem(ctx, config)
 	}

@@ -54,6 +54,8 @@ type Config struct {
 	RedisHost             string `json:"redis_host,omitempty"`
 	RedisKeys             string `json:"redis_keys,omitempty"`
 	RedisLockPrefix       string `json:"redis_lock_prefix,omitempty"`
+	RedisLockTTL          int    `json:"redis_lock_ttl,omitempty"`
+	RedisLockInstanceName string `json:"redis_lock_instance_name,omitempty"`
 	RedisPassword         string `json:"redis_password,omitempty"`
 	RedisRecoveryKey      string `json:"redis_recovery_key,omitempty"`
 	S3Account             string `json:"s3_account,omitempty"`
@@ -82,6 +84,8 @@ var keys = []string{
 	"RedisHost",
 	"RedisKeys",
 	"RedisLockPrefix",
+	"RedisLockTTL",
+	"RedisLockInstanceName",
 	"RedisPassword",
 	"RedisRecoveryKey",
 	"RedisSQLPrefix",
@@ -212,6 +216,10 @@ func (c *Config) Set(cfg map[string]string) error {
 			c.RedisDLQPrefix = value
 		case "RedisLockPrefix":
 			c.RedisLockPrefix = value
+		case "RedisLockTTL":
+			fmt.Sscanf(value, "%d", &c.RedisLockTTL)
+		case "RedisLockInstanceName":
+			c.RedisLockInstanceName = value
 
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
@@ -240,6 +248,8 @@ func (c *Config) Get() map[string]interface{} {
 	ret["RedisHost"] = c.RedisHost
 	ret["RedisKeys"] = c.RedisKeys
 	ret["RedisLockPrefix"] = c.RedisLockPrefix
+	ret["RedisLockTTL"] = c.RedisLockTTL
+	ret["RedisLockInstanceName"] = c.RedisLockInstanceName
 	ret["RedisPassword"] = c.RedisPassword
 	ret["RedisRecoveryKey"] = c.RedisRecoveryKey
 	ret["RedisSQLPrefix"] = c.RedisDLQPrefix
@@ -264,64 +274,94 @@ func (c *Config) SetDefaults() {
 	}
 
 	if c.WriterType == "" {
+		slog.Warn("Writer type is empty, setting to file")
 		c.WriterType = "file"
 	}
 
 	if c.WriterFilePath == "" {
+		slog.Debug("Writer file path is empty, setting to ./out")
 		c.WriterFilePath = "./out"
 	}
 
 	if c.WriterCompressionType == "" {
+		slog.Warn("Writer compression type is empty, setting to snappy")
 		c.WriterCompressionType = "snappy"
 	}
 
 	if c.WriterRowGroupSize < 1024 {
+		slog.Debug("Writer row group size is less than 1024, setting to 128M"
 		c.WriterRowGroupSize = 128 * 1024 * 1024 //128M
 	}
 
 	if c.BufferType == "" {
-		c.BufferType = "mem"
+		slog.Warn("Buffer type is empty, setting to mem")
+		c.BufferType = BufferTypeMem
 	}
 
 	if c.BufferSize < 100 {
+		slog.Debug("Buffer size is less than 100, setting to 100"
 		c.BufferSize = 100
 	}
 
 	if c.FlushInterval < 10 {
+		slog.Debug("Flush interval is less than 10 seconds, setting to 10")
 		c.FlushInterval = 10
 	}
 
 	if len(c.RedisKeys) == 0 {
+		slog.Debug("Redis keys is empty, setting to keys")
 		c.RedisKeys = "keys"
 	}
 
 	if len(c.RedisLockPrefix) == 0 {
+		slog.Debug("Redis lock prefix is empty, setting to lock")
 		c.RedisLockPrefix = "lock"
 	}
 
 	if len(c.RedisDLQPrefix) == 0 {
+		slog.Debug("Redis DLQ prefix is empty, setting to dlq")
 		c.RedisDLQPrefix = "dlq"
 	}
 
-	if c.RedisDB < 0 {
-		c.RedisDB = 0
-	}
-
 	if len(c.RedisDataPrefix) == 0 {
+		slog.Debug("Redis data prefix is empty, setting to data")
 		c.RedisDataPrefix = "data"
 	}
 
 	if len(c.RedisRecoveryKey) == 0 {
+		slog.Debug("Redis recovery key is empty, setting to recovery")
 		c.RedisRecoveryKey = "recovery"
 	}
 
 	if c.RecoveryAttempts < 0 {
+		slog.Debug("Recovery attempts is less than 0, setting to 0")
 		c.RecoveryAttempts = 0
 	}
 
 	if len(c.RecordType) == 0 {
+		slog.Warn("Record type is empty, setting to log")
 		c.RecordType = domain.RecordTypeLog
 	}
 
 	c.RecordType = strings.ToLower(c.RecordType)
+
+	if c.BufferType == BufferTypeRedis {
+		if c.RedisLockTTL < c.FlushInterval*2.5 {
+			slog.Warn("Redis lock TTL is less than 2.5 times the flush interval, setting to 2.5 times the flush interval")
+		}
+	
+		if len(c.RedisLockInstanceName) == 0 {
+			slog.Warn("Redis lock instance name is empty, setting to data2parquet")
+			c.RedisLockInstanceName = "data2parquet"
+		}
+
+		if c.RedisDB < 0 {
+			slog.Warn("Redis DB is less than 0, setting to 0")
+			c.RedisDB = 0
+		}
+
+		if len(c.RedisHost) == 0 {
+			slog.Error("Redis host is empty, please set it")
+		}
+	}
 }

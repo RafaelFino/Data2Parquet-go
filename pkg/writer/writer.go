@@ -13,15 +13,18 @@ type Writer interface {
 	IsReady() bool
 }
 
+const WriterTypeS3 = "aws-s3"
+const WriterTypeFile = "file"
+
 func New(ctx context.Context, config *config.Config) Writer {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
 	switch config.WriterType {
-	case "aws-s3":
+	case WriterTypeS3:
 		return NewS3(ctx, config)
-	case "file":
+	case WriterTypeFile:
 		return NewFile(ctx, config)
 
 	default:
