@@ -95,7 +95,7 @@ func (r *Receiver) Write(record domain.Record) error {
 		r.control[key] = c
 
 		if n >= r.config.BufferSize && !c.running {
-			slog.Info("Buffer size reached, flushing buffer", "key", key, "size", n, "buffer-size", r.config.BufferSize)
+			slog.Info("Buffer size reached, checkin to flush buffer", "key", key, "size", n, "buffer-size", r.config.BufferSize)
 			//Call flush on reach buffer size
 			err := r.FlushKey(key)
 
@@ -185,7 +185,7 @@ func (r *Receiver) FlushKey(key string) error {
 	data := r.buffer.Get(key)
 
 	if len(data) == 0 {
-		slog.Debug("No data to flush", "key", key)
+		slog.Info("No data to flush here", "key", key)
 		return nil
 	}
 

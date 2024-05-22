@@ -204,20 +204,19 @@ func (r *Redis) checkLock(key string) bool {
 	if ret {
 		slog.Info("Lock created for this instance", "key", key, "id", r.instanceId, "ttl", ttl)
 	} else {
-		slog.Info("Lock already exists", "key", key, "id", r.instanceId)
-		myLock := r.client.Get(ctx, lockKey)
+		currentLck := r.client.Get(ctx, lockKey)
 
-		if myLock.Err() != nil {
-			slog.Error("Error getting lock", "error", myLock.Err())
+		if currentLck.Err() != nil {
+			slog.Error("Error getting lock", "error", currentLck.Err())
 			return false
 		}
 
-		if myLock.Val() == string(r.instanceId) {
+		slog.Debug("A lock already exists on redis", "key", key, "instance-id", r.instanceId, "redis-lock-id", currentLck.Val())
+
+		if currentLck.Val() == string(r.instanceId) {
 			slog.Debug("Already locked for this instance, continue to use", "key", key, "id", r.instanceId)
 			return true
 		}
-
-		slog.Debug("Already locked for another instance, skipping", "key", key, "id", r.instanceId, "lock-id", myLock.Val())
 	}
 
 	return ret
