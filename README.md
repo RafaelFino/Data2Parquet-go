@@ -170,30 +170,53 @@ type Config struct {
 #### Fluent Out Parquet config keys
 To FluentBit, use the main key name, example: `WriterType` instead `writer_type`
 
-##### Keys to Fluent-Bit Output
- - BufferSize 
- - BufferType 
- - Debug 
- - FlushInterval 
- - JsonSchemaPath 
- - LogPath 
- - Port 
- - RecordType 
- - RecoveryAttempts 
- - RedisDataPrefix 
- - RedisDB 
- - RedisHost 
- - RedisKeys 
- - RedisPassword 
- - RedisRecoveryKey 
- - RedisSQLPrefix 
- - RedisSkipFlush 
- - S3BucketName 
- - S3Region 
- - S3StorageClass 
- - TryAutoRecover 
- - WriterCompressionType 
- - WriterFilePath 
- - WriterRowGroupSize 
- - WriterType 
+##### Fluent output config example
+``` ini
+[OUTPUT]
+  Name  out_parquet
+  Match *
+  BufferSize 1000
+  FlushInterval 12
+  BufferType redis
+  Debug true
+  WriterFilePath /home/fino/git/Data2Parquet-go/data
+  WriterType aws-s3
+  S3BucketName data2parquet
+  S3Region us-east-2
+  S3RoleName localstack
+  S3STSEndpoint http://localhost:4566
+  S3Endpoint http://localhost:4566
+  S3Account localstack
+```
 
+##### Keys to Fluent-Bit Output
+``` golang
+var keys = []string{
+	"BufferSize",
+	"BufferType",
+	"Debug",
+	"FlushInterval",
+	"JsonSchemaPath",
+	"RecordType",
+	"RecoveryAttempts",
+	"RedisDataPrefix",
+	"RedisDB",
+	"RedisHost",
+	"RedisKeys",
+	"RedisLockPrefix",
+	"RedisPassword",
+	"RedisRecoveryKey",
+	"RedisSQLPrefix",
+	"S3BucketName",
+	"S3Region",
+	"S3RoleName",
+	"S3STSEndpoint",
+	"S3Endpoint",
+	"S3Account",
+	"TryAutoRecover",
+	"WriterCompressionType",
+	"WriterFilePath",
+	"WriterRowGroupSize",
+	"WriterType",
+}
+```
