@@ -69,7 +69,7 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 
 	rcv = receiver.NewReceiver(ctx, cfg)
 
-	// Gets called only once for each instance you have configured.
+	slog.Info("Plugin initialized")
 	return output.FLB_OK
 }
 

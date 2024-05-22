@@ -34,20 +34,21 @@ func NewS3(ctx context.Context, config *config.Config) Writer {
 		ctx:    ctx,
 	}
 
+	slog.Info("Creating S3 writer")
+
 	return ret
 }
 
 func (s *S3) Init() error {
-	slog.Debug("Initializing S3 writer", "config", s.config.ToString())
-
 	endpoints := map[string]string{
 		"S3":  s.config.S3Endpoint,
 		"STS": s.config.S3STSEndpoint,
 	}
 
+	slog.Info("Initializing S3 writer", "config", s.config.ToJSON(), "endpoints", endpoints)
+
 	cfg, err := awsConfig.LoadDefaultConfig(s.ctx,
 		awsConfig.WithRegion(s.config.S3Region),
-		//awsConfig.WithClientLogMode(aws.LogRetries|aws.LogRequest|aws.LogResponse|aws.LogResponseWithBody),
 		awsConfig.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(func(service, region string, _ ...interface{}) (aws.Endpoint, error) {
 			if endpoint, ok := endpoints[service]; ok {
 				return aws.Endpoint{
@@ -56,7 +57,6 @@ func (s *S3) Init() error {
 					SigningRegion: s.config.S3Region,
 				}, nil
 			}
-			// returning EndpointNotFoundError will allow the service to fallback to its default resolution
 			return aws.Endpoint{}, &aws.EndpointNotFoundError{}
 		})),
 	)
@@ -68,6 +68,8 @@ func (s *S3) Init() error {
 
 	roleARN := fmt.Sprintf("arn:aws:iam::%s:role/%s", s.config.S3Account, s.config.S3RoleName)
 
+	slog.Info("Assuming role", "role", roleARN, "session", s.config.S3RoleName)
+
 	stsClient := sts.NewFromConfig(cfg)
 
 	cfg.Credentials = aws.NewCredentialsCache(
@@ -76,7 +78,8 @@ func (s *S3) Init() error {
 		}),
 	)
 
-	// Create an Amazon S3 service client
+	slog.Info("Get credentials, trying to create a S3 client")
+
 	s.client = s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.UsePathStyle = true
 	})
@@ -86,12 +89,16 @@ func (s *S3) Init() error {
 		return errors.New("error creating S3 client")
 	}
 
+	slog.Info("S3 client created, checking bucket")
+
 	err = s.CheckBucket()
 
 	if err != nil {
 		slog.Error("Error checking S3 bucket", "error", err, "module", "writer.s3", "function", "Init")
 		return err
 	}
+
+	slog.Info("S3 writer initialized")
 
 	return nil
 }
@@ -112,7 +119,7 @@ func (s *S3) CheckBucket() error {
 			}
 		}
 	} else {
-		slog.Info("S3 bucket already exists", "module", "writer.s3", "function", "CheckBucket", "bucket", s.config.S3BuketName, "region", s.config.S3Region)
+		slog.Info("S3 bucket already exists", "bucket", s.config.S3BuketName, "region", s.config.S3Region)
 		return nil
 	}
 
