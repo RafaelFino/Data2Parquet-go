@@ -289,7 +289,7 @@ func (c *Config) SetDefaults() {
 	}
 
 	if c.WriterRowGroupSize < 1024 {
-		slog.Debug("Writer row group size is less than 1024, setting to 128M"
+		slog.Debug("Writer row group size is less than 1024, setting to 128M")
 		c.WriterRowGroupSize = 128 * 1024 * 1024 //128M
 	}
 
@@ -299,7 +299,7 @@ func (c *Config) SetDefaults() {
 	}
 
 	if c.BufferSize < 100 {
-		slog.Debug("Buffer size is less than 100, setting to 100"
+		slog.Debug("Buffer size is less than 100, setting to 100")
 		c.BufferSize = 100
 	}
 
@@ -349,7 +349,7 @@ func (c *Config) SetDefaults() {
 		if c.RedisLockTTL < c.FlushInterval*2.5 {
 			slog.Warn("Redis lock TTL is less than 2.5 times the flush interval, setting to 2.5 times the flush interval")
 		}
-	
+
 		if len(c.RedisLockInstanceName) == 0 {
 			slog.Warn("Redis lock instance name is empty, setting to data2parquet")
 			c.RedisLockInstanceName = "data2parquet"
