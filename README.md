@@ -70,46 +70,43 @@ Write data in a local file, use the tag `WriterFilePath` to choose path to store
 ### [AWS-S3](https://github.com/RafaelFino/Data2Parquet-go/blob/main/pkg/writer/aws-s3.go) (`WriterType` = `aws-s3`)
 
 ## [Config](https://github.com/RafaelFino/Data2Parquet-go/blob/main/pkg/config/config.go) (/pkg/config)
-- BufferSize is the size of the buffer. Default is 1000. Json tag is `buffer_size`
-- BufferType is the type of buffer to use. Can be `mem` or `redis`. Default is `mem`. Json tag is `buffer_type`
-- Debug is the debug flag. Default is `false`. Json tag is `debug`
-- FlushInterval is the interval to flush the buffer. Default is 60. This value is in seconds. Json tag is `flush_interval`
-- JsonSchemaPath is the path to the JSON schema file. Default is **empty string**. Json tag is `json_schema_path`
-- LogPath is the path to the log files. Default is `./logs`. Json tag is `log_path`
-- Port is the port to listen on. Default is 0. Json tag is `port`
-- RecordType is the type of record to use. Default is `log`. Json tag is `record_type`
-	- RecordTypeLog = `log`
-	- RecordTypeDynamic = `dynamic`
-- RecoveryAttempts is the number of recovery attempts. Default is 0. Json tag is `recovery_attempts`, dependency on TryAutoRecover
-- RedisDataPrefix is the prefix to use for the redis keys. Default is `data`. Json tag is `redis_data_prefix`
-- RedisDB is the redis database to use. Default is 0. Json tag is `redis_db`
-- RedisDLQPrefix is the prefix to use for the dead letter queue. Default is `dlq`. Json tag is `redis_dlq_prefix`
-- RedisHost is the redis host to connect to. Default is **empty string**. Json tag is `redis_host`
-- RedisKeys is the keys to use for the redis buffer. Default is `keys`. Json tag is `redis_keys`
-- RedisPassword is the redis password to use. Default is **empty string**. Json tag is `redis_password`
-- RedisRecoveryKey is the key to use for the dead letter queue. Default is **empty string**. Json tag is `redis_dlq_key`
-- RedisSkipFlush is the flag to skip flushing the redis buffer. Default is false. Json tag is `redis_skip_flush`
-- S3AccessKey is the access key to use for S3. Default is **empty string**. Json tag is `s3_access_key`
-- S3BucketName is the bucket name to use for S3. Default is **empty string**. Json tag is `s3_bucket_name`
-- S3Region is the region to use for S3. Default is **empty string**. Json tag is `s3_region`
-- TryAutoRecover is the flag to try to auto recover. Default is `false`. Json tag is `try_auto_recover`
-- WriterCompressionType is the compression type to use for the writer. Default is `snappy`. This field can be `snappy`, `gzip`, or `none`. Json tag is `writer_compression_type`
-	- CompressionTypeSnappy = `snappy`
-	- CompressionTypeGzip = `gzip`
-	- CompressionTypeNone = `none`
-- WriterFilePath is the path to write the files to. Default is `./out`. Json tag is `writer_file_path`
-- WriterRowGroupSize is the size of the row group. Default is `128M`. This value is in bytes. Json tag is `writer_row_group_size`
-- WriterType is the type of writer to use. Default is `file`. This field can be `file` or `s3`. Json tag is `writer_type`	
+- Address: HTTP server Address configuration tag, describe the address of the server, its an optional field only used for HTTP server. The default value is empty.
+- BufferSize: BufferSize configuration tag, describe the size of the buffer, its an important field for control buffer and page size to flush data. The default value is `100`.
+- BufferType: BufferType configuration tag, describe the type of the buffer, this fields accepte two values, `mem` or `redis`. The default value is `mem`.
+- Debug: Debug configuration tag, describe the debug mode, its an optional field. The debug mode will generate a lot of information. The default value is `false`.
+- FlushInterval: FlushInterval configuration tag, describe the interval to flush data in seconds, its an important field to control the time to flush data. The default value is `10`.
+- JsonSchemaPath: JsonSchemaPath configuration tag, describe the path to the JSON schema file, its an optional field. The default value is empty. *This feature is not implemented yet.
+- Port: Port configuration tag, describe the port of the server, its an optional field only used for HTTP server. The default value is `8080``.
+- RecordType: RecordType configuration tag, describe the type of the record, this fields accepte two values, `log` or `dynamic``. The default value is log. *Dynamic type is not implemented yet.
+- RecoveryAttempts: RecoveryAttempts configuration tag, describe the number of attempts to recover data, its an optional field. The default value is `0``.
+- RedisDataPrefix: RedisDataPrefix configuration tag, describe the prefix of the data key in Redis, its an optional field. The default value is `data`.
+- RedisDB: RedisDB configuration tag, describe the database number in Redis, its an optional field. The default value is `0`.
+- RedisHost: RedisHost configuration tag, describe the host of the Redis server, its an optional field if you use 'BufferType` as `mem`, but became required if `BufferType` is `redis`. The default value is empty but need to be set if `BufferType` is `redis`.
+- RedisKeys: RedisKeys configuration tag, describe the keys of the Redis server, its an optional field. The default value is `keys`.
+- RedisLockPrefix: RedisLockPrefix configuration tag, describe the prefix of the lock key in Redis, its an optional field. The default value is `lock`.
+- RedisPassword: RedisPassword configuration tag, describe the password of the Redis server, its an optional field. The default value is empty.
+- RedisRecoveryKey: RedisRecoveryKey configuration tag, describe the recovery key in Redis, its an optional field. The default value is `recovery`.
+- RedisDLQPrefix: RedisDLQPrefix configuration tag, describe the prefix of the DLQ key in Redis, its an optional field. The default value is `dlq`.
+- S3BucketName: S3BucketName configuration tag, describe the bucket name in S3, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- S3Region: S3Region configuration tag, describe the region of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- S3RoleName: S3RoleName configuration tag, describe the role name of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- S3STSEndpoint: S3STSEndpoint configuration tag, describe the endpoint of the STS server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- S3Endpoint: S3Endpoint configuration tag, describe the endpoint of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- S3Account: S3Account configuration tag, describe the account of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- TryAutoRecover: TryAutoRecover configuration tag, describe the auto recover mode, its an optional field. The default value is `false`. If set to `true` the system will try to recover the data that failed to write after flash, using recovery cache.
+- WriterCompressionType: WriterCompressionType configuration tag, describe the compression type of the writer, its an optional field. The default and recommended value is `snappy`. This fields accepte two values, `snappy`, `gzip` or `none`.
+- WriterFilePath: WriterFilePath configuration tag, describe the file path of the writer, its an optional field. The default value is `./out`.
+- WriterRowGroupSize: WriterRowGroupSize configuration tag, describe the row group size of the writer, its an optional field. The default value is `134217728` (128M).
+- WriterType: WriterType configuration tag, describe the type of the writer, this fields accepte two values, `file` or `aws-s3`. The default value is `file`.
 
 ``` golang
 type Config struct {
-Address               string `json:"address,omitempty"`
+	Address               string `json:"address,omitempty"`
 	BufferSize            int    `json:"buffer_size"`
 	BufferType            string `json:"buffer_type"`
 	Debug                 bool   `json:"debug,omitempty"`
 	FlushInterval         int    `json:"flush_interval"`
 	JsonSchemaPath        string `json:"json_schema_path,omitempty"`
-	LogPath               string `json:"log_path"`
 	Port                  int    `json:"port,omitempty"`
 	RecordType            string `json:"record_type"`
 	RecoveryAttempts      int    `json:"recovery_attempts,omitempty"`
@@ -118,12 +115,15 @@ Address               string `json:"address,omitempty"`
 	RedisDLQPrefix        string `json:"redis_dlq_prefix,omitempty"`
 	RedisHost             string `json:"redis_host,omitempty"`
 	RedisKeys             string `json:"redis_keys,omitempty"`
+	RedisLockPrefix       string `json:"redis_lock_prefix,omitempty"`
 	RedisPassword         string `json:"redis_password,omitempty"`
 	RedisRecoveryKey      string `json:"redis_recovery_key,omitempty"`
-	RedisSkipFlush        bool   `json:"redis_skip_flush,omitempty"`
+	S3Account             string `json:"s3_account,omitempty"`
 	S3BuketName           string `json:"s3_bucket_name"`
+	S3Endpoint            string `json:"s3_endpoint,omitempty"`
 	S3Region              string `json:"s3_region"`
-	S3StorageClass        string `json:"s3_storage_class"`
+	S3RoleName            string `json:"s3_role_name,omitempty"`
+	S3STSEndpoint         string `json:"s3_sts_endpoint,omitempty"`
 	TryAutoRecover        bool   `json:"try_auto_recover,omitempty"`
 	WriterCompressionType string `json:"writer_compression_type,omitempty"`
 	WriterFilePath        string `json:"writer_file_path,omitempty"`

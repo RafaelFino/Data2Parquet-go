@@ -31,7 +31,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = initLogger(cfg.LogPath)
+	err = initLogger("./logs")
 	if err != nil {
 		fmt.Printf("Error opening log file: %s, using stdout", err)
 		log.SetOutput(os.Stdout)
