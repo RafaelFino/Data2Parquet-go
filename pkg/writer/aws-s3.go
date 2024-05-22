@@ -106,8 +106,9 @@ func (s *S3) CheckBucket() error {
 		if errors.As(err, &apiError) {
 			switch apiError.(type) {
 			case *types.NotFound:
-				slog.Info("S3 bucket not found", "module", "writer.s3", "function", "CheckBucket", "bucket", s.config.S3BuketName, "region", s.config.S3Region)
-				err = nil
+				slog.Info("S3 bucket not found", "bucket", s.config.S3BuketName, "region", s.config.S3Region)
+			default:
+				slog.Debug("AWS SDK return on checking S3 bucket", "return", err, "bucket", s.config.S3BuketName)
 			}
 		}
 	} else {

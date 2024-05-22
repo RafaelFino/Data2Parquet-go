@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"data2parquet/pkg/config"
 	"fmt"
 	"strings"
 	"time"
@@ -17,34 +18,10 @@ type Record interface {
 	FromMsgPack(data []byte) error
 }
 
-const BufferTypeMem = "mem"
-const BufferTypeRedis = "redis"
-
-var BufferTypes = map[string]int{
-	BufferTypeMem:   1,
-	BufferTypeRedis: 2,
-}
-
-const WriterTypeAWSS3 = "aws-s3"
-const WriterTypeFile = "file"
-
-var WriterTypes = map[string]int{
-	WriterTypeFile:  1,
-	WriterTypeAWSS3: 2,
-}
-
-const RecordTypeLog = "log"
-const RecordTypeDynamic = "dynamic"
-
-var RecordTypes = map[string]int{
-	RecordTypeLog:     1,
-	RecordTypeDynamic: 2,
-}
-
 func NewRecord(recordType string, data map[string]interface{}) Record {
 	var ret Record
 	switch strings.ToLower(recordType) {
-	case RecordTypeDynamic:
+	case config.RecordTypeDynamic:
 		ret = NewDynamic(data)
 	default:
 		ret = NewLog(data)
@@ -55,7 +32,7 @@ func NewRecord(recordType string, data map[string]interface{}) Record {
 
 func NewObj(t string) Record {
 	switch t {
-	case RecordTypeDynamic:
+	case config.RecordTypeDynamic:
 		return &Dynamic{}
 	default:
 		return &Log{}

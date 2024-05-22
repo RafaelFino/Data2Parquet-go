@@ -28,17 +28,14 @@ type Buffer interface {
 	ClearRecoveryData() error
 }
 
-const BufferTypeMem = "mem"
-const BufferTypeRedis = "redis"
-
-func New(ctx context.Context, config *config.Config) Buffer {
-	switch config.BufferType {
-	case BufferTypeRedis:
-		return NewRedis(ctx, config)
-	case BufferTypeMem:
-		return NewMem(ctx, config)
+func New(ctx context.Context, cfg *config.Config) Buffer {
+	switch cfg.BufferType {
+	case config.BufferTypeRedis:
+		return NewRedis(ctx, cfg)
+	case config.BufferTypeMem:
+		return NewMem(ctx, cfg)
 	default:
-		return NewMem(ctx, config)
+		return NewMem(ctx, cfg)
 	}
 }
 

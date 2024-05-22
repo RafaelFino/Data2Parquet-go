@@ -11,9 +11,6 @@ import (
 	"time"
 )
 
-// / Mem buffer
-// / @struct Mem
-// / @implements Buffer
 type Mem struct {
 	config   *config.Config
 	data     map[string][]domain.Record
@@ -24,14 +21,6 @@ type Mem struct {
 	ctx      context.Context
 }
 
-type BuffItem struct {
-	key  string
-	item domain.Record
-}
-
-// / New mem buffer
-// / @param config *config.Config
-// / @return Buffer
 func NewMem(ctx context.Context, config *config.Config) Buffer {
 	ret := &Mem{
 		data:     make(map[string][]domain.Record),
@@ -83,7 +72,7 @@ func (m *Mem) Push(key string, item domain.Record) (int, error) {
 		values = make([]domain.Record, 0, m.config.BufferSize)
 	}
 
-	values = append(m.data[key], item)
+	values = append(values, item)
 
 	m.data[key] = values
 

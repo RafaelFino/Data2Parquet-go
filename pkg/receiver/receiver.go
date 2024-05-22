@@ -95,7 +95,7 @@ func (r *Receiver) Write(record domain.Record) error {
 		r.control[key] = c
 
 		if n >= r.config.BufferSize && !c.running {
-			slog.Debug("Buffer size reached, flushing buffer", "key", key)
+			slog.Info("Buffer size reached, flushing buffer", "key", key, "size", n, "buffer-size", r.config.BufferSize)
 			//Call flush on reach buffer size
 			err := r.FlushKey(key)
 

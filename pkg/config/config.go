@@ -1,7 +1,6 @@
 package config
 
 import (
-	"data2parquet/pkg/domain"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -69,6 +68,30 @@ type Config struct {
 	WriterFilePath        string `json:"writer_file_path,omitempty"`
 	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
 	WriterType            string `json:"writer_type"`
+}
+
+const BufferTypeMem = "mem"
+const BufferTypeRedis = "redis"
+
+var BufferTypes = map[string]int{
+	BufferTypeMem:   1,
+	BufferTypeRedis: 2,
+}
+
+const WriterTypeAWSS3 = "aws-s3"
+const WriterTypeFile = "file"
+
+var WriterTypes = map[string]int{
+	WriterTypeFile:  1,
+	WriterTypeAWSS3: 2,
+}
+
+const RecordTypeLog = "log"
+const RecordTypeDynamic = "dynamic"
+
+var RecordTypes = map[string]int{
+	RecordTypeLog:     1,
+	RecordTypeDynamic: 2,
 }
 
 var keys = []string{
@@ -295,7 +318,7 @@ func (c *Config) SetDefaults() {
 
 	if c.BufferType == "" {
 		slog.Warn("Buffer type is empty, setting to mem")
-		c.BufferType = domain.BufferTypeMem
+		c.BufferType = BufferTypeMem
 	}
 
 	if c.BufferSize < 100 {
@@ -340,19 +363,19 @@ func (c *Config) SetDefaults() {
 
 	if len(c.RecordType) == 0 {
 		slog.Warn("Record type is empty, setting to log")
-		c.RecordType = domain.RecordTypeLog
+		c.RecordType = RecordTypeLog
 	}
 
 	c.RecordType = strings.ToLower(c.RecordType)
 
-	if c.BufferType == domain.BufferTypeRedis {
-		if c.RedisLockTTL < int(c.FlushInterval*2+c.FlushInterval/2) {
+	if c.BufferType == BufferTypeRedis {
+		if c.RedisLockTTL < int(c.FlushInterval*2) {
 			slog.Warn("Redis lock TTL is less than 2.5 times the flush interval, setting to 2.5 times the flush interval")
 		}
 
 		if len(c.RedisLockInstanceName) == 0 {
 			slog.Warn("Redis lock instance name is empty, setting to data2parquet")
-			c.RedisLockInstanceName = "data2parquet"
+			c.RedisLockInstanceName = "d2p"
 		}
 
 		if c.RedisDB < 0 {

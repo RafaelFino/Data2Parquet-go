@@ -190,8 +190,9 @@ func (r *Redis) GetDLQ() (map[string][]domain.Record, error) {
 func (r *Redis) checkLock(key string) bool {
 	ctx := r.ctx
 	lockKey := r.makeLockKey(key)
+	ttl := time.Duration(r.config.RedisLockTTL) * time.Second
 
-	createLock := r.client.SetNX(ctx, lockKey, r.instanceId, time.Duration(r.config.RedisLockTTL)*time.Second)
+	createLock := r.client.SetNX(ctx, lockKey, r.instanceId, ttl)
 
 	if createLock.Err() != nil {
 		slog.Error("Error setting lock", "error", createLock.Err(), "key", key, "id", r.instanceId)
@@ -201,8 +202,9 @@ func (r *Redis) checkLock(key string) bool {
 	ret := createLock.Val()
 
 	if ret {
-		slog.Info("Lock created for this instance", "key", key, "id", r.instanceId)
+		slog.Info("Lock created for this instance", "key", key, "id", r.instanceId, "ttl", ttl)
 	} else {
+		slog.Info("Lock already exists", "key", key, "id", r.instanceId)
 		myLock := r.client.Get(ctx, lockKey)
 
 		if myLock.Err() != nil {

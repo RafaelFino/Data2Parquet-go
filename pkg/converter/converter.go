@@ -45,23 +45,23 @@ type Converter struct {
 	np              int64
 }
 
-func New(config *config.Config) *Converter {
+func New(cfg *config.Config) *Converter {
 	ret := &Converter{
-		config:          config,
-		compressionType: GetCompressionType(config.WriterCompressionType),
-		rowGroupSize:    config.WriterRowGroupSize,
-		recordType:      config.RecordType,
-		jsonSchemaPath:  config.JsonSchemaPath,
+		config:          cfg,
+		compressionType: GetCompressionType(cfg.WriterCompressionType),
+		rowGroupSize:    cfg.WriterRowGroupSize,
+		recordType:      cfg.RecordType,
+		jsonSchemaPath:  cfg.JsonSchemaPath,
 		np:              4,
 	}
 
-	if config.RecordType == domain.RecordTypeDynamic && len(config.JsonSchemaPath) != 0 {
+	if cfg.RecordType == config.RecordTypeDynamic && len(cfg.JsonSchemaPath) != 0 {
 		err := ret.loadJsonSchema()
 
 		if err != nil {
 			slog.Error("Error loading json schema", "error", err, "module", "converter", "function", "New")
 		} else {
-			slog.Info("Json schema loaded", "module", "converter", "function", "New", "path", config.JsonSchemaPath, "schema", ret.jsonSchemaData)
+			slog.Info("Json schema loaded", "module", "converter", "function", "New", "path", cfg.JsonSchemaPath, "schema", ret.jsonSchemaData)
 		}
 	}
 
@@ -90,7 +90,7 @@ func (c *Converter) createParquetWriter(w io.Writer) (*writer.ParquetWriter, err
 	var pw *writer.ParquetWriter
 	var err error
 
-	if c.config.RecordType == domain.RecordTypeDynamic {
+	if c.config.RecordType == config.RecordTypeDynamic {
 		pw, err = writer.NewParquetWriterFromWriter(w, c.jsonSchemaData, c.np)
 	} else {
 		pw, err = writer.NewParquetWriterFromWriter(w, domain.NewObj(c.config.RecordType), c.np)
