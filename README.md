@@ -70,34 +70,34 @@ Write data in a local file, use the tag `WriterFilePath` to choose path to store
 ### [AWS-S3](https://github.com/RafaelFino/Data2Parquet-go/blob/main/pkg/writer/aws-s3.go) (`WriterType` = `aws-s3`)
 
 ## [Config](https://github.com/RafaelFino/Data2Parquet-go/blob/main/pkg/config/config.go) (/pkg/config)
-- Address: HTTP server Address configuration tag, describe the address of the server, its an optional field only used for HTTP server. The default value is empty.
-- BufferSize: BufferSize configuration tag, describe the size of the buffer, its an important field for control buffer and page size to flush data. The default value is `100`.
-- BufferType: BufferType configuration tag, describe the type of the buffer, this fields accepte two values, `mem` or `redis`. The default value is `mem`.
-- Debug: Debug configuration tag, describe the debug mode, its an optional field. The debug mode will generate a lot of information. The default value is `false`.
-- FlushInterval: FlushInterval configuration tag, describe the interval to flush data in seconds, its an important field to control the time to flush data. The default value is `10`.
-- JsonSchemaPath: JsonSchemaPath configuration tag, describe the path to the JSON schema file, its an optional field. The default value is empty. *This feature is not implemented yet.
+- **Address**: HTTP server Address configuration tag, describe the address of the server, its an optional field only used for HTTP server. The default value is empty.
+- **BufferSize**: BufferSize configuration tag, describe the size of the buffer, its an important field for control buffer and page size to flush data. The default value is `100`.
+- **BufferType**: BufferType configuration tag, describe the type of the buffer, this fields accepte two values, `mem` or `redis`. The default value is `mem`.
+- **Debug**: Debug configuration tag, describe the debug mode, its an optional field. The debug mode will generate a lot of information. The default value is `false`.
+- **FlushInterval**: FlushInterval configuration tag, describe the interval to flush data in seconds, its an important field to control the time to flush data. The default value is `10`.
+- **JsonSchemaPath**: JsonSchemaPath configuration tag, describe the path to the JSON schema file, its an optional field. The default value is empty. *This feature is not implemented yet.
 - Port: Port configuration tag, describe the port of the server, its an optional field only used for HTTP server. The default value is `8080``.
-- RecordType: RecordType configuration tag, describe the type of the record, this fields accepte two values, `log` or `dynamic``. The default value is log. *Dynamic type is not implemented yet.
-- RecoveryAttempts: RecoveryAttempts configuration tag, describe the number of attempts to recover data, its an optional field. The default value is `0``.
-- RedisDataPrefix: RedisDataPrefix configuration tag, describe the prefix of the data key in Redis, its an optional field. The default value is `data`.
-- RedisDB: RedisDB configuration tag, describe the database number in Redis, its an optional field. The default value is `0`.
-- RedisHost: RedisHost configuration tag, describe the host of the Redis server, its an optional field if you use 'BufferType` as `mem`, but became required if `BufferType` is `redis`. The default value is empty but need to be set if `BufferType` is `redis`.
-- RedisKeys: RedisKeys configuration tag, describe the keys of the Redis server, its an optional field. The default value is `keys`.
-- RedisLockPrefix: RedisLockPrefix configuration tag, describe the prefix of the lock key in Redis, its an optional field. The default value is `lock`.
-- RedisPassword: RedisPassword configuration tag, describe the password of the Redis server, its an optional field. The default value is empty.
-- RedisRecoveryKey: RedisRecoveryKey configuration tag, describe the recovery key in Redis, its an optional field. The default value is `recovery`.
-- RedisDLQPrefix: RedisDLQPrefix configuration tag, describe the prefix of the DLQ key in Redis, its an optional field. The default value is `dlq`.
-- S3BucketName: S3BucketName configuration tag, describe the bucket name in S3, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
-- S3Region: S3Region configuration tag, describe the region of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
-- S3RoleName: S3RoleName configuration tag, describe the role name of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
-- S3STSEndpoint: S3STSEndpoint configuration tag, describe the endpoint of the STS server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
-- S3Endpoint: S3Endpoint configuration tag, describe the endpoint of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
-- S3Account: S3Account configuration tag, describe the account of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
-- TryAutoRecover: TryAutoRecover configuration tag, describe the auto recover mode, its an optional field. The default value is `false`. If set to `true` the system will try to recover the data that failed to write after flash, using recovery cache.
-- WriterCompressionType: WriterCompressionType configuration tag, describe the compression type of the writer, its an optional field. The default and recommended value is `snappy`. This fields accepte two values, `snappy`, `gzip` or `none`.
-- WriterFilePath: WriterFilePath configuration tag, describe the file path of the writer, its an optional field. The default value is `./out`.
-- WriterRowGroupSize: WriterRowGroupSize configuration tag, describe the row group size of the writer, its an optional field. The default value is `134217728` (128M).
-- WriterType: WriterType configuration tag, describe the type of the writer, this fields accepte two values, `file` or `aws-s3`. The default value is `file`.
+- **RecordType**: RecordType configuration tag, describe the type of the record, this fields accepte two values, `log` or `dynamic``. The default value is log. *Dynamic type is not implemented yet.
+- **RecoveryAttempts**: RecoveryAttempts configuration tag, describe the number of attempts to recover data, its an optional field. The default value is `0``.
+- **RedisDataPrefix**: RedisDataPrefix configuration tag, describe the prefix of the data key in Redis, its an optional field. The default value is `data`.
+- **RedisDB**: RedisDB configuration tag, describe the database number in Redis, its an optional field. The default value is `0`.
+- **RedisHost**: RedisHost configuration tag, describe the host of the Redis server, its an optional field if you use `BufferType` as `mem`, but became required if `BufferType` is `redis`. The default value is empty but need to be set if `BufferType` is `redis`.
+- **RedisKeys**: RedisKeys configuration tag, describe the keys of the Redis server, its an optional field. The default value is `keys`.
+- **RedisLockPrefix**: RedisLockPrefix configuration tag, describe the prefix of the lock key in Redis, its an optional field. The default value is `lock`.
+- **RedisPassword**: RedisPassword configuration tag, describe the password of the Redis server, its an optional field. The default value is empty.
+- **RedisRecoveryKey**: RedisRecoveryKey configuration tag, describe the recovery key in Redis, its an optional field. The default value is `recovery`.
+- **RedisDLQPrefix**: RedisDLQPrefix configuration tag, describe the prefix of the DLQ key in Redis, its an optional field. The default value is `dlq`.
+- **S3BucketName**: S3BucketName configuration tag, describe the bucket name in S3, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- **S3Region**: S3Region configuration tag, describe the region of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- **S3RoleName**: S3RoleName configuration tag, describe the role name of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- **S3STSEndpoint**: S3STSEndpoint configuration tag, describe the endpoint of the STS server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- **S3Endpoint**: S3Endpoint configuration tag, describe the endpoint of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- **S3Account**: S3Account configuration tag, describe the account of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- **TryAutoRecover**: TryAutoRecover configuration tag, describe the auto recover mode, its an optional field. The default value is `false`. If set to `true` the system will try to recover the data that failed to write after flash, using recovery cache.
+- **WriterCompressionType**: WriterCompressionType configuration tag, describe the compression type of the writer, its an optional field. The default and recommended value is `snappy`. This fields accepte two values, `snappy`, `gzip` or `none`.
+- **WriterFilePath**: WriterFilePath configuration tag, describe the file path of the writer, its an optional field. The default value is `./out`.
+- **WriterRowGroupSize**: WriterRowGroupSize configuration tag, describe the row group size of the writer, its an optional field. The default value is `134217728` (128M).
+- **WriterType**: WriterType configuration tag, describe the type of the writer, this fields accepte two values, `file` or `aws-s3`. The default value is `file`.
 
 ``` golang
 type Config struct {
