@@ -295,7 +295,7 @@ func (c *Config) SetDefaults() {
 
 	if c.BufferType == "" {
 		slog.Warn("Buffer type is empty, setting to mem")
-		c.BufferType = BufferTypeMem
+		c.BufferType = domain.BufferTypeMem
 	}
 
 	if c.BufferSize < 100 {
@@ -345,8 +345,8 @@ func (c *Config) SetDefaults() {
 
 	c.RecordType = strings.ToLower(c.RecordType)
 
-	if c.BufferType == BufferTypeRedis {
-		if c.RedisLockTTL < c.FlushInterval*2.5 {
+	if c.BufferType == domain.BufferTypeRedis {
+		if c.RedisLockTTL < int(c.FlushInterval*2+c.FlushInterval/2) {
 			slog.Warn("Redis lock TTL is less than 2.5 times the flush interval, setting to 2.5 times the flush interval")
 		}
 

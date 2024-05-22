@@ -17,8 +17,24 @@ type Record interface {
 	FromMsgPack(data []byte) error
 }
 
-var RecordTypeLog = "log"
-var RecordTypeDynamic = "dynamic"
+const BufferTypeMem = "mem"
+const BufferTypeRedis = "redis"
+
+var BufferTypes = map[string]int{
+	BufferTypeMem:   1,
+	BufferTypeRedis: 2,
+}
+
+const WriterTypeAWSS3 = "aws-s3"
+const WriterTypeFile = "file"
+
+var WriterTypes = map[string]int{
+	WriterTypeFile:  1,
+	WriterTypeAWSS3: 2,
+}
+
+const RecordTypeLog = "log"
+const RecordTypeDynamic = "dynamic"
 
 var RecordTypes = map[string]int{
 	RecordTypeLog:     1,
