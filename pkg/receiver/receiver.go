@@ -84,18 +84,17 @@ func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 
 func (r *Receiver) Write(record domain.Record) error {
 	key := record.Key()
-	err := r.buffer.Push(key, record)
+	n, err := r.buffer.Push(key, record)
 
 	if err != nil {
 		slog.Error("Error pushing record", "error", err, "record", record.ToString(), "module", "receiver", "function", "Write")
 	}
-
 	//Check if key is already in control and increment count
 	if c, ok := r.control[key]; ok {
-		c.Count++
+		c.Count = n
 		r.control[key] = c
 
-		if c.Count >= r.config.BufferSize && !c.running {
+		if n >= r.config.BufferSize && !c.running {
 			slog.Debug("Buffer size reached, flushing buffer", "key", key)
 			//Call flush on reach buffer size
 			err := r.FlushKey(key)
@@ -108,7 +107,7 @@ func (r *Receiver) Write(record domain.Record) error {
 		//Fisrt record for this key
 		r.control[key] = &BufferControl{
 			Last:    time.Now(),
-			Count:   1,
+			Count:   n,
 			running: false,
 			mu:      &sync.Mutex{},
 		}
@@ -154,8 +153,6 @@ func (r *Receiver) FlushKey(key string) error {
 		}
 	}
 
-	slog.Info("Flushing buffer", "key", key, "metrics", metrics)
-
 	//Create buffer control if not found - should not happen
 	if !found || ctrl == nil {
 		ctrl = &BufferControl{
@@ -188,11 +185,13 @@ func (r *Receiver) FlushKey(key string) error {
 	data := r.buffer.Get(key)
 
 	if len(data) == 0 {
+		slog.Debug("No data to flush", "key", key)
 		return nil
 	}
 
 	metrics["data-len"] = len(data)
 	metrics["get-time"] = time.Since(start)
+	slog.Info("Flushing buffer", "key", key, "metrics", metrics)
 	start = time.Now()
 
 	buf := new(bytes.Buffer)

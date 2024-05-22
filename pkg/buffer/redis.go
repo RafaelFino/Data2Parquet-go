@@ -7,15 +7,18 @@ import (
 	"data2parquet/pkg/domain"
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/oklog/ulid"
 )
 
 type Redis struct {
-	config *config.Config
-	client *redis.Client
-	ctx    context.Context
+	config     *config.Config
+	client     *redis.Client
+	ctx        context.Context
+	instanceId string
 }
 
 func NewRedis(ctx context.Context, config *config.Config) Buffer {
@@ -26,12 +29,15 @@ func NewRedis(ctx context.Context, config *config.Config) Buffer {
 
 	ret.client = createClient(config)
 
+	entropy := rand.New(rand.NewSource(time.Now().UnixNano()))
+	ret.instanceId = ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String()
+
 	if !ret.IsReady() {
 		slog.Error("Redis is not ready", "module", "buffer", "function", "NewRedis")
 		return nil
 	}
 
-	slog.Debug("Connected to redis", "module", "buffer", "function", "NewRedis")
+	slog.Debug("Connected to redis")
 
 	return ret
 }
@@ -70,6 +76,10 @@ func (r *Redis) makeDLQKey(key string) string {
 	return fmt.Sprintf("%s:%s", r.config.RedisDLQPrefix, key)
 }
 
+func (r *Redis) makeLockKey(key string) string {
+	return fmt.Sprintf("%s:%s", r.config.RedisLockPrefix, key)
+}
+
 func (r *Redis) Len(key string) int {
 	cmd := r.client.LLen(r.ctx, r.makeDataKey(key))
 
@@ -81,26 +91,39 @@ func (r *Redis) Len(key string) int {
 	return int(cmd.Val())
 }
 
-func (r *Redis) Push(key string, item domain.Record) error {
+func (r *Redis) Push(key string, item domain.Record) (int, error) {
 	ctx := r.ctx
+
+	if len(key) == 0 {
+		slog.Warn("Key is empty", "module", "buffer.redis", "function", "Push")
+		return 0, fmt.Errorf("key is empty") // Fix: Changed "Key" to "key"
+	}
+
+	if item == nil {
+		slog.Warn("Item is nil", "module", "buffer.redis", "function", "Push")
+		return 0, fmt.Errorf("item is nil") // Fix: Changed "Item" to "item"
+	}
+
 	sadd := r.client.SAdd(ctx, r.config.RedisKeys, key)
 
 	if sadd.Err() != nil {
 		slog.Error("Error adding key", "error", sadd.Err())
-		return sadd.Err()
+		return 0, sadd.Err()
 	}
 
 	rkey := r.makeDataKey(key)
 	data := item.ToMsgPack()
 
-	lpush := r.client.RPush(ctx, rkey, data)
+	ret := r.client.RPush(ctx, rkey, data)
 
-	if lpush.Err() != nil {
-		slog.Error("Error pushing to key", "error", lpush.Err())
-		return lpush.Err()
+	if ret.Err() != nil {
+		slog.Error("Error pushing to key", "error", ret.Err())
+		return 0, ret.Err()
 	}
 
-	return nil
+	l := int(ret.Val())
+
+	return l, nil
 }
 
 func (r *Redis) PushDLQ(key string, item domain.Record) error {
@@ -160,10 +183,45 @@ func (r *Redis) GetDLQ() (map[string][]domain.Record, error) {
 	return ret, nil
 }
 
+func (r *Redis) checkLock(key string) bool {
+	ctx := r.ctx
+	lockKey := r.makeLockKey(key)
+
+	createLock := r.client.SetNX(ctx, lockKey, r.instanceId, time.Duration(r.config.FlushInterval+r.config.FlushInterval/2)*time.Second)
+
+	if createLock.Err() != nil {
+		slog.Error("Error setting lock", "error", createLock.Err(), "key", key, "id", r.instanceId)
+		return false
+	}
+
+	ret := createLock.Val()
+
+	if ret {
+		slog.Info("Lock created for this instance", "key", key, "id", r.instanceId)
+	} else {
+		myLock := r.client.Get(ctx, lockKey)
+
+		if myLock.Err() != nil {
+			slog.Error("Error getting lock", "error", myLock.Err())
+			return false
+		}
+
+		if myLock.Val() == string(r.instanceId) {
+			slog.Debug("Already locked for this instance, continue to use", "key", key, "id", r.instanceId)
+			return true
+		}
+
+		slog.Debug("Already locked for another instance, skipping", "key", key, "id", r.instanceId, "lock-id", myLock.Val())
+	}
+
+	return ret
+}
+
 func (r *Redis) Get(key string) []domain.Record {
 	rkey := r.makeDataKey(key)
-	if r.config.RedisSkipFlush {
-		slog.Info("Skipping buffer get", "key", key, "module", "buffer.redis", "function", "Get")
+
+	if !r.checkLock(key) {
+		slog.Debug("Skipping buffer get due to lock", "key", key)
 		return make([]domain.Record, 0)
 	}
 
@@ -204,10 +262,6 @@ func (r *Redis) Get(key string) []domain.Record {
 
 func (r *Redis) Clear(key string, size int) error {
 	rkey := r.makeDataKey(key)
-	if r.config.RedisSkipFlush {
-		slog.Debug("Skipping buffer clear", "key", key, "module", "buffer.redis", "function", "Clear")
-		return nil
-	}
 
 	cmd := r.client.LPopCount(r.ctx, rkey, size)
 
@@ -272,7 +326,7 @@ func (r *Redis) PushRecovery(key string, buf *bytes.Buffer) error {
 
 	if r.client == nil {
 		slog.Error("PushRecovery - No client", "key", key)
-		return fmt.Errorf("No redis client")
+		return fmt.Errorf("no redis client")
 	}
 
 	cmd := r.client.LPush(r.ctx, r.makeRecoveryKey(key), data.ToMsgPack())

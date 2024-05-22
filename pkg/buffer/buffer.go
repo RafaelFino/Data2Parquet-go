@@ -13,7 +13,7 @@ import (
 
 type Buffer interface {
 	Close() error
-	Push(key string, item domain.Record) error
+	Push(key string, item domain.Record) (int, error)
 	PushDLQ(key string, item domain.Record) error
 	GetDLQ() (map[string][]domain.Record, error)
 	ClearDLQ() error

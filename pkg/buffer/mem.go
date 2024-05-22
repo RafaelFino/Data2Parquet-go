@@ -19,7 +19,6 @@ type Mem struct {
 	data     map[string][]domain.Record
 	dlq      map[string][]domain.Record
 	recovery []*RecoveryData
-	buff     chan BuffItem
 	mu       sync.Mutex
 	Ready    bool
 	ctx      context.Context
@@ -39,27 +38,9 @@ func NewMem(ctx context.Context, config *config.Config) Buffer {
 		dlq:      make(map[string][]domain.Record),
 		recovery: make([]*RecoveryData, 0),
 		config:   config,
-		buff:     make(chan BuffItem, config.BufferSize),
 		ctx:      ctx,
+		Ready:    true,
 	}
-
-	ret.buff = make(chan BuffItem, config.BufferSize)
-	signal := make(chan bool)
-
-	go func(m *Mem, signal chan bool) {
-		signal <- true
-		for item := range m.buff {
-			m.mu.Lock()
-			if _, ok := m.data[item.key]; !ok {
-				m.data[item.key] = make([]domain.Record, 0, m.config.BufferSize)
-			}
-
-			m.data[item.key] = append(m.data[item.key], item.item)
-			m.mu.Unlock()
-		}
-	}(ret, signal)
-
-	ret.Ready = <-signal
 
 	return ret
 }
@@ -67,7 +48,6 @@ func NewMem(ctx context.Context, config *config.Config) Buffer {
 func (m *Mem) Close() error {
 	slog.Debug("Closing buffer", "module", "buffer.mem", "function", "Close")
 	m.Ready = false
-	close(m.buff)
 	return nil
 }
 
@@ -84,18 +64,30 @@ func (m *Mem) Len(key string) int {
 	return len(m.data[key])
 }
 
-func (m *Mem) Push(key string, item domain.Record) error {
+func (m *Mem) Push(key string, item domain.Record) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if len(key) == 0 {
+		slog.Warn("Key is empty", "module", "buffer.mem", "function", "Push")
+		return 0, errors.New("key is empty")
+	}
+
 	if item == nil {
 		slog.Warn("Item is nil	", "key", key, "module", "buffer.mem", "function", "Push")
-		return errors.New("item is nil")
+		return 0, errors.New("item is nil")
 	}
 
-	m.buff <- BuffItem{
-		key:  key,
-		item: item,
+	values, ok := m.data[key]
+	if !ok {
+		values = make([]domain.Record, 0, m.config.BufferSize)
 	}
 
-	return nil
+	values = append(m.data[key], item)
+
+	m.data[key] = values
+
+	return len(values), nil
 }
 
 func (m *Mem) PushDLQ(key string, item domain.Record) error {
