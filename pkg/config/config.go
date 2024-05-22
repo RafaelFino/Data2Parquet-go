@@ -369,13 +369,19 @@ func (c *Config) SetDefaults() {
 	c.RecordType = strings.ToLower(c.RecordType)
 
 	if c.BufferType == BufferTypeRedis {
-		if c.RedisLockTTL < int(c.FlushInterval*2) {
+		if c.RedisLockTTL < int(c.FlushInterval*2+c.FlushInterval/2) {
 			slog.Warn("Redis lock TTL is less than 2.5 times the flush interval, setting to 2.5 times the flush interval")
 		}
 
 		if len(c.RedisLockInstanceName) == 0 {
-			slog.Warn("Redis lock instance name is empty, setting to data2parquet")
-			c.RedisLockInstanceName = "d2p"
+			slog.Warn("Redis lock instance name is empty, setting with hostname")
+			host, err := os.Hostname()
+
+			if err != nil {
+				slog.Warn("Error getting hostname", "error", err)
+				host = "d2p"
+			}
+			c.RedisLockInstanceName = host
 		}
 
 		if c.RedisDB < 0 {

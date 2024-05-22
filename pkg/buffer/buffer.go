@@ -26,6 +26,7 @@ type Buffer interface {
 	PushRecovery(key string, buf *bytes.Buffer) error
 	GetRecovery() ([]*RecoveryData, error)
 	ClearRecoveryData() error
+	CheckLock(key string) bool
 }
 
 func New(ctx context.Context, cfg *config.Config) Buffer {

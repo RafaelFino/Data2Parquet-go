@@ -23,6 +23,7 @@ type Receiver struct {
 	converter     *converter.Converter
 	ctx           context.Context
 	recoveryCount int
+	interval      time.Duration
 }
 
 type BufferControl struct {
@@ -46,6 +47,7 @@ func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 		ctx:           ctx,
 		recoveryCount: 0,
 		converter:     converter.New(config),
+		interval:      time.Duration(config.FlushInterval) * time.Second,
 	}
 
 	slog.Debug("Validating receiver buffer", "module", "receiver", "function", "NewReceiver")
@@ -89,14 +91,14 @@ func (r *Receiver) Write(record domain.Record) error {
 	if err != nil {
 		slog.Error("Error pushing record", "error", err, "record", record.ToString(), "module", "receiver", "function", "Write")
 	}
-	//Check if key is already in control and increment count
+
 	if c, ok := r.control[key]; ok {
 		c.Count = n
 		r.control[key] = c
 
 		if n >= r.config.BufferSize && !c.running {
 			slog.Info("Buffer size reached, checkin to flush buffer", "key", key, "size", n, "buffer-size", r.config.BufferSize)
-			//Call flush on reach buffer size
+
 			err := r.FlushKey(key)
 
 			if err != nil {
@@ -114,8 +116,8 @@ func (r *Receiver) Write(record domain.Record) error {
 
 		go func(r *Receiver, key string) {
 			for r.running {
-				slog.Debug("Waiting interval to flush buffer", "key", key, "interval", r.config.FlushInterval)
-				time.Sleep(time.Duration(r.config.FlushInterval) * time.Second)
+				slog.Debug("Waiting interval to flush buffer", "key", key, "interval", r.interval)
+				time.Sleep(r.interval)
 
 				if r.running {
 					slog.Debug("Interval reached, trying to flush buffer", "key", key)
@@ -136,18 +138,14 @@ func (r *Receiver) FlushKey(key string) error {
 	metrics := make(map[string]any)
 	start := time.Now()
 
-	//Get buffer control
-	var ctrl *BufferControl
 	ctrl, found := r.control[key]
 	if found {
 		metrics["last-flush"] = ctrl.Last.Format(time.RFC3339)
 		metrics["ctrl-count"] = ctrl.Count
 
 		if ctrl.Count < r.config.BufferSize {
-			nextInterval := time.Since(ctrl.Last)
-
-			if nextInterval < time.Duration(r.config.FlushInterval)*time.Second {
-				slog.Debug("Skipping buffer flush, interval reached but buffer already reached about size, waiting for next check", "key", key, "next-interval-flush", time.Duration(r.config.FlushInterval)*time.Second-nextInterval)
+			if time.Since(ctrl.Last) < r.interval {
+				slog.Debug("Skipping buffer flush, interval reached but buffer already reached about size, waiting for next check", "key", key)
 				return nil
 			}
 		}
@@ -169,10 +167,9 @@ func (r *Receiver) FlushKey(key string) error {
 
 	ctrl.mu.Lock()
 	ctrl.running = true
-	ctrl.Last = time.Now()
-	r.control[key] = ctrl
 
 	defer func(key string, ctrl *BufferControl) {
+		ctrl.Last = time.Now()
 		ctrl.running = false
 		ctrl.mu.Unlock()
 
@@ -181,6 +178,11 @@ func (r *Receiver) FlushKey(key string) error {
 
 	metrics["ctrl-time"] = time.Since(start)
 	start = time.Now()
+
+	if !r.buffer.CheckLock(key) {
+		slog.Info("Skipping flush, buffer is locked by other process", "key", key)
+		return nil
+	}
 
 	data := r.buffer.Get(key)
 
@@ -210,6 +212,7 @@ func (r *Receiver) FlushKey(key string) error {
 
 			if err != nil {
 				slog.Error("Error pushing to DLQ Buffer", "error", err, "key", key, "module", "receiver", "function", "Flush")
+				panic(err)
 			}
 		}
 	}
@@ -224,7 +227,7 @@ func (r *Receiver) FlushKey(key string) error {
 	start = time.Now()
 
 	if err != nil {
-		slog.Error("Error writing data, pushing to DLQ Buffer", "error", err, "key", key, "size", len(data), "duration", time.Since(start))
+		slog.Error("Error writing data, pushing to DLQ Buffer", "error", err, "key", key, "size", len(data), "duration", metrics["write-time"])
 		errWr := r.buffer.PushRecovery(key, buf)
 
 		if errWr != nil {
@@ -322,7 +325,7 @@ func (r *Receiver) Close() error {
 		slog.Debug("Flushing key on close receiver", "key", key, "module", "receiver", "function", "Close")
 		if ctrl, found := r.control[key]; found {
 			ctrl.Count = r.config.BufferSize
-			ctrl.Last = time.Now().Add(-time.Duration(r.config.FlushInterval) * time.Second)
+			ctrl.Last = time.Now().Add(-r.interval)
 			r.control[key] = ctrl
 		}
 

@@ -96,8 +96,6 @@ func (r *Redis) Len(key string) int {
 }
 
 func (r *Redis) Push(key string, item domain.Record) (int, error) {
-	ctx := r.ctx
-
 	if len(key) == 0 {
 		slog.Warn("Key is empty", "module", "buffer.redis", "function", "Push")
 		return 0, fmt.Errorf("key is empty") // Fix: Changed "Key" to "key"
@@ -108,7 +106,7 @@ func (r *Redis) Push(key string, item domain.Record) (int, error) {
 		return 0, fmt.Errorf("item is nil") // Fix: Changed "Item" to "item"
 	}
 
-	sadd := r.client.SAdd(ctx, r.config.RedisKeys, key)
+	sadd := r.client.SAdd(r.ctx, r.config.RedisKeys, key)
 
 	if sadd.Err() != nil {
 		slog.Error("Error adding key", "error", sadd.Err())
@@ -118,7 +116,7 @@ func (r *Redis) Push(key string, item domain.Record) (int, error) {
 	rkey := r.makeDataKey(key)
 	data := item.ToMsgPack()
 
-	ret := r.client.RPush(ctx, rkey, data)
+	ret := r.client.RPush(r.ctx, rkey, data)
 
 	if ret.Err() != nil {
 		slog.Error("Error pushing to key", "error", ret.Err())
@@ -187,12 +185,11 @@ func (r *Redis) GetDLQ() (map[string][]domain.Record, error) {
 	return ret, nil
 }
 
-func (r *Redis) checkLock(key string) bool {
-	ctx := r.ctx
+func (r *Redis) CheckLock(key string) bool {
 	lockKey := r.makeLockKey(key)
 	ttl := time.Duration(r.config.RedisLockTTL) * time.Second
 
-	createLock := r.client.SetNX(ctx, lockKey, r.instanceId, ttl)
+	createLock := r.client.SetNX(r.ctx, lockKey, r.instanceId, ttl)
 
 	if createLock.Err() != nil {
 		slog.Error("Error setting lock", "error", createLock.Err(), "key", key, "id", r.instanceId)
@@ -203,20 +200,19 @@ func (r *Redis) checkLock(key string) bool {
 
 	if ret {
 		slog.Info("Lock created for this instance", "key", key, "id", r.instanceId, "ttl", ttl)
-	} else {
-		currentLck := r.client.Get(ctx, lockKey)
+		return ret
+	}
 
-		if currentLck.Err() != nil {
-			slog.Error("Error getting lock", "error", currentLck.Err())
-			return false
-		}
+	currentLck := r.client.Get(r.ctx, lockKey)
 
-		slog.Debug("A lock already exists on redis", "key", key, "instance-id", r.instanceId, "redis-lock-id", currentLck.Val())
+	if currentLck.Err() != nil {
+		slog.Error("Error getting lock", "error", currentLck.Err())
+		return false
+	}
 
-		if currentLck.Val() == string(r.instanceId) {
-			slog.Debug("Already locked for this instance, continue to use", "key", key, "id", r.instanceId)
-			return true
-		}
+	if currentLck.Val() == r.instanceId {
+		slog.Debug("Already locked for this instance, continue to use", "key", key, "id", r.instanceId)
+		return true
 	}
 
 	return ret
@@ -225,39 +221,38 @@ func (r *Redis) checkLock(key string) bool {
 func (r *Redis) Get(key string) []domain.Record {
 	rkey := r.makeDataKey(key)
 
-	if !r.checkLock(key) {
+	if !r.CheckLock(key) {
 		slog.Debug("Skipping buffer get due to lock", "key", key)
 		return make([]domain.Record, 0)
 	}
 
-	ctx := r.ctx
-	cmd := r.client.LLen(ctx, rkey)
+	cmd := r.client.LLen(r.ctx, rkey)
 
 	if cmd.Err() != nil {
 		slog.Error("Error getting key", "error", cmd.Err())
-		return nil
+		return make([]domain.Record, 0)
 	}
 
 	size := cmd.Val()
 
-	result := r.client.LRange(ctx, rkey, 0, size-1)
+	result := r.client.LRange(r.ctx, rkey, 0, size-1)
 
 	if result.Err() != nil {
 		slog.Error("Error getting key", "error", result.Err())
-		return nil
+		return make([]domain.Record, 0)
 	}
 
 	ret := make([]domain.Record, size)
 
 	var err error
 	for i, v := range result.Val() {
-		r := domain.NewObj(r.config.RecordType)
-		err = r.FromMsgPack([]byte(v))
+		rec := domain.NewObj(r.config.RecordType)
+		err = rec.FromMsgPack([]byte(v))
 		if err != nil {
 			slog.Error("Error decoding record", "error", err, "module", "buffer.redis", "function", "Get", "record", v)
-			return nil
+			return ret
 		}
-		ret[i] = r
+		ret[i] = rec
 	}
 
 	slog.Debug("Got buffer", "key", key, "size", size, "records", len(ret))

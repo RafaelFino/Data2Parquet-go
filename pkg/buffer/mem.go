@@ -226,3 +226,7 @@ func (m *Mem) ClearRecoveryData() error {
 
 	return nil
 }
+
+func (m *Mem) CheckLock(key string) bool {
+	return true
+}
