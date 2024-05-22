@@ -11,9 +11,6 @@ A HTTP-Server that offer a HTTP Rest API to send data and manage Flush process.
 ### [FluentBit Parquet Output Plugin](https://github.com/RafaelFino/Data2Parquet-go/blob/main/cmd/fluent-out-parquet/main.go)
 A shared object built to works with FluentBit as an Output plugin.
 
-## [Receiver](https://github.com/RafaelFino/Data2Parquet-go/blob/main/pkg/receiver/receiver.go) (/pkg)
-This is the core for this service, responsable for receive data, buffering, enconde, decode and handle pages to Writers
-
 ### The [Record Type](https://github.com/RafaelFino/Data2Parquet-go/blob/main/pkg/domain/record.go) (/pkg/domain)
 ``` golang
 type Record struct {
@@ -62,6 +59,9 @@ Use a redis instance to store temporaly data before Writer receive data. This of
 Some parameters can be changed to handle Redis keys, such as `RedisKeys` and `RedisDataPrefix`, they will change how Writer make store keys.
 
 The Works also can be configure just to receive data and never flush it, it is specialy important if you want to have more than one worker receiving data in a cluster, scanling worloads. It's very recommended that only one instance made Flush for each kind of key. To do that, use `RedisSkipFlush` key as `true`
+
+## [Receiver](https://github.com/RafaelFino/Data2Parquet-go/blob/main/pkg/receiver/receiver.go) (/pkg/receiver)
+This is the core for this service, responsable for receive data, buffering, enconde, decode and handle pages to Writers
 
 ## [Writers](https://github.com/RafaelFino/Data2Parquet-go/blob/main/pkg/writer/writer.go) (/pkg/writer)
 Using the key `WriterType` you can choose the writer to write parquet data.
