@@ -116,17 +116,21 @@ func (r *Receiver) Write(record domain.Record) error {
 
 		go func(r *Receiver, key string) {
 			for r.running {
+				if r.ctx.Err() != nil {
+					slog.Debug("Context canceled, stopping receiver", "module", "receiver", "function", "Write")
+					r.Close()
+					return
+				}
+
+				slog.Debug("Interval reached, trying to flush buffer", "key", key)
+				err := r.FlushKey(key)
+
+				if err != nil {
+					slog.Error("Error flushing buffer", "error", err, "key", key, "module", "receiver", "function", "Write")
+				}
+
 				slog.Debug("Waiting interval to flush buffer", "key", key, "interval", r.interval)
 				time.Sleep(r.interval)
-
-				if r.running {
-					slog.Debug("Interval reached, trying to flush buffer", "key", key)
-					err := r.FlushKey(key)
-
-					if err != nil {
-						slog.Error("Error flushing buffer", "error", err, "key", key, "module", "receiver", "function", "Write")
-					}
-				}
 			}
 		}(r, key)
 	}

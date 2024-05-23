@@ -1,7 +1,7 @@
 {
     "buffer_size": 10000,
-    "_buffer_type": "mem",
-    "buffer_type": "redis",
+    "buffer_type": "mem",
+    "_buffer_type": "redis",
     "debug": false,
     "flush_interval": 10,
     "ledis_path": "/tmp",
