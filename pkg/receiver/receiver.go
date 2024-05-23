@@ -24,6 +24,7 @@ type Receiver struct {
 	ctx           context.Context
 	recoveryCount int
 	interval      time.Duration
+	mu            *sync.Mutex
 }
 
 type BufferControl struct {
@@ -48,6 +49,7 @@ func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 		recoveryCount: 0,
 		converter:     converter.New(config),
 		interval:      time.Duration(config.FlushInterval) * time.Second,
+		mu:            &sync.Mutex{},
 	}
 
 	slog.Debug("Validating receiver buffer", "module", "receiver", "function", "NewReceiver")
@@ -97,7 +99,7 @@ func (r *Receiver) Write(record domain.Record) error {
 		r.control[key] = c
 
 		if n >= r.config.BufferSize && !c.running {
-			slog.Info("Buffer size reached, checkin to flush buffer", "key", key, "size", n, "buffer-size", r.config.BufferSize)
+			slog.Debug("Buffer size reached, checkin to flush buffer", "key", key, "size", n, "buffer-size", r.config.BufferSize)
 
 			err := r.FlushKey(key)
 
@@ -116,12 +118,6 @@ func (r *Receiver) Write(record domain.Record) error {
 
 		go func(r *Receiver, key string) {
 			for r.running {
-				if r.ctx.Err() != nil {
-					slog.Debug("Context canceled, stopping receiver", "module", "receiver", "function", "Write")
-					r.Close()
-					return
-				}
-
 				slog.Debug("Interval reached, trying to flush buffer", "key", key)
 				err := r.FlushKey(key)
 
@@ -139,14 +135,10 @@ func (r *Receiver) Write(record domain.Record) error {
 }
 
 func (r *Receiver) FlushKey(key string) error {
-	metrics := make(map[string]any)
 	start := time.Now()
 
 	ctrl, found := r.control[key]
 	if found {
-		metrics["last-flush"] = ctrl.Last.Format(time.RFC3339)
-		metrics["ctrl-count"] = ctrl.Count
-
 		if ctrl.Count < r.config.BufferSize {
 			if time.Since(ctrl.Last) < r.interval {
 				slog.Debug("Skipping buffer flush, interval reached but buffer already reached about size, waiting for next check", "key", key)
@@ -177,18 +169,17 @@ func (r *Receiver) FlushKey(key string) error {
 		ctrl.running = false
 		ctrl.mu.Unlock()
 
+		r.mu.Lock()
 		r.control[key] = ctrl
+		r.mu.Unlock()
 	}(key, ctrl)
-
-	metrics["ctrl-time"] = time.Since(start)
-	start = time.Now()
 
 	if !r.buffer.CheckLock(key) {
 		slog.Debug("Skipping flush, buffer is locked by other process", "key", key)
 		return nil
 	}
 
-	slog.Info("Flushing buffer - trying to load data from buffer", "key", key, "page-size", r.config.BufferSize)
+	slog.Info("Flushing buffer - trying to load data from buffer", "key", key)
 
 	data := r.buffer.Get(key)
 
@@ -197,17 +188,11 @@ func (r *Receiver) FlushKey(key string) error {
 		return nil
 	}
 
-	metrics["data-len"] = len(data)
-	metrics["get-time"] = time.Since(start)
-	slog.Info("Writing buffer data", "key", key, "metrics", metrics)
-	start = time.Now()
+	slog.Info("Writing buffer data", "key", key, "size", len(data), "page-size", r.config.BufferSize)
 
 	buf := new(bytes.Buffer)
 	result := r.converter.Write(key, data, buf)
 
-	metrics["convert-time"] = time.Since(start)
-	metrics["buffer-size"] = buf.Len()
-	start = time.Now()
 	errCount := 0
 
 	for _, item := range result {
@@ -223,17 +208,10 @@ func (r *Receiver) FlushKey(key string) error {
 		}
 	}
 
-	if errCount > 0 {
-		metrics["convert-error"] = errCount
-	}
-
 	err := r.writer.Write(key, buf)
 
-	metrics["write-time"] = time.Since(start)
-	start = time.Now()
-
 	if err != nil {
-		slog.Error("Error writing data, pushing to DLQ Buffer", "error", err, "key", key, "size", len(data), "duration", metrics["write-time"])
+		slog.Error("Error writing data, pushing to DLQ Buffer", "error", err, "key", key, "size", len(data))
 		errWr := r.buffer.PushRecovery(key, buf)
 
 		if errWr != nil {
@@ -248,9 +226,6 @@ func (r *Receiver) FlushKey(key string) error {
 
 	err = r.buffer.Clear(key, len(data))
 
-	metrics["clear-time"] = time.Since(start)
-	start = time.Now()
-
 	if err != nil {
 		slog.Error("Error clearing buffer", "error", err, "key", key, "size", len(data), "module", "receiver")
 		return err
@@ -258,11 +233,11 @@ func (r *Receiver) FlushKey(key string) error {
 
 	//Reset buffer control
 	ctrl.Count = 0
+	r.mu.Lock()
 	r.control[key] = ctrl
+	r.mu.Unlock()
 
-	metrics["ctrl-last"] = ctrl.Last
-	slog.Debug("Flush metrics", "metrics", metrics)
-	slog.Info("Buffer flushed!", "key", key, "total-duration", time.Since(start), "count", len(data))
+	slog.Info("Buffer flushed!", "key", key, "total-duration", time.Since(start))
 
 	return nil
 }

@@ -42,6 +42,10 @@ func (m *Mem) Close() error {
 
 func (m *Mem) Len(key string) int {
 	slog.Debug("Getting buffer length", "key", key, "module", "buffer.mem", "function", "Len")
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.data == nil {
 		return 0
 	}
@@ -153,13 +157,12 @@ func (m *Mem) Clear(key string, size int) error {
 	if m.data == nil {
 		return nil
 	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	if _, ok := m.data[key]; !ok {
 		return nil
 	}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
 
 	if size == -1 || size > len(m.data[key]) {
 		delete(m.data, key)
@@ -173,6 +176,9 @@ func (m *Mem) Clear(key string, size int) error {
 func (m *Mem) Keys() []string {
 	keys := make([]string, 0, len(m.data))
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	for k := range m.data {
 		keys = append(keys, k)
 	}
@@ -185,6 +191,9 @@ func (m *Mem) IsReady() bool {
 }
 
 func (m *Mem) HasRecovery() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	return len(m.recovery) > 0
 }
 

@@ -260,7 +260,7 @@ func (r *Redis) Get(key string) []domain.Record {
 		ret[i] = rec
 	}
 
-	slog.Debug("Got buffer", "key", key, "size", size, "records", len(ret))
+	slog.Info("Got buffer", "key", key, "size", size, "records", len(ret))
 
 	return ret
 }

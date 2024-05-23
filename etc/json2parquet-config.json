@@ -1,5 +1,5 @@
 {
-    "buffer_size": 10000,
+    "buffer_size": 1000000,
     "buffer_type": "mem",
     "_buffer_type": "redis",
     "debug": false,
