@@ -125,7 +125,7 @@ func GenerateLog(pid int, count int, result chan domain.Record, wg *sync.WaitGro
 
 	resType := "ec2"
 	cloudProvider := "aws"
-	httpResult := int64(200)
+	httpResult := "200"
 	stack := string(debug.Stack())
 	start := time.Now()
 	region := "us-east-1"
@@ -138,7 +138,7 @@ func GenerateLog(pid int, count int, result chan domain.Record, wg *sync.WaitGro
 	slog.Info("Starting to generate logs", "pid", pid, "count", count)
 
 	for i := 0; i < count; i++ {
-		duration := time.Since(start).Milliseconds()
+		duration := fmt.Sprint(time.Since(start).Milliseconds())
 		line := &domain.Log{
 			Level:                       "INFO",
 			Message:                     words.Sentences(5),
