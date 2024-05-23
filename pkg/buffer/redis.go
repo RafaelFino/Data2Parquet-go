@@ -57,9 +57,10 @@ func (r *Redis) Close() error {
 
 func createClient(cfg *config.Config) *redis.Client {
 	return redis.NewClient(&redis.Options{
-		Addr:     cfg.RedisHost,
-		Password: cfg.RedisPassword,
-		DB:       cfg.RedisDB,
+		Addr:        cfg.RedisHost,
+		Password:    cfg.RedisPassword,
+		DB:          cfg.RedisDB,
+		ReadTimeout: time.Duration(cfg.RedisTimeout),
 	})
 }
 
@@ -210,21 +211,20 @@ func (r *Redis) CheckLock(key string) bool {
 		return false
 	}
 
-	if currentLck.Val() == r.instanceId {
+	lockOwner := currentLck.Val()
+
+	if lockOwner == r.instanceId {
 		slog.Debug("Already locked for this instance, continue to use", "key", key, "id", r.instanceId)
 		return true
 	}
+
+	slog.Info("Buffer already locked by another instance", "key", key, "this-id", r.instanceId, "current-id", lockOwner)
 
 	return ret
 }
 
 func (r *Redis) Get(key string) []domain.Record {
 	rkey := r.makeDataKey(key)
-
-	if !r.CheckLock(key) {
-		slog.Debug("Skipping buffer get due to lock", "key", key)
-		return make([]domain.Record, 0)
-	}
 
 	cmd := r.client.LLen(r.ctx, rkey)
 
@@ -234,6 +234,11 @@ func (r *Redis) Get(key string) []domain.Record {
 	}
 
 	size := cmd.Val()
+
+	if size > int64(r.config.BufferSize) {
+		slog.Info("Buffer size is bigger than config, will get partial data", "key", key, "size", size, "config", r.config.BufferSize)
+		size = int64(r.config.BufferSize)
+	}
 
 	result := r.client.LRange(r.ctx, rkey, 0, size-1)
 

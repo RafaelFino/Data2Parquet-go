@@ -180,9 +180,11 @@ func (r *Receiver) FlushKey(key string) error {
 	start = time.Now()
 
 	if !r.buffer.CheckLock(key) {
-		slog.Info("Skipping flush, buffer is locked by other process", "key", key)
+		slog.Debug("Skipping flush, buffer is locked by other process", "key", key)
 		return nil
 	}
+
+	slog.Info("Flushing buffer - trying to load data from buffer", "key", key, "page-size", r.config.BufferSize)
 
 	data := r.buffer.Get(key)
 
@@ -193,7 +195,7 @@ func (r *Receiver) FlushKey(key string) error {
 
 	metrics["data-len"] = len(data)
 	metrics["get-time"] = time.Since(start)
-	slog.Info("Flushing buffer", "key", key, "metrics", metrics)
+	slog.Info("Writing buffer data", "key", key, "metrics", metrics)
 	start = time.Now()
 
 	buf := new(bytes.Buffer)
@@ -255,8 +257,8 @@ func (r *Receiver) FlushKey(key string) error {
 	r.control[key] = ctrl
 
 	metrics["ctrl-last"] = ctrl.Last
-
-	slog.Debug("Buffer flushed", "key", key, "module", "receiver", "function", "Flush", "total-duration", time.Since(start), "metrics", metrics)
+	slog.Debug("Flush metrics", "metrics", metrics)
+	slog.Info("Buffer flushed!", "key", key, "total-duration", time.Since(start), "count", len(data))
 
 	return nil
 }

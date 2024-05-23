@@ -26,6 +26,9 @@ type Config struct {
 	//RedisPassword: RedisPassword configuration tag, describe the password of the Redis server, its an optional field. The default value is empty.
 	//RedisRecoveryKey: RedisRecoveryKey configuration tag, describe the recovery key in Redis, its an optional field. The default value is `recovery`.
 	//RedisDLQPrefix: RedisDLQPrefix configuration tag, describe the prefix of the DLQ key in Redis, its an optional field. The default value is `dlq`.
+	//RedisLockTTL: RedisLockTTL configuration tag, describe the TTL of the lock key in Redis, its an optional field. The default value is `2.5x` 'FlushInterval` value.
+	//RedisLockInstanceName: RedisLockInstanceName configuration tag, describe the instance name of the lock key in Redis, its an optional field. The default value is empty and in this case, instance hostname will be considered.
+	//RedisTimeout: RedisTimeout configuration tag, describe the timeout of the Redis server, its an optional field. The default value is empty, in this case, `0` will be the value (Redis defaults).
 	//S3BucketName: S3BucketName configuration tag, describe the bucket name in S3, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 	//S3Region: S3Region configuration tag, describe the region of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 	//S3RoleName: S3RoleName configuration tag, describe the role name of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
@@ -57,6 +60,7 @@ type Config struct {
 	RedisLockInstanceName string `json:"redis_lock_instance_name,omitempty"`
 	RedisPassword         string `json:"redis_password,omitempty"`
 	RedisRecoveryKey      string `json:"redis_recovery_key,omitempty"`
+	RedisTimeout          int    `json:"redis_timeout,omitempty"`
 	S3Account             string `json:"s3_account,omitempty"`
 	S3BuketName           string `json:"s3_bucket_name"`
 	S3Endpoint            string `json:"s3_endpoint,omitempty"`
@@ -112,6 +116,7 @@ var keys = []string{
 	"RedisPassword",
 	"RedisRecoveryKey",
 	"RedisSQLPrefix",
+	"RedisTimeout",
 	"S3BucketName",
 	"S3Region",
 	"S3RoleName",
@@ -243,6 +248,8 @@ func (c *Config) Set(cfg map[string]string) error {
 			fmt.Sscanf(value, "%d", &c.RedisLockTTL)
 		case "RedisLockInstanceName":
 			c.RedisLockInstanceName = value
+		case "RedisTimeout":
+			fmt.Sscanf(value, "%d", &c.RedisTimeout)
 
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
@@ -275,7 +282,8 @@ func (c *Config) Get() map[string]interface{} {
 	ret["RedisLockInstanceName"] = c.RedisLockInstanceName
 	ret["RedisPassword"] = c.RedisPassword
 	ret["RedisRecoveryKey"] = c.RedisRecoveryKey
-	ret["RedisSQLPrefix"] = c.RedisDLQPrefix
+	ret["RedisDLQPrefix"] = c.RedisDLQPrefix
+	ret["RedisTimeout"] = c.RedisTimeout
 	ret["S3BucketName"] = c.S3BuketName
 	ret["S3Region"] = c.S3Region
 	ret["S3RoleName"] = c.S3RoleName
@@ -297,7 +305,7 @@ func (c *Config) SetDefaults() {
 	}
 
 	if c.WriterType == "" {
-		slog.Warn("Writer type is empty, setting to file")
+		slog.Debug("Writer type is empty, setting to file")
 		c.WriterType = "file"
 	}
 
@@ -307,7 +315,7 @@ func (c *Config) SetDefaults() {
 	}
 
 	if c.WriterCompressionType == "" {
-		slog.Warn("Writer compression type is empty, setting to snappy")
+		slog.Debug("Writer compression type is empty, setting to snappy")
 		c.WriterCompressionType = "snappy"
 	}
 
@@ -317,7 +325,7 @@ func (c *Config) SetDefaults() {
 	}
 
 	if c.BufferType == "" {
-		slog.Warn("Buffer type is empty, setting to mem")
+		slog.Debug("Buffer type is empty, setting to mem")
 		c.BufferType = BufferTypeMem
 	}
 
@@ -362,7 +370,7 @@ func (c *Config) SetDefaults() {
 	}
 
 	if len(c.RecordType) == 0 {
-		slog.Warn("Record type is empty, setting to log")
+		slog.Debug("Record type is empty, setting to log")
 		c.RecordType = RecordTypeLog
 	}
 
@@ -370,22 +378,22 @@ func (c *Config) SetDefaults() {
 
 	if c.BufferType == BufferTypeRedis {
 		if c.RedisLockTTL < int(c.FlushInterval*2+c.FlushInterval/2) {
-			slog.Warn("Redis lock TTL is less than 2.5 times the flush interval, setting to 2.5 times the flush interval")
+			slog.Debug("Redis lock TTL is less than 2.5 times the flush interval, setting to 2.5 times the flush interval")
 		}
 
 		if len(c.RedisLockInstanceName) == 0 {
-			slog.Warn("Redis lock instance name is empty, setting with hostname")
+			slog.Debug("Redis lock instance name is empty, setting with hostname")
 			host, err := os.Hostname()
 
 			if err != nil {
-				slog.Warn("Error getting hostname", "error", err)
+				slog.Debug("Error getting hostname", "error", err)
 				host = "d2p"
 			}
 			c.RedisLockInstanceName = host
 		}
 
 		if c.RedisDB < 0 {
-			slog.Warn("Redis DB is less than 0, setting to 0")
+			slog.Debug("Redis DB is less than 0, setting to 0")
 			c.RedisDB = 0
 		}
 

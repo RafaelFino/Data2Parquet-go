@@ -17,3 +17,4 @@ services:
     environment:
       - SERVICES=s3,sts
       - DEFAULT_REGION=us-east-2  
+      - DEBUG=1

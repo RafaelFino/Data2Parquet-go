@@ -45,7 +45,7 @@ func (s *S3) Init() error {
 		"STS": s.config.S3STSEndpoint,
 	}
 
-	slog.Info("Initializing S3 writer", "config", s.config.ToJSON(), "endpoints", endpoints)
+	slog.Debug("Initializing S3 writer", "config", s.config.ToJSON(), "endpoints", endpoints)
 
 	cfg, err := awsConfig.LoadDefaultConfig(s.ctx,
 		awsConfig.WithRegion(s.config.S3Region),
@@ -78,7 +78,7 @@ func (s *S3) Init() error {
 		}),
 	)
 
-	slog.Info("Get credentials, trying to create a S3 client")
+	slog.Debug("Get credentials, trying to create a S3 client")
 
 	s.client = s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.UsePathStyle = true
@@ -89,7 +89,7 @@ func (s *S3) Init() error {
 		return errors.New("error creating S3 client")
 	}
 
-	slog.Info("S3 client created, checking bucket")
+	slog.Debug("S3 client created, checking bucket")
 
 	err = s.CheckBucket()
 
@@ -169,7 +169,7 @@ func (s *S3) makeBuketName(key string) string {
 	year, month, day := tm.Date()
 	hour, min, sec := tm.Clock()
 
-	return fmt.Sprintf("%d/%02d/%02d/%02d%02d%02d-%s.parquet", year, month, day, hour, min, sec, key)
+	return fmt.Sprintf("year=%04d/month=%02d/day=%02d/hour=%02d/%02d%02d%02d-%s.parquet", year, month, day, hour, hour, min, sec, key)
 }
 
 func (s *S3) Close() error {
