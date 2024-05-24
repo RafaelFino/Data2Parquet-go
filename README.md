@@ -31,13 +31,15 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
 	autonumber
-    participant Receiver
-    participant Buffer    	
+	participant Receiver
+    participant Buffer   
+	participant Redis
+	participant Converter
+	participant Writer
 
-	rect gray
+	rect rgb(240,240,240)
 	note right of Receiver: Lock verify
 		Receiver->>Buffer: Check Lock
-		create participant Redis
 		alt No lock
 			Buffer->>Redis: Create a lock
 			Buffer->>Receiver: Continue with flush
@@ -50,16 +52,15 @@ sequenceDiagram
 		end
 	end
 	
-	rect gray
+	rect rgb(240,240,240)
 	note right of Receiver: Request buffer data
 		Receiver->>Buffer: Request data to Flush
 		Buffer->>Redis: Request current flush data
 		Buffer->>Receiver: Return data to flush		
 	end
-
-	rect gray
-	note right of Receiver: Try to converting data into a parquet file
-		create participant Converter
+	
+	rect rgb(240,240,240)
+	note right of Receiver: Try to convert data into a parquet file				
 		Receiver->>Converter: Try convert all data to Parquet stream	
 		alt Fail to convert
 			Converter->>Receiver: Return invalid data
@@ -70,7 +71,7 @@ sequenceDiagram
 		end
 	end
 	
-	rect gray
+	rect rgb(240,240,240)
 	note right of Receiver: Resend recovered data if needed
 		Receiver->>Buffer: Ask for recovery data if exists
 		Buffer->>Redis: Check if exists recovery data
@@ -79,9 +80,8 @@ sequenceDiagram
 		Receiver->>Receiver: Prepare recovery data with new values
 	end
 	
-	rect gray
+	rect rgb(240,240,240)
 	note right of Receiver: Write converted data on final target	
-		create participant Writer
 		Receiver->>Writer: Send data to store
 		alt Fail to store processed data
 			Receiver->>Buffer: Send data to recovery bucket
