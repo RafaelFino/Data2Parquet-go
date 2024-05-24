@@ -32,10 +32,11 @@ sequenceDiagram
 	autonumber
 	participant Receiver
     participant Buffer   		
-	
-	note right of Receiver: Lock verify
-		Receiver->>Buffer: Check Lock
-		create participant Redis
+	participant Redis
+		
+	critical
+		note over Receiver, Redis: Lock verify
+		Receiver->>Buffer: Check Lock		
 		alt No lock
 			Buffer->>Redis: Create a lock
 			Buffer->>Receiver: Continue with flush
@@ -46,14 +47,18 @@ sequenceDiagram
 		break Lock belongs to another instance
 			Buffer->>Receiver: Skip flush this time and end process
 		end
+	end
 		
-	note right of Receiver: Request buffer data
+	critical
+		note over Receiver, Redis: Request buffer data
 		Receiver->>Buffer: Request data to Flush
 		Buffer->>Redis: Request current flush data
 		Buffer->>Receiver: Return data to flush		
-			
-	note right of Receiver: Try to convert data into a parquet stream				
+	end
+
+	critical	
 		create participant Converter
+		note over Receiver, Converter: Try to convert data into a parquet stream						
 		Receiver->>Converter: Try convert all data to Parquet stream	
 		alt Fail to convert
 			Converter->>Receiver: Return invalid data
@@ -62,21 +67,31 @@ sequenceDiagram
 		else
 			Converter->>Receiver: Receive processed data
 		end
-	
-	note right of Receiver: Resend recovered data if needed
+	end 
+
+	opt 
+		note over Receiver, Redis: Resend recovered data if needed
 		Receiver->>Buffer: Ask for recovery data if exists
 		Buffer->>Redis: Check if exists recovery data
 		Redis->>Buffer: Return recovery data
 		Buffer->>Receiver: Get data to write
-	
-	note right of Receiver: Write converted data on final target	
-		create participant Writer
+	end
+
+	critical
+		create participant Writer	
+		note over Receiver, Writer: Write converted data on final target	
 		Receiver->>Writer: Send data to store
+
+		note over Receiver, Redis: Write converted data on final target	
+		
 		alt Fail to store processed data
 			Receiver->>Buffer: Send data to recovery bucket
-		else
-			Receiver->>Buffer: Clean data afeter store
+			Buffer->>Redis: Send data to recovery bucket
 		end
+
+		Receiver->>Buffer: Clear data already stored from current bucket
+		Buffer->>Redis: Clear data already stored from current bucket
+	end
 ```
 
 
