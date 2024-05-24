@@ -91,6 +91,7 @@ func (r *Receiver) Write(record domain.Record) error {
 
 	if err != nil {
 		slog.Error("Error pushing record", "error", err, "record", record.ToString(), "module", "receiver", "function", "Write")
+		return err
 	}
 
 	if c, ok := r.control[key]; ok {
@@ -98,6 +99,11 @@ func (r *Receiver) Write(record domain.Record) error {
 		r.control[key] = c
 
 		if n >= r.config.BufferSize && !c.running {
+			if !r.buffer.CheckLock(key) {
+				slog.Debug("Skipping flush, buffer is locked by other process", "key", key, "CheckLock", false)
+				return nil
+			}
+
 			slog.Debug("Buffer size reached, checkin to flush buffer", "key", key, "size", n, "buffer-size", r.config.BufferSize)
 
 			err := r.FlushKey(key)
@@ -158,17 +164,27 @@ func (r *Receiver) FlushKey(key string) error {
 	}
 
 	if ctrl.running {
+		slog.Debug("Skipping flush, buffer is already running", "key", key, "running", ctrl.running)
+		return nil
+	}
+
+	ctrl.Count = 0
+	last := ctrl.Last
+	ctrl.Last = time.Now()
+	r.control[key] = ctrl
+
+	if !r.buffer.CheckLock(key) {
+		slog.Info("Skipping flush, buffer is locked by other process", "key", key, "CheckLock", false)
 		return nil
 	}
 
 	ctrl.running = true
 
-	if !r.buffer.CheckLock(key) {
-		slog.Debug("Skipping flush, buffer is locked by other process", "key", key)
-		return nil
+	if last.Add(r.interval).Before(time.Now()) {
+		slog.Info("Interval reached, trying to flush buffer", "key", key, "interval", r.interval)
 	}
 
-	slog.Info("Flushing buffer - trying to load data from buffer", "key", key)
+	slog.Debug("Flushing buffer - trying to load data from buffer", "key", key)
 
 	data := r.buffer.Get(key)
 
@@ -177,7 +193,7 @@ func (r *Receiver) FlushKey(key string) error {
 		return nil
 	}
 
-	slog.Info("Writing buffer data", "key", key, "size", len(data), "page-size", r.config.BufferSize)
+	slog.Debug("Writing buffer data", "key", key, "size", len(data), "page-size", r.config.BufferSize)
 
 	buf := new(bytes.Buffer)
 	result := r.converter.Write(key, data, buf)
@@ -220,6 +236,8 @@ func (r *Receiver) FlushKey(key string) error {
 		return err
 	}
 
+	slog.Debug("Data written and removed from buffer", "key", key, "size", len(data), "duration", time.Since(start))
+
 	//Reset buffer control
 	ctrl.Count = 0
 	ctrl.Last = time.Now()
@@ -227,7 +245,7 @@ func (r *Receiver) FlushKey(key string) error {
 
 	r.control[key] = ctrl
 
-	slog.Info("Buffer flushed!", "key", key, "total-duration", time.Since(start))
+	slog.Info("Buffer flushed!", "key", key, "total-duration", time.Since(start), "size", len(data))
 
 	return nil
 }
@@ -294,7 +312,6 @@ func (r *Receiver) Close() error {
 
 	slog.Info("Stopping receiver, trying to flushing remaining data from buffers")
 
-	r.mu.Lock()
 	for key := range r.control {
 		slog.Debug("Flushing key on close receiver", "key", key)
 		if ctrl, found := r.control[key]; found {
@@ -306,7 +323,6 @@ func (r *Receiver) Close() error {
 
 		keys = append(keys, key)
 	}
-	r.mu.Unlock()
 
 	for _, key := range keys {
 		err := r.FlushKey(key)

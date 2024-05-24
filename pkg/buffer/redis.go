@@ -218,7 +218,7 @@ func (r *Redis) CheckLock(key string) bool {
 		return true
 	}
 
-	slog.Info("Buffer already locked by another instance", "key", key, "this-id", r.instanceId, "current-id", lockOwner)
+	slog.Debug("Buffer already locked by another instance", "key", key, "this-id", r.instanceId, "current-id", lockOwner, "CheckLock", ret)
 
 	return ret
 }
@@ -260,7 +260,7 @@ func (r *Redis) Get(key string) []domain.Record {
 		ret[i] = rec
 	}
 
-	slog.Info("Got buffer", "key", key, "size", size, "records", len(ret))
+	slog.Debug("Got buffer", "key", key, "size", size, "records", len(ret))
 
 	return ret
 }

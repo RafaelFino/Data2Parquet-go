@@ -10,18 +10,17 @@ sequenceDiagram
     participant Client
     participant Receiver
     participant Buffer
-	participant Flush
     participant Redis
 
     Client->>Receiver: Send Record
     Receiver->>Buffer: Store data on Buffer
-	Buffer->>Redis: Store data on persistent buffer
+	Buffer->>Redis: Store data on external buffer
     Receiver->>Buffer: Check Buffer Size
 	alt BufferSize reach
-		Receiver->>Flush: Start Flush
+		Receiver->>Receiver: Start Flush
 	end
 	alt Trigger by Flush Interval
-		Receiver->>Flush: Start Flush
+		Receiver->>Receiver: Start Flush
     end
 ```
 
@@ -30,11 +29,9 @@ sequenceDiagram
 sequenceDiagram
     participant Receiver
     participant Buffer
-    participant DLQ
-    participant Writer
-    participant Converter
-    participant Recovery
     participant Redis
+    participant Converter    
+	participant Writer
 
 	Receiver->>Buffer: Check Lock
 	alt No lock
@@ -144,7 +141,7 @@ Write data in a local file, use the tag `WriterFilePath` to choose path to store
 - **BufferSize**: BufferSize configuration tag, describe the size of the buffer, its an important field for control buffer and page size to flush data. The default value is `100`.
 - **BufferType**: BufferType configuration tag, describe the type of the buffer, this fields accepte two values, `mem` or `redis`. The default value is `mem`.
 - **Debug**: Debug configuration tag, describe the debug mode, its an optional field. The debug mode will generate a lot of information. The default value is `false`.
-- **FlushInterval**: FlushInterval configuration tag, describe the interval to flush data in seconds, its an important field to control the time to flush data. The default value is `10`.
+- **FlushInterval**: FlushInterval configuration tag, describe the interval to flush data in seconds, its an important field to control the time to flush data. The default value is `5`.
 - **JsonSchemaPath**: JsonSchemaPath configuration tag, describe the path to the JSON schema file, its an optional field. The default value is empty. *This feature is not implemented yet.
 - Port: Port configuration tag, describe the port of the server, its an optional field only used for HTTP server. The default value is `8080`.
 - **RecordType**: RecordType configuration tag, describe the type of the record, this fields accepte two values, `log` or `dynamic`. The default value is log. *Dynamic type is not implemented yet.
@@ -157,7 +154,7 @@ Write data in a local file, use the tag `WriterFilePath` to choose path to store
 - **RedisPassword**: RedisPassword configuration tag, describe the password of the Redis server, its an optional field. The default value is empty.
 - **RedisRecoveryKey**: RedisRecoveryKey configuration tag, describe the recovery key in Redis, its an optional field. The default value is `recovery`.
 - **RedisDLQPrefix**: RedisDLQPrefix configuration tag, describe the prefix of the DLQ key in Redis, its an optional field. The default value is `dlq`.
-- **RedisLockTTL**: RedisLockTTL configuration tag, describe the TTL of the lock key in Redis, its an optional field. The default value is `2.5x` 'FlushInterval` value.
+- **RedisLockTTL**: RedisLockTTL configuration tag, describe the TTL of the lock key in Redis, its an optional field. The default value is `1.5x` 'FlushInterval` value.
 - **RedisLockInstanceName**: RedisLockInstanceName configuration tag, describe the instance name of the lock key in Redis, its an optional field. The default value is empty and in this case, instance hostname will be considered.
 - **RedisTimeout**: RedisTimeout configuration tag, describe the timeout of the Redis server, its an optional field. The default value is empty, in this case, `0` will be the value (Redis defaults).
 - **S3BucketName**: S3BucketName configuration tag, describe the bucket name in S3, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
