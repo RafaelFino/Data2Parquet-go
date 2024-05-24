@@ -31,7 +31,6 @@ type BufferControl struct {
 	Last    time.Time
 	Count   int
 	running bool
-	mu      *sync.Mutex
 }
 
 func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
@@ -113,7 +112,6 @@ func (r *Receiver) Write(record domain.Record) error {
 			Last:    time.Now(),
 			Count:   n,
 			running: false,
-			mu:      &sync.Mutex{},
 		}
 
 		go func(r *Receiver, key string) {
@@ -137,6 +135,9 @@ func (r *Receiver) Write(record domain.Record) error {
 func (r *Receiver) FlushKey(key string) error {
 	start := time.Now()
 
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	ctrl, found := r.control[key]
 	if found {
 		if ctrl.Count < r.config.BufferSize {
@@ -153,7 +154,6 @@ func (r *Receiver) FlushKey(key string) error {
 			Last:    time.Now(),
 			Count:   0,
 			running: false,
-			mu:      &sync.Mutex{},
 		}
 	}
 
@@ -161,18 +161,7 @@ func (r *Receiver) FlushKey(key string) error {
 		return nil
 	}
 
-	ctrl.mu.Lock()
 	ctrl.running = true
-
-	defer func(key string, ctrl *BufferControl) {
-		ctrl.Last = time.Now()
-		ctrl.running = false
-		ctrl.mu.Unlock()
-
-		r.mu.Lock()
-		r.control[key] = ctrl
-		r.mu.Unlock()
-	}(key, ctrl)
 
 	if !r.buffer.CheckLock(key) {
 		slog.Debug("Skipping flush, buffer is locked by other process", "key", key)
@@ -233,9 +222,10 @@ func (r *Receiver) FlushKey(key string) error {
 
 	//Reset buffer control
 	ctrl.Count = 0
-	r.mu.Lock()
+	ctrl.Last = time.Now()
+	ctrl.running = false
+
 	r.control[key] = ctrl
-	r.mu.Unlock()
 
 	slog.Info("Buffer flushed!", "key", key, "total-duration", time.Since(start))
 
@@ -300,16 +290,25 @@ func (r *Receiver) Close() error {
 	slog.Debug("Closing receiver", "module", "receiver", "function", "Close")
 	r.running = false
 
-	slog.Info("Stopping receiver, flushing buffers", "module", "receiver", "function", "Close")
+	keys := []string{}
 
+	slog.Info("Stopping receiver, trying to flushing remaining data from buffers")
+
+	r.mu.Lock()
 	for key := range r.control {
-		slog.Debug("Flushing key on close receiver", "key", key, "module", "receiver", "function", "Close")
+		slog.Debug("Flushing key on close receiver", "key", key)
 		if ctrl, found := r.control[key]; found {
 			ctrl.Count = r.config.BufferSize
 			ctrl.Last = time.Now().Add(-r.interval)
+			ctrl.running = false
 			r.control[key] = ctrl
 		}
 
+		keys = append(keys, key)
+	}
+	r.mu.Unlock()
+
+	for _, key := range keys {
 		err := r.FlushKey(key)
 
 		if err != nil {
