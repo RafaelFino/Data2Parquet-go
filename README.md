@@ -21,8 +21,7 @@ sequenceDiagram
 	Receiver->>Buffer: Check Buffer Size
 	alt BufferSize reach
 		Receiver->>Receiver: Start Flush
-	end
-	alt Trigger by Flush Interval
+	else Trigger by Flush Interval
 		Receiver->>Receiver: Start Flush
     end
 ```
@@ -32,13 +31,11 @@ sequenceDiagram
 sequenceDiagram
 	autonumber
 	participant Receiver
-    participant Buffer   
-	participant Redis
-	participant Converter
-	participant Writer
+    participant Buffer   		
 	
 	note right of Receiver: Lock verify
 		Receiver->>Buffer: Check Lock
+		create participant Redis
 		alt No lock
 			Buffer->>Redis: Create a lock
 			Buffer->>Receiver: Continue with flush
@@ -54,8 +51,9 @@ sequenceDiagram
 		Receiver->>Buffer: Request data to Flush
 		Buffer->>Redis: Request current flush data
 		Buffer->>Receiver: Return data to flush		
-		
-	note right of Receiver: Try to convert data into a parquet file				
+			
+	note right of Receiver: Try to convert data into a parquet stream				
+		create participant Converter
 		Receiver->>Converter: Try convert all data to Parquet stream	
 		alt Fail to convert
 			Converter->>Receiver: Return invalid data
@@ -72,6 +70,7 @@ sequenceDiagram
 		Buffer->>Receiver: Get data to write
 	
 	note right of Receiver: Write converted data on final target	
+		create participant Writer
 		Receiver->>Writer: Send data to store
 		alt Fail to store processed data
 			Receiver->>Buffer: Send data to recovery bucket
