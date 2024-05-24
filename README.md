@@ -36,8 +36,7 @@ sequenceDiagram
 	participant Redis
 	participant Converter
 	participant Writer
-
-	rect 
+	
 	note right of Receiver: Lock verify
 		Receiver->>Buffer: Check Lock
 		alt No lock
@@ -50,16 +49,12 @@ sequenceDiagram
 		break Lock belongs to another instance
 			Buffer->>Receiver: Skip flush this time and end process
 		end
-	end
-	
-	rect 
+		
 	note right of Receiver: Request buffer data
 		Receiver->>Buffer: Request data to Flush
 		Buffer->>Redis: Request current flush data
 		Buffer->>Receiver: Return data to flush		
-	end
-	
-	rect 
+		
 	note right of Receiver: Try to convert data into a parquet file				
 		Receiver->>Converter: Try convert all data to Parquet stream	
 		alt Fail to convert
@@ -69,17 +64,13 @@ sequenceDiagram
 		else
 			Converter->>Receiver: Receive processed data
 		end
-	end
 	
-	rect 
 	note right of Receiver: Resend recovered data if needed
 		Receiver->>Buffer: Ask for recovery data if exists
 		Buffer->>Redis: Check if exists recovery data
 		Redis->>Buffer: Return recovery data
 		Buffer->>Receiver: Get data to write
-	end
 	
-	rect 
 	note right of Receiver: Write converted data on final target	
 		Receiver->>Writer: Send data to store
 		alt Fail to store processed data
@@ -87,7 +78,6 @@ sequenceDiagram
 		else
 			Receiver->>Buffer: Clean data afeter store
 		end
-	end
 ```
 
 
