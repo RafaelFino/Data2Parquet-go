@@ -1,6 +1,76 @@
 # Data2Parquet-go
 A go data converter to Apache Parquet
 
+## Concepts
+We need to receive a large amount of json data and create structured parquet files. Considering that we will receive data line by line and it will be necessary to create a buffer to obtain better performance from the files. To do this, we will use a kind of buffer to temporarily store this data and we will create an asynchronous process, triggered by this buffer size or with a time interval.
+
+### Receiving data
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Receiver
+    participant Buffer
+	participant Flush
+    participant Redis
+
+    Client->>Receiver: Send Record
+    Receiver->>Buffer: Store data on Buffer
+	Buffer->>Redis: Store data on persistent buffer
+    Receiver->>Buffer: Check Buffer Size
+	alt BufferSize reach
+		Receiver->>Flush: Start Flush
+	end
+	alt Trigger by Flush Interval
+		Receiver->>Flush: Start Flush
+    end
+```
+
+### Flush process
+```mermaid
+sequenceDiagram
+    participant Receiver
+    participant Buffer
+    participant DLQ
+    participant Writer
+    participant Converter
+    participant Recovery
+    participant Redis
+
+	Receiver->>Buffer: Check Lock
+	alt No lock
+		Buffer->>Redis: Create a lock
+		Redis->>Buffer: Get data to flush
+		Buffer->>Receiver: Return data to flush
+    else Lock is mine
+		Redis->>Buffer: Get data to flush
+        Buffer->>Receiver: Return data		
+    else Lock belongs to another instance
+        Buffer->>Receiver: Skip flush this time
+    end
+	
+	Receiver->>Converter: Try convert all data to Parquet stream	
+	alt Fail to convert
+		Converter->>Receiver: Return invalid data
+		Receiver->>Buffer: Put data on DLQ
+		Buffer->>Redis: Put data on DLQ Bucket
+	end
+	
+	Converter->>Receiver: Receive processed data
+	Receiver->>Buffer: Ask for recovery data if exists
+	Buffer->>Redis: Check if exists recovery data
+	Redis->>Buffer: Return recovery data
+	Buffer->>Receiver: Get data to write
+	Receiver->>Receiver: Merge recovery data with new values
+	Receiver->>Writer: Send data to store
+	
+	alt Fail to store processed data
+		Receiver->>Buffer: Send data to recovery bucket
+	end
+	Receiver->>Buffer: Clean data afeter store
+
+```
+
+
 ## Applications (/cmd)
 ### [Data Generator](https://github.com/RafaelFino/Data2Parquet-go/blob/main/cmd/data-generator/main.go)
 Simple data creator to simulate workloads to json2parquet.
