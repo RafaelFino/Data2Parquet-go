@@ -7,15 +7,18 @@ We need to receive a large amount of json data and create structured parquet fil
 ### Receiving data
 ```mermaid
 sequenceDiagram
+	autonumber
     participant Client
-    participant Receiver
-    participant Buffer
-    participant Redis
+    participant Receiver    
 
     Client->>Receiver: Send Record
+	create participant Buffer
     Receiver->>Buffer: Store data on Buffer
+	
+	create participant Redis
 	Buffer->>Redis: Store data on external buffer
-    Receiver->>Buffer: Check Buffer Size
+    
+	Receiver->>Buffer: Check Buffer Size
 	alt BufferSize reach
 		Receiver->>Receiver: Start Flush
 	end
@@ -27,44 +30,65 @@ sequenceDiagram
 ### Flush process
 ```mermaid
 sequenceDiagram
+	autonumber
     participant Receiver
-    participant Buffer
-    participant Redis
-    participant Converter    
-	participant Writer
+    participant Buffer    	
 
-	Receiver->>Buffer: Check Lock
-	alt No lock
-		Buffer->>Redis: Create a lock
-		Redis->>Buffer: Get data to flush
-		Buffer->>Receiver: Return data to flush
-    else Lock is mine
-		Redis->>Buffer: Get data to flush
-        Buffer->>Receiver: Return data		
-    else Lock belongs to another instance
-        Buffer->>Receiver: Skip flush this time
-    end
-	
-	Receiver->>Converter: Try convert all data to Parquet stream	
-	alt Fail to convert
-		Converter->>Receiver: Return invalid data
-		Receiver->>Buffer: Put data on DLQ
-		Buffer->>Redis: Put data on DLQ Bucket
+	rect gray
+	note right of Receiver: Lock verify
+		Receiver->>Buffer: Check Lock
+		create participant Redis
+		alt No lock
+			Buffer->>Redis: Create a lock
+			Buffer->>Receiver: Continue with flush
+		else Lock is mine
+			Redis->>Buffer: Get data to flush		
+			Buffer->>Receiver: Continue with flush
+		end
+		break Lock belongs to another instance
+			Buffer->>Receiver: Skip flush this time and end process
+		end
 	end
 	
-	Converter->>Receiver: Receive processed data
-	Receiver->>Buffer: Ask for recovery data if exists
-	Buffer->>Redis: Check if exists recovery data
-	Redis->>Buffer: Return recovery data
-	Buffer->>Receiver: Get data to write
-	Receiver->>Receiver: Merge recovery data with new values
-	Receiver->>Writer: Send data to store
-	
-	alt Fail to store processed data
-		Receiver->>Buffer: Send data to recovery bucket
+	rect gray
+	note right of Receiver: Request buffer data
+		Receiver->>Buffer: Request data to Flush
+		Buffer->>Redis: Request current flush data
+		Buffer->>Receiver: Return data to flush		
 	end
-	Receiver->>Buffer: Clean data afeter store
 
+	rect gray
+	note right of Receiver: Try to converting data into a parquet file
+		create participant Converter
+		Receiver->>Converter: Try convert all data to Parquet stream	
+		alt Fail to convert
+			Converter->>Receiver: Return invalid data
+			Receiver->>Buffer: Put data on DLQ
+			Buffer->>Redis: Put data on DLQ Bucket
+		else
+			Converter->>Receiver: Receive processed data
+		end
+	end
+	
+	rect gray
+	note right of Receiver: Resend recovered data if needed
+		Receiver->>Buffer: Ask for recovery data if exists
+		Buffer->>Redis: Check if exists recovery data
+		Redis->>Buffer: Return recovery data
+		Buffer->>Receiver: Get data to write
+		Receiver->>Receiver: Prepare recovery data with new values
+	end
+	
+	rect gray
+	note right of Receiver: Write converted data on final target	
+		create participant Writer
+		Receiver->>Writer: Send data to store
+		alt Fail to store processed data
+			Receiver->>Buffer: Send data to recovery bucket
+		else
+			Receiver->>Buffer: Clean data afeter store
+		end
+	end
 ```
 
 
