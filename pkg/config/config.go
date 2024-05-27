@@ -31,10 +31,9 @@ type Config struct {
 	//RedisTimeout: RedisTimeout configuration tag, describe the timeout of the Redis server, its an optional field. The default value is empty, in this case, `0` will be the value (Redis defaults).
 	//S3BucketName: S3BucketName configuration tag, describe the bucket name in S3, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 	//S3Region: S3Region configuration tag, describe the region of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
-	//S3RoleName: S3RoleName configuration tag, describe the role name of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+	//S3RoleARN: S3RoleName configuration tag, describe the role name of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 	//S3STSEndpoint: S3STSEndpoint configuration tag, describe the endpoint of the STS server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 	//S3Endpoint: S3Endpoint configuration tag, describe the endpoint of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
-	//S3Account: S3Account configuration tag, describe the account of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 	//TryAutoRecover: TryAutoRecover configuration tag, describe the auto recover mode, its an optional field. The default value is `false`. If set to `true` the system will try to recover the data that failed to write after flash, using recovery cache.
 	//WriterCompressionType: WriterCompressionType configuration tag, describe the compression type of the writer, its an optional field. The default and recommended value is `snappy`. This fields accepte two values, `snappy`, `gzip` or `none`.
 	//WriterFilePath: WriterFilePath configuration tag, describe the file path of the writer, its an optional field. The default value is `./out`.
@@ -61,12 +60,12 @@ type Config struct {
 	RedisPassword         string `json:"redis_password,omitempty"`
 	RedisRecoveryKey      string `json:"redis_recovery_key,omitempty"`
 	RedisTimeout          int    `json:"redis_timeout,omitempty"`
-	S3Account             string `json:"s3_account,omitempty"`
 	S3BuketName           string `json:"s3_bucket_name"`
 	S3Endpoint            string `json:"s3_endpoint,omitempty"`
 	S3Region              string `json:"s3_region"`
-	S3RoleName            string `json:"s3_role_name,omitempty"`
+	S3RoleARN             string `json:"s3_role_arn,omitempty"`
 	S3STSEndpoint         string `json:"s3_sts_endpoint,omitempty"`
+	S3DefaultCapability   string `json:"s3_default_capability,omitempty"`
 	TryAutoRecover        bool   `json:"try_auto_recover,omitempty"`
 	WriterCompressionType string `json:"writer_compression_type,omitempty"`
 	WriterFilePath        string `json:"writer_file_path,omitempty"`
@@ -119,10 +118,10 @@ var keys = []string{
 	"RedisTimeout",
 	"S3BucketName",
 	"S3Region",
-	"S3RoleName",
+	"S3RoleARN",
 	"S3STSEndpoint",
 	"S3Endpoint",
-	"S3Account",
+	"S3DefaultCapability",
 	"TryAutoRecover",
 	"WriterCompressionType",
 	"WriterFilePath",
@@ -228,14 +227,12 @@ func (c *Config) Set(cfg map[string]string) error {
 			c.S3BuketName = value
 		case "S3Region":
 			c.S3Region = value
-		case "S3RoleName":
-			c.S3RoleName = value
+		case "S3RoleARN":
+			c.S3RoleARN = value
 		case "S3STSEndpoint":
 			c.S3STSEndpoint = value
 		case "S3Endpoint":
 			c.S3Endpoint = value
-		case "S3Account":
-			c.S3Account = value
 		case "JsonSchemaPath":
 			c.JsonSchemaPath = value
 		case "RecordType":
@@ -250,6 +247,8 @@ func (c *Config) Set(cfg map[string]string) error {
 			c.RedisLockInstanceName = value
 		case "RedisTimeout":
 			fmt.Sscanf(value, "%d", &c.RedisTimeout)
+		case "S3DefaultCapability":
+			c.S3DefaultCapability = value
 
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
@@ -286,10 +285,10 @@ func (c *Config) Get() map[string]interface{} {
 	ret["RedisTimeout"] = c.RedisTimeout
 	ret["S3BucketName"] = c.S3BuketName
 	ret["S3Region"] = c.S3Region
-	ret["S3RoleName"] = c.S3RoleName
+	ret["S3RoleARN"] = c.S3RoleARN
 	ret["S3STSEndpoint"] = c.S3STSEndpoint
 	ret["S3Endpoint"] = c.S3Endpoint
-	ret["S3Account"] = c.S3Account
+	ret["S3DefaultCapability"] = c.S3DefaultCapability
 	ret["TryAutoRecover"] = c.TryAutoRecover
 	ret["WriterCompressionType"] = c.WriterCompressionType
 	ret["WriterFilePath"] = c.WriterFilePath
@@ -400,5 +399,10 @@ func (c *Config) SetDefaults() {
 		if len(c.RedisHost) == 0 {
 			slog.Error("Redis host is empty, please set it")
 		}
+	}
+
+	if len(c.S3DefaultCapability) == 0 {
+		slog.Debug("S3 default capability is empty, setting to empty")
+		c.S3DefaultCapability = "undefined"
 	}
 }

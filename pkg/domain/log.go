@@ -29,6 +29,7 @@ type Log struct {
 	SourceId                    *string           `json:"source_id,omitempty" parquet:"name=source_id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"source_id"`
 	HTTPResponse                *string           `json:"http_response,omitempty" parquet:"name=http_response, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"http_response"`
 	ErrorCode                   *string           `json:"error_code,omitempty" parquet:"name=error_code, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"error_code"`
+	Error                       *string           `json:"error,omitempty" parquet:"name=error, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"error"`
 	StackTrace                  *string           `json:"stack_trace,omitempty" parquet:"name=stack_trace, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"stack_trace"`
 	Duration                    *string           `json:"duration,omitempty" parquet:"name=duration, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"duration"`
 	TraceIP                     []string          `json:"trace_ip,omitempty" parquet:"name=trace_ip, type=MAP, convertedtype=LIST, valuetype=BYTE_ARRAY, valueconvertedtype=UTF8" msg:"trace_ip"`
@@ -42,6 +43,7 @@ type Log struct {
 	LoggerName                  *string           `json:"logger_name,omitempty" parquet:"name=logger_name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"logger_name"`
 	ThreadName                  *string           `json:"thread_name,omitempty" parquet:"name=thread_name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"thread_name"`
 	ExtraFields                 map[string]string `json:"extra_fields,omitempty" parquet:"name=extra_fields, type=MAP, convertedtype=MAP, keytype=BYTE_ARRAY, keyconvertedtype=UTF8, valuetype=BYTE_ARRAY" msg:"extra_fields"`
+	info                        RecordInfo
 }
 
 // / CloudProviderAWS is the AWS cloud provider
@@ -106,12 +108,9 @@ func NewLog(data map[string]interface{}) Record {
 	}
 
 	ret.Decode(data)
+	ret.info = NewLogInfo(ret)
 
 	return ret
-}
-
-func (l *Log) ToString() string {
-	return fmt.Sprintf("%+v", l)
 }
 
 func GetInt64(n any) int64 {
@@ -156,7 +155,11 @@ func (l *Log) Decode(data map[string]interface{}) {
 		switch key {
 		case "time":
 			l.Time = v.(string)
+		case "timestamp":
+			l.Time = v.(string)
 		case "level":
+			l.Level = v.(string)
+		case "lvl":
 			l.Level = v.(string)
 		case "correlation_id":
 			l.CorrelationId = GetStringP(v)
@@ -171,6 +174,10 @@ func (l *Log) Decode(data map[string]interface{}) {
 		case "device_id":
 			l.DeviceId = GetStringP(v)
 		case "message":
+			l.Message = v.(string)
+		case "msg":
+			l.Message = v.(string)
+		case "log":
 			l.Message = v.(string)
 		case "business_capability":
 			l.BusinessCapability = v.(string)
@@ -193,9 +200,19 @@ func (l *Log) Decode(data map[string]interface{}) {
 			l.HTTPResponse = GetStringP(v)
 		case "error_code":
 			l.ErrorCode = GetStringP(v)
+		case "error":
+			l.ErrorCode = GetStringP(v)
+		case "error_message":
+			l.ErrorCode = GetStringP(v)
+		case "error_msg":
+			l.ErrorCode = GetStringP(v)
 		case "stack_trace":
 			l.StackTrace = GetStringP(v)
 		case "duration":
+			l.Duration = GetStringP(v)
+		case "elapsed":
+			l.Duration = GetStringP(v)
+		case "elapsed_time":
 			l.Duration = GetStringP(v)
 		case "trace_ip":
 			switch valueType := v.(type) {
@@ -251,8 +268,16 @@ func (l *Log) Decode(data map[string]interface{}) {
 	}
 }
 
+func (l *Log) GetInfo() RecordInfo {
+	return l.info
+}
+
+func (l *Log) ToString() string {
+	return fmt.Sprintf("%+v", l)
+}
+
 func (l *Log) Key() string {
-	return fmt.Sprintf("%s-%s-%s", l.BusinessCapability, l.BusinessDomain, l.BusinessService)
+	return l.info.Key()
 }
 
 func (l *Log) ToJson() string {

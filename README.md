@@ -186,10 +186,9 @@ Write data in a local file, use the tag `WriterFilePath` to choose path to store
 - **RedisTimeout**: RedisTimeout configuration tag, describe the timeout of the Redis server, its an optional field. The default value is empty, in this case, `0` will be the value (Redis defaults).
 - **S3BucketName**: S3BucketName configuration tag, describe the bucket name in S3, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 - **S3Region**: S3Region configuration tag, describe the region of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
-- **S3RoleName**: S3RoleName configuration tag, describe the role name of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- **S3RoleARN**: S3RoleARN configuration tag, describe the role name of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 - **S3STSEndpoint**: S3STSEndpoint configuration tag, describe the endpoint of the STS server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 - **S3Endpoint**: S3Endpoint configuration tag, describe the endpoint of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
-- **S3Account**: S3Account configuration tag, describe the account of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 - **TryAutoRecover**: TryAutoRecover configuration tag, describe the auto recover mode, its an optional field. The default value is `false`. If set to `true` the system will try to recover the data that failed to write after flash, using recovery cache.
 - **WriterCompressionType**: WriterCompressionType configuration tag, describe the compression type of the writer, its an optional field. The default and recommended value is `snappy`. This fields accepte two values, `snappy`, `gzip` or `none`.
 - **WriterFilePath**: WriterFilePath configuration tag, describe the file path of the writer, its an optional field. The default value is `./out`.
@@ -218,11 +217,10 @@ type Config struct {
 	RedisPassword         string `json:"redis_password,omitempty"`
 	RedisRecoveryKey      string `json:"redis_recovery_key,omitempty"`
 	RedisTimeout          int    `json:"redis_timeout,omitempty"`
-	S3Account             string `json:"s3_account,omitempty"`
 	S3BuketName           string `json:"s3_bucket_name"`
 	S3Endpoint            string `json:"s3_endpoint,omitempty"`
 	S3Region              string `json:"s3_region"`
-	S3RoleName            string `json:"s3_role_name,omitempty"`
+	S3RoleARN             string `json:"s3_role_arn,omitempty"`
 	S3STSEndpoint         string `json:"s3_sts_endpoint,omitempty"`
 	TryAutoRecover        bool   `json:"try_auto_recover,omitempty"`
 	WriterCompressionType string `json:"writer_compression_type,omitempty"`
@@ -283,10 +281,9 @@ To FluentBit, use the main key name, example: `WriterType` instead `writer_type`
   WriterType aws-s3
   S3BucketName data2parquet
   S3Region us-east-2
-  S3RoleName localstack
+  S3RoleARN arn:aws:iam::localstack:role/localhost:4566
   S3STSEndpoint http://localhost:4566
   S3Endpoint http://localhost:4566
-  S3Account localstack
 ```
 
 ##### Keys to Fluent-Bit Output
@@ -312,10 +309,9 @@ var keys = []string{
 	"RedisTimeout",
 	"S3BucketName",
 	"S3Region",
-	"S3RoleName",
+	"S3RoleARN",
 	"S3STSEndpoint",
 	"S3Endpoint",
-	"S3Account",
 	"TryAutoRecover",
 	"WriterCompressionType",
 	"WriterFilePath",

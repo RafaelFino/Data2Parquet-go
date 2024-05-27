@@ -9,13 +9,33 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+const KeySeparator = "-"
+
 type Record interface {
+	GetInfo() RecordInfo
 	Key() string
 	ToJson() string
 	FromJson(data string) error
 	ToString() string
 	ToMsgPack() []byte
 	FromMsgPack(data []byte) error
+}
+
+type RecordInfo interface {
+	RecordType() string
+	Key() string
+	Service() string
+	Domain() string
+	Capability() string
+	Target() string
+}
+
+func NewRecordInfoFromKey(recordType string, key string) RecordInfo {
+	if strings.Contains(key, config.RecordTypeDynamic) {
+		return NewDynamicInfoFromKey(key)
+	}
+
+	return NewLogInfoFromKey(key)
 }
 
 func NewRecord(recordType string, data map[string]interface{}) Record {

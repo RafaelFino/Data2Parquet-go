@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"data2parquet/pkg/config"
+	"data2parquet/pkg/domain"
 	"errors"
-	"fmt"
 	"log/slog"
 	"time"
 
@@ -66,15 +66,13 @@ func (s *S3) Init() error {
 		return err
 	}
 
-	roleARN := fmt.Sprintf("arn:aws:iam::%s:role/%s", s.config.S3Account, s.config.S3RoleName)
-
-	slog.Info("Assuming role", "role", roleARN, "session", s.config.S3RoleName)
+	slog.Info("Assuming role", "role", s.config.S3RoleARN)
 
 	stsClient := sts.NewFromConfig(cfg)
 
 	cfg.Credentials = aws.NewCredentialsCache(
-		stscreds.NewAssumeRoleProvider(stsClient, roleARN, func(aro *stscreds.AssumeRoleOptions) {
-			aro.RoleSessionName = s.config.S3RoleName
+		stscreds.NewAssumeRoleProvider(stsClient, s.config.S3RoleARN, func(aro *stscreds.AssumeRoleOptions) {
+			//aro.RoleSessionName = s.config.S3RoleARN
 		}),
 	)
 
@@ -144,7 +142,8 @@ func (s *S3) CheckBucket() error {
 
 func (s *S3) Write(key string, buf *bytes.Buffer) error {
 	start := time.Now()
-	s3Key := s.makeBuketName(key)
+	recInfo := domain.NewRecordInfoFromKey(s.config.RecordType, key)
+	s3Key := recInfo.Target()
 
 	_, err := s.client.PutObject(
 		s.ctx,
@@ -162,14 +161,6 @@ func (s *S3) Write(key string, buf *bytes.Buffer) error {
 	slog.Info("S3 written", "file", s3Key, "duration", time.Since(start), "file-size", buf.Len(), "bucket", s.config.S3BuketName)
 
 	return err
-}
-
-func (s *S3) makeBuketName(key string) string {
-	tm := time.Now()
-	year, month, day := tm.Date()
-	hour, min, sec := tm.Clock()
-
-	return fmt.Sprintf("year=%04d/month=%02d/day=%02d/hour=%02d/%02d%02d%02d-%s.parquet", year, month, day, hour, hour, min, sec, key)
 }
 
 func (s *S3) Close() error {

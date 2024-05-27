@@ -10,6 +10,7 @@ import (
 
 type Dynamic struct {
 	Data map[string]interface{} `msg:"data" json:"data"`
+	Info RecordInfo             `msg:"info" json:"info,omitempty"`
 }
 
 func NewDynamic(data map[string]interface{}) Record {
@@ -18,6 +19,7 @@ func NewDynamic(data map[string]interface{}) Record {
 	}
 
 	ret.Decode(data)
+	ret.Info = NewDynamicInfo(ret)
 
 	return ret
 }
@@ -28,8 +30,20 @@ func (d *Dynamic) Decode(data map[string]interface{}) {
 	}
 }
 
+func (d *Dynamic) Domain() string {
+	if v, ok := d.Data["business_capability"]; ok {
+		return fmt.Sprintf("%s", v)
+	}
+
+	return "dynamic_fields"
+}
+
+func (d *Dynamic) GetInfo() RecordInfo {
+	return d.Info
+}
+
 func (d *Dynamic) Key() string {
-	return fmt.Sprintf("%+v", d)
+	return d.Info.Key()
 }
 
 func (d *Dynamic) ToString() string {
