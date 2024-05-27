@@ -60,6 +60,7 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 	}
 
 	if cfg.Debug {
+		logger.Info("Debug mode enabled")
 		slog.SetLogLoggerLevel(slog.LevelDebug.Level())
 	} else {
 		slog.SetLogLoggerLevel(slog.LevelInfo.Level())

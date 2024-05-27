@@ -7,6 +7,7 @@ import (
 	"data2parquet/pkg/domain"
 	"errors"
 	"log/slog"
+	"path/filepath"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -66,13 +67,14 @@ func (s *S3) Init() error {
 		return err
 	}
 
-	slog.Info("Assuming role", "role", s.config.S3RoleARN)
+	session := filepath.Base(s.config.S3RoleARN)
+	slog.Info("Assuming role", "roleArn", s.config.S3RoleARN, "sessionName", session)
 
 	stsClient := sts.NewFromConfig(cfg)
 
 	cfg.Credentials = aws.NewCredentialsCache(
 		stscreds.NewAssumeRoleProvider(stsClient, s.config.S3RoleARN, func(aro *stscreds.AssumeRoleOptions) {
-			aro.RoleSessionName = s.config.S3RoleARN
+			aro.RoleSessionName = session
 		}),
 	)
 
