@@ -72,7 +72,7 @@ func (s *S3) Init() error {
 
 	cfg.Credentials = aws.NewCredentialsCache(
 		stscreds.NewAssumeRoleProvider(stsClient, s.config.S3RoleARN, func(aro *stscreds.AssumeRoleOptions) {
-			//aro.RoleSessionName = s.config.S3RoleARN
+			aro.RoleSessionName = s.config.S3RoleARN
 		}),
 	)
 
