@@ -12,3 +12,9 @@ lint:
 
 test:
 	@./build.sh test
+
+full:
+	@./build.sh clean
+	@./build.sh lint
+	@./build.sh test
+	@./build.sh all
