@@ -21,13 +21,17 @@ type Redis struct {
 	instanceId string
 }
 
-func NewRedis(ctx context.Context, config *config.Config) Buffer {
+func NewRedis(ctx context.Context, config *config.Config, client *redis.Client) Buffer {
 	ret := &Redis{
 		config: config,
 		ctx:    ctx,
 	}
 
-	ret.client = createClient(config)
+	if client != nil {
+		ret.client = client
+	} else {
+		ret.client = createClient(config)
+	}
 
 	ret.makeInstanceName()
 

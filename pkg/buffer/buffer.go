@@ -33,7 +33,7 @@ func New(ctx context.Context, cfg *config.Config) Buffer {
 	var ret Buffer
 	switch cfg.BufferType {
 	case config.BufferTypeRedis:
-		ret = NewRedis(ctx, cfg)
+		ret = NewRedis(ctx, cfg, nil)
 		if ret == nil {
 			slog.Error("Error creating Redis buffer, using memory buffer instead")
 			ret = NewMem(ctx, cfg)

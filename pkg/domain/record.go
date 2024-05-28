@@ -20,6 +20,7 @@ type Record interface {
 	ToString() string
 	ToMsgPack() []byte
 	FromMsgPack(data []byte) error
+	GetData() map[string]interface{}
 }
 
 type RecordInfo interface {
@@ -60,15 +61,17 @@ func NewObj(t string) Record {
 	}
 }
 
+var emptyString string = ""
+
 func GetStringP(s interface{}) *string {
 	if s == nil {
-		return nil
+		return &emptyString
 	}
 
 	ret := fmt.Sprintf("%s", s)
 
 	if len(ret) == 0 {
-		return nil
+		return &emptyString
 	}
 
 	return &ret

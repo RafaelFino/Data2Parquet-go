@@ -126,6 +126,46 @@ func NewLogInfo(log *Log) RecordInfo {
 	return ret
 }
 
+func (l *Log) GetData() map[string]interface{} {
+	ret := make(map[string]interface{})
+
+	ret["time"] = l.Time
+	ret["level"] = l.Level
+	ret["correlation_id"] = l.CorrelationId
+	ret["session_id"] = l.SessionId
+	ret["message_id"] = l.MessageId
+	ret["person_id"] = l.PersonId
+	ret["user_id"] = l.UserId
+	ret["device_id"] = l.DeviceId
+	ret["message"] = l.Message
+	ret["business_capability"] = l.BusinessCapability
+	ret["business_domain"] = l.BusinessDomain
+	ret["business_service"] = l.BusinessService
+	ret["application_service"] = l.ApplicationService
+	ret["audit"] = l.Audit
+	ret["resource_type"] = l.ResourceType
+	ret["cloud_provider"] = l.CloudProvider
+	ret["source_id"] = l.SourceId
+	ret["http_response"] = l.HTTPResponse
+	ret["error_code"] = l.ErrorCode
+	ret["error"] = l.ErrorCode
+	ret["stack_trace"] = l.StackTrace
+	ret["duration"] = l.Duration
+	ret["trace_ip"] = l.TraceIP
+	ret["region"] = l.Region
+	ret["az"] = l.AZ
+	ret["tags"] = l.Tags
+	ret["args"] = l.Args
+	ret["transaction_message_reference"] = l.TransactionMessageReference
+	ret["ttl"] = l.Ttl
+	ret["auto_index"] = l.AutoIndex
+	ret["logger_name"] = l.LoggerName
+	ret["thread_name"] = l.ThreadName
+	ret["extra_fields"] = l.ExtraFields
+
+	return ret
+}
+
 func GetInt64(n any) int64 {
 	if n == nil {
 		return 0
@@ -290,11 +330,15 @@ func (l *Log) ToString() string {
 }
 
 func (l *Log) Key() string {
+	if l.info == nil {
+		l.info = NewLogInfo(l)
+	}
+
 	return l.info.Key()
 }
 
 func (l *Log) ToJson() string {
-	data, err := json.Marshal(l)
+	data, err := json.MarshalIndent(l, "", "\t")
 
 	if err != nil {
 		slog.Error("Error marshalling JSON", "error", err)
@@ -311,6 +355,8 @@ func (l *Log) FromJson(data string) error {
 		slog.Error("Error unmarshalling JSON", "error", err)
 		return err
 	}
+
+	l.info = NewLogInfo(l)
 
 	return nil
 }
@@ -333,6 +379,8 @@ func (l *Log) FromMsgPack(data []byte) error {
 		slog.Error("Error unmarshalling MsgPack", "error", err)
 		return err
 	}
+
+	l.info = NewLogInfo(l)
 
 	return nil
 }

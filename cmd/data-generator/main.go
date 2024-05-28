@@ -143,28 +143,28 @@ func GenerateLog(pid int, count int, result chan domain.Record, wg *sync.WaitGro
 			Level:                       "INFO",
 			Message:                     words.Sentences(5),
 			Time:                        time.Now().Format(time.RFC3339Nano),
-			CorrelationId:               GetID(),
-			SessionId:                   GetID(),
-			MessageId:                   GetID(),
-			PersonId:                    GetID(),
-			UserId:                      GetID(),
-			DeviceId:                    GetID(),
+			CorrelationId:               getID(),
+			SessionId:                   getID(),
+			MessageId:                   getID(),
+			PersonId:                    getID(),
+			UserId:                      getID(),
+			DeviceId:                    getID(),
 			BusinessCapability:          "business_capability" + fmt.Sprintf("%02d", i%10),
 			BusinessDomain:              "business_domain" + fmt.Sprintf("%02d", i%10),
 			BusinessService:             "business_service" + fmt.Sprintf("%02d", i%20),
 			ApplicationService:          "application_service" + fmt.Sprintf("%02d", i%30),
 			ResourceType:                &resType,
 			CloudProvider:               &cloudProvider,
-			SourceId:                    GetID(),
+			SourceId:                    getID(),
 			HTTPResponse:                &httpResult,
-			ErrorCode:                   GetID(),
+			ErrorCode:                   getID(),
 			StackTrace:                  &stack,
 			Duration:                    &duration,
 			Region:                      &region,
 			AZ:                          &az,
 			Tags:                        []string{"tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8", "tag9", "tag10"},
 			Args:                        map[string]string{"arg1": "val1", "arg2": "val2", "arg3": "val3", "arg4": "val4", "arg5": "val5", "arg6": "val6", "arg7": "val7", "arg8": "val8", "arg9": "val9", "arg10": "val10"},
-			TransactionMessageReference: GetID(),
+			TransactionMessageReference: getID(),
 			AutoIndex:                   &boolValue,
 			Audit:                       &boolValue,
 			LoggerName:                  &loggerName,
@@ -182,7 +182,7 @@ func GenerateLog(pid int, count int, result chan domain.Record, wg *sync.WaitGro
 	slog.Info("Finished generating logs", "pid", pid, "count", count)
 }
 
-func GetID() *string {
+func getID() *string {
 	entropy := rand.New(rand.NewSource(time.Now().UnixNano()))
 	ret := ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String()
 	return &ret

@@ -24,6 +24,10 @@ func NewDynamic(data map[string]interface{}) Record {
 	return ret
 }
 
+func (d *Dynamic) GetData() map[string]interface{} {
+	return d.Data
+}
+
 func (d *Dynamic) Decode(data map[string]interface{}) {
 	for k, v := range data {
 		d.Data[fmt.Sprint(k)] = v
