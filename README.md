@@ -4,6 +4,8 @@ A go data converter to Apache Parquet
 ## Concepts
 We need to receive a large amount of json data and create structured parquet files. Considering that we will receive data line by line and it will be necessary to create a buffer to obtain better performance from the files. To do this, we will use a kind of buffer to temporarily store this data and we will create an asynchronous process, triggered by this buffer size or with a time interval.
 
+## Flows
+
 ### Receiving data
 ```mermaid
 sequenceDiagram
@@ -94,6 +96,237 @@ sequenceDiagram
 	end
 ```
 
+## Components
+
+``` mermaid
+---
+title: Data 2 Parquet
+---
+classDiagram
+	class RecordInfo{
+		+ string key
+		+ string Key()
+		+ string Target()
+		+ string Capability()
+		+ string Domain()
+		+ sring Service()
+		+ string Application()
+	}
+	Record *-- RecordInfo
+
+	class Record{
+		<<interface>>
+		GetInfo() : RecordInfo
+		Decode(data map[string]any)
+		ToJson(): string
+		FromJson(data string)
+		ToString(): string
+		ToMsgPack() []byte
+		FromMsgPack(data []byte)		
+	}
+	
+	class Buffer{
+		<<interface>>
+		Close() error
+		Push(key string, item domain.Record) (int, error)
+		PushDLQ(key string, item domain.Record) error
+		GetDLQ() (map[string][]domain.Record, error)
+		ClearDLQ() error
+		Get(key string) []domain.Record
+		Clear(key string, size int) error
+		Len(key string) int
+		Keys() []string
+		IsReady() bool
+		HasRecovery() bool
+		PushRecovery(key string, buf *bytes.Buffer) error
+		GetRecovery() ([]*RecoveryData, error)
+		ClearRecoveryData() error
+		CheckLock(key string) bool		
+	}
+
+	Mem <|-- Buffer: implement
+	Redis <|-- Buffer: implement
+
+	class Writer{
+		<<interface>>
+		Init() error
+		Write(key string, buf *bytes.Buffer) error
+		Close() error
+		IsReady() bool
+	}
+
+	File <|-- Writer: implement
+	AWS-S3 <|-- Writer: implement
+
+	Log <|-- Record: implement
+	Dynamic <|-- Record: implement
+
+	Receiver  <-- Record: use
+	Receiver <-- Config: use
+	Receiver <-- Writer: use
+	Receiver <-- Buffer: use
+
+	class Config{
+		+ BufferSize            int   
+		+ BufferType            string
+		+ Debug                 bool  
+		+ FlushInterval         int   
+		+ JsonSchemaPath        string
+		+ RecordType            string
+		+ RecoveryAttempts      int   
+		+ RedisDataPrefix       string
+		+ RedisDB               int   
+		+ RedisDLQPrefix        string
+		+ RedisHost             string
+		+ RedisKeys             string
+		+ RedisLockPrefix       string
+		+ RedisLockTTL          int   
+		+ RedisLockInstanceName string
+		+ RedisPassword         string
+		+ RedisRecoveryKey      string
+		+ RedisTimeout          int   
+		+ S3BuketName           string
+		+ S3Endpoint            string
+		+ S3Region              string
+		+ S3RoleARN             string
+		+ S3STSEndpoint         string
+		+ S3DefaultCapability   string
+		+ TryAutoRecover        bool  
+		+ WriterCompressionType string
+		+ WriterFilePath        string
+		+ WriterRowGroupSize    int64 
+		+ WriterType            string
+		+ FromJson(json string)
+		+ Set(data map[string]any)
+	}
+
+	class File{
+		+ config Config
+		+ New(config Config)
+		+ Init() error
+		+ Write(key string, buf *bytes.Buffer) error
+		+ Close() error
+		+ IsReady() bool
+	}
+
+	class AWS-S3{
+		+ config Config
+		+ New(config Config)
+		+ Init() error
+		+ Write(key string, buf *bytes.Buffer) error
+		+ Close() error
+		+ IsReady() bool
+	}
+
+	class Dynamic{
+		+ Data map[string]any
+
+		+ GetInfo(): RecordInfo
+		+ Decode(data map[string]any)
+		+ ToJson(): string
+		+ FromJson(data string)
+		+ ToString(): string
+		+ ToMsgPack(): []byte
+		+ FromMsgPack(data []byte)		
+	}
+
+	class Log{
+		+ Time                        string           
+		+ Level                       string           
+		+ CorrelationId               *string          
+		+ SessionId                   *string          
+		+ MessageId                   *string          
+		+ PersonId                    *string          
+		+ UserId                      *string          
+		+ DeviceId                    *string          
+		+ Message                     string           
+		+ BusinessCapability          string           
+		+ BusinessDomain              string           
+		+ BusinessService             string           
+		+ ApplicationService          string           
+		+ Audit                       *bool            
+		+ ResourceType                *string          
+		+ CloudProvider               *string          
+		+ SourceId                    *string          
+		+ HTTPResponse                *string          
+		+ ErrorCode                   *string          
+		+ Error                       *string          
+		+ StackTrace                  *string          
+		+ Duration                    *string          
+		+ TraceIP                     []string         
+		+ Region                      *string          
+		+ AZ                          *string          
+		+ Tags                        []string         
+		+ Args                        map[string]string
+		+ TransactionMessageReference *string          
+		+ Ttl                         *string          
+		+ AutoIndex                   *bool            
+		+ LoggerName                  *string          
+		+ ThreadName                  *string          
+		+ ExtraFields                 map[string]string
+
+		+ GetInfo(): RecordInfo
+		+ Decode(data map[string]any)
+		+ ToJson(): string
+		+ FromJson(data string)
+		+ ToString(): string
+		+ ToMsgPack(): []byte
+		+ FromMsgPack(data []byte)
+	}
+
+	class Mem{
+		+ config Config
+		+ New(config Config)
+		+ Close(): error
+		+ Push(key string, item domain.Record): (int, error)
+		+ PushDLQ(key string, item domain.Record): error
+		+ GetDLQ() (map[string][]domain.Record, error)
+		+ ClearDLQ(): error
+		+ Get(key string): []domain.Record
+		+ Clear(key string, size int): error
+		+ Len(key string): int
+		+ Keys(): []string
+		+ IsReady(): bool
+		+ HasRecovery() bool
+		+ PushRecovery(key string, buf *bytes.Buffer): error
+		+ GetRecovery(): ([]*RecoveryData, error)
+		+ ClearRecoveryData(): error
+		+ CheckLock(key string): bool
+	}
+
+	class Redis{
+		+ config Config
+		+ New(config Config)
+		+ Close(): error
+		+ Push(key string, item domain.Record): (int, error)
+		+ PushDLQ(key string, item domain.Record): error
+		+ GetDLQ() (map[string][]domain.Record, error)
+		+ ClearDLQ(): error
+		+ Get(key string): []domain.Record
+		+ Clear(key string, size int): error
+		+ Len(key string): int
+		+ Keys(): []string
+		+ IsReady(): bool
+		+ HasRecovery() bool
+		+ PushRecovery(key string, buf *bytes.Buffer): error
+		+ GetRecovery(): ([]*RecoveryData, error)
+		+ ClearRecoveryData(): error
+		+ CheckLock(key string): bool
+	}
+
+	class Receiver{
+		+ config config.Config
+		+ writer Writer
+		+ buffer Buffer
+		+ New(config Config)
+		+ Write(record Record): error
+		+ Flush(): error
+		+ FlushKey(key string): error
+		+ TryResendData(): error
+		+ Close(): error
+		+ HealthCheck(): error
+	}
+```
 
 ## Applications (/cmd)
 ### [Data Generator](https://github.com/RafaelFino/Data2Parquet-go/blob/main/cmd/data-generator/main.go)

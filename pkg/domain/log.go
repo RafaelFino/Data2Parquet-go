@@ -113,6 +113,19 @@ func NewLog(data map[string]interface{}) Record {
 	return ret
 }
 
+func NewLogInfo(log *Log) RecordInfo {
+	ret := &LogInfo{
+		BusinessCapability: log.BusinessCapability,
+		BusinessDomain:     log.BusinessDomain,
+		BusinessService:    log.BusinessService,
+		ApplicationService: log.ApplicationService,
+	}
+
+	ret.makeKey()
+
+	return ret
+}
+
 func GetInt64(n any) int64 {
 	if n == nil {
 		return 0

@@ -30,14 +30,6 @@ func (d *Dynamic) Decode(data map[string]interface{}) {
 	}
 }
 
-func (d *Dynamic) Domain() string {
-	if v, ok := d.Data["business_capability"]; ok {
-		return fmt.Sprintf("%s", v)
-	}
-
-	return "dynamic_fields"
-}
-
 func (d *Dynamic) GetInfo() RecordInfo {
 	return d.Info
 }

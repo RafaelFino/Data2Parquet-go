@@ -13,6 +13,7 @@ const KeySeparator = "-"
 
 type Record interface {
 	GetInfo() RecordInfo
+	Decode(data map[string]interface{})
 	Key() string
 	ToJson() string
 	FromJson(data string) error

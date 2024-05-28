@@ -33,19 +33,6 @@ func NewLogInfoFromKey(key string) RecordInfo {
 	return ret
 }
 
-func NewLogInfo(log *Log) RecordInfo {
-	ret := &LogInfo{
-		BusinessCapability: log.BusinessCapability,
-		BusinessDomain:     log.BusinessDomain,
-		BusinessService:    log.BusinessService,
-		ApplicationService: log.ApplicationService,
-	}
-
-	ret.makeKey()
-
-	return ret
-}
-
 func (i *LogInfo) RecordType() string {
 	return config.RecordTypeLog
 }
