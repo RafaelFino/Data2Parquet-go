@@ -135,20 +135,37 @@ func FLBPluginExit() int {
 
 func IsLogRecord(data map[string]interface{}) bool {
 	var ret bool = true
-	_, ok := data["message"]
-	ret = ok && ret
 
-	_, ok = data["level"]
-	ret = ok && ret
+	if ret {
+		_, okMsg := data["msg"]
+		_, okMessage := data["message"]
+		_, okLog := data["log"]
 
-	_, ok = data["time"]
-	return ok && ret
+		ret = okMsg || okMessage || okLog
+	}
+
+	if ret {
+		_, okLevel := data["level"]
+		_, okLvl := data["lvl"]
+
+		ret = ret && (okLevel || okLvl)
+	}
+
+	if ret {
+		_, okTime := data["time"]
+		_, okTimestamp := data["timestamp"]
+		_, okWhen := data["when"]
+
+		ret = ret && (okTime || okTimestamp || okWhen)
+	}
+
+	return ret
 }
 
 func CreateDataMap(data map[interface{}]interface{}, tm time.Time, tag string) map[string]any {
 	logData := make(map[string]any)
 
-	logData["fluent_timestamp"] = tm
+	logData["fluent_timestamp"] = tm.Format(time.RFC3339Nano)
 	logData["fluent_tag"] = tag
 
 	for k, v := range data {
