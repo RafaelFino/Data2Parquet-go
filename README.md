@@ -214,6 +214,7 @@ classDiagram
 
 	namespace Fluent{
 		class Fluent-Out-Parquet["Fluent Out Parquet Plugin"]{
+			<<service>>
 			- config Config
 			+ Register()
 			+ Init()
@@ -224,6 +225,7 @@ classDiagram
 
 	namespace Manager{
 		class Receiver{
+			<<service>>
 			- config config.Config
 			- writer Writer
 			- buffer Buffer
