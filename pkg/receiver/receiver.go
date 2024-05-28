@@ -51,36 +51,55 @@ func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 		mu:            &sync.Mutex{},
 	}
 
-	slog.Debug("Validating receiver buffer", "module", "receiver", "function", "NewReceiver")
-
 	if ret.buffer == nil {
-		slog.Error("Error creating buffer", "module", "receiver", "function", "NewReceiver")
+		slog.Error("Error creating buffer")
 		return nil
 	}
 
 	if !ret.buffer.IsReady() {
-		slog.Error("Buffer is not ready", "module", "receiver", "function", "NewReceiver")
+		slog.Error("Buffer is not ready")
 		return nil
 	}
 
-	slog.Debug("Initializing receiver", "config", config.ToString(), "module", "receiver", "function", "NewReceiver")
+	slog.Debug("Initializing receiver", "config", config.ToString())
 
 	if ret.writer == nil {
-		slog.Error("Error creating writer", "module", "receiver", "function", "NewReceiver")
+		slog.Error("Error creating writer")
 		return nil
 	}
 
 	err := ret.writer.Init()
 
 	if err != nil {
-		slog.Error("Error initializing writer", "error", err, "module", "receiver", "function", "NewReceiver")
+		slog.Error("Error initializing writer", "error", err)
 		return nil
 	}
 
 	if !ret.writer.IsReady() {
-		slog.Error("Writer is not ready", "module", "receiver", "function", "NewReceiver")
+		slog.Error("Writer is not ready")
 		return nil
 	}
+
+	go func(r *Receiver) {
+		var err error
+		for r.running {
+			time.Sleep(1 * time.Second)
+
+			if !r.running {
+				slog.Info("Receiver is not running, stopping healthcheck")
+				break
+			}
+
+			err = r.Healthcheck()
+
+			if err != nil {
+				slog.Error("Error in healthcheck", "error", err)
+				break
+			}
+
+			slog.Debug("Receiver is running")
+		}
+	}(ret)
 
 	return ret
 }
