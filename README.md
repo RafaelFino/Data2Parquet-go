@@ -103,231 +103,261 @@ sequenceDiagram
 title: Data 2 Parquet
 ---
 classDiagram
-	class RecordInfo{
-		+ string key
-		+ string Key()
-		+ string Target()
-		+ string Capability()
-		+ string Domain()
-		+ sring Service()
-		+ string Application()
-	}
-	Record *-- RecordInfo
-
-	class Record{
-		<<interface>>
-		GetInfo() : RecordInfo
-		Decode(data map[string]any)
-		ToJson(): string
-		FromJson(data string)
-		ToString(): string
-		ToMsgPack() []byte
-		FromMsgPack(data []byte)		
-	}
+	Fluent-Out-Parquet <-- Receiver: use
+	Fluent-Out-Parquet <-- Config: use
+	Fluent-Out-Parquet <-- Record: use
 	
-	class Buffer{
-		<<interface>>
-		Close() error
-		Push(key string, item domain.Record) (int, error)
-		PushDLQ(key string, item domain.Record) error
-		GetDLQ() (map[string][]domain.Record, error)
-		ClearDLQ() error
-		Get(key string) []domain.Record
-		Clear(key string, size int) error
-		Len(key string) int
-		Keys() []string
-		IsReady() bool
-		HasRecovery() bool
-		PushRecovery(key string, buf *bytes.Buffer) error
-		GetRecovery() ([]*RecoveryData, error)
-		ClearRecoveryData() error
-		CheckLock(key string) bool		
-	}
-
-	Mem <|-- Buffer: implement
-	Redis <|-- Buffer: implement
-
-	class Writer{
-		<<interface>>
-		Init() error
-		Write(key string, buf *bytes.Buffer) error
-		Close() error
-		IsReady() bool
-	}
-
-	File <|-- Writer: implement
-	AWS-S3 <|-- Writer: implement
-
-	Log <|-- Record: implement
-	Dynamic <|-- Record: implement
-
-	File <-- RecordInfo: use
-	AWS-S3 <-- RecordInfo: use
-
-	Receiver  <-- Record: use
+	Receiver <-- Record: use
 	Receiver <-- Config: use
 	Receiver <-- Writer: use
 	Receiver <-- Buffer: use
 
-	class Config{
-		+ BufferSize            int   
-		+ BufferType            string
-		+ Debug                 bool  
-		+ FlushInterval         int   
-		+ JsonSchemaPath        string
-		+ RecordType            string
-		+ RecoveryAttempts      int   
-		+ RedisDataPrefix       string
-		+ RedisDB               int   
-		+ RedisDLQPrefix        string
-		+ RedisHost             string
-		+ RedisKeys             string
-		+ RedisLockPrefix       string
-		+ RedisLockTTL          int   
-		+ RedisLockInstanceName string
-		+ RedisPassword         string
-		+ RedisRecoveryKey      string
-		+ RedisTimeout          int   
-		+ S3BuketName           string
-		+ S3Endpoint            string
-		+ S3Region              string
-		+ S3RoleARN             string
-		+ S3STSEndpoint         string
-		+ S3DefaultCapability   string
-		+ TryAutoRecover        bool  
-		+ WriterCompressionType string
-		+ WriterFilePath        string
-		+ WriterRowGroupSize    int64 
-		+ WriterType            string
-		+ FromJson(json string)
-		+ Set(data map[string]any)
+	Record *-- RecordInfo
+
+	Log <|-- Record: implement
+	Log o-- RecordInfo: compose
+	Dynamic <|-- Record: implement
+	Dynamic o-- RecordInfo: compose
+
+	Mem <-- Config: use
+	Mem <|-- Buffer: implement
+
+	Redis <-- Config: use
+	Redis <|-- Buffer: implement
+
+	File <-- Config: use
+	File <-- RecordInfo: use
+	File <|-- Writer: implement
+	
+	AWS-S3 <-- Config: use
+	AWS-S3 <-- RecordInfo: use
+	AWS-S3 <|-- Writer: implement
+
+	namespace Records{
+		class RecordInfo{
+			+ string key
+			+ string Key()
+			+ string Target()
+			+ string Capability()
+			+ string Domain()
+			+ sring Service()
+			+ string Application()
+		}
+
+		class Record{
+			<<interface>>
+			GetInfo() : RecordInfo
+			Decode(data map[string]any)
+			ToJson(): string
+			FromJson(data string)
+			ToString(): string
+			ToMsgPack() []byte
+			FromMsgPack(data []byte)		
+		}
+
+		class Dynamic["Record::Dynamic"]{
+			- Data map[string]any
+
+			+ GetInfo(): RecordInfo
+			+ Decode(data map[string]any)
+			+ ToJson(): string
+			+ FromJson(data string)
+			+ ToString(): string
+			+ ToMsgPack(): []byte
+			+ FromMsgPack(data []byte)		
+		}	
+
+		class Log["Record::Log"]{
+			+ Time                        string           
+			+ Level                       string           
+			+ CorrelationId               *string          
+			+ SessionId                   *string          
+			+ MessageId                   *string          
+			+ PersonId                    *string          
+			+ UserId                      *string          
+			+ DeviceId                    *string          
+			+ Message                     string           
+			+ BusinessCapability          string           
+			+ BusinessDomain              string           
+			+ BusinessService             string           
+			+ ApplicationService          string           
+			+ Audit                       *bool            
+			+ ResourceType                *string          
+			+ CloudProvider               *string          
+			+ SourceId                    *string          
+			+ HTTPResponse                *string          
+			+ ErrorCode                   *string          
+			+ Error                       *string          
+			+ StackTrace                  *string          
+			+ Duration                    *string          
+			+ TraceIP                     []string         
+			+ Region                      *string          
+			+ AZ                          *string          
+			+ Tags                        []string         
+			+ Args                        map[string]string
+			+ TransactionMessageReference *string          
+			+ Ttl                         *string          
+			+ AutoIndex                   *bool            
+			+ LoggerName                  *string          
+			+ ThreadName                  *string          
+			+ ExtraFields                 map[string]string
+
+			+ GetInfo(): RecordInfo
+			+ Decode(data map[string]any)
+			+ ToJson(): string
+			+ FromJson(data string)
+			+ ToString(): string
+			+ ToMsgPack(): []byte
+			+ FromMsgPack(data []byte)
+		}
 	}
 
-	class File{
-		+ config Config
-		+ New(config Config)
-		+ Init() error
-		+ Write(key string, buf *bytes.Buffer) error
-		+ Close() error
-		+ IsReady() bool
+	namespace Fluent{
+		class Fluent-Out-Parquet["Fluent Out Parquet Plugin"]{
+			- config Config
+			+ Register()
+			+ Init()
+			+ Flush()
+			+ Close()
+		}
 	}
 
-	class AWS-S3{
-		+ config Config
-		+ New(config Config)
-		+ Init() error
-		+ Write(key string, buf *bytes.Buffer) error
-		+ Close() error
-		+ IsReady() bool
+	namespace Manager{
+		class Receiver{
+			- config config.Config
+			- writer Writer
+			- buffer Buffer
+			+ New(config Config)
+			+ Write(record Record): error
+			+ Flush(): error
+			+ FlushKey(key string): error
+			+ TryResendData(): error
+			+ Close(): error
+			+ HealthCheck(): error
+		}
+
+		class Config{
+			+ BufferSize            int   
+			+ BufferType            string
+			+ Debug                 bool  
+			+ FlushInterval         int   
+			+ JsonSchemaPath        string
+			+ RecordType            string
+			+ RecoveryAttempts      int   
+			+ RedisDataPrefix       string
+			+ RedisDB               int   
+			+ RedisDLQPrefix        string
+			+ RedisHost             string
+			+ RedisKeys             string
+			+ RedisLockPrefix       string
+			+ RedisLockTTL          int   
+			+ RedisLockInstanceName string
+			+ RedisPassword         string
+			+ RedisRecoveryKey      string
+			+ RedisTimeout          int   
+			+ S3BuketName           string
+			+ S3Endpoint            string
+			+ S3Region              string
+			+ S3RoleARN             string
+			+ S3STSEndpoint         string
+			+ S3DefaultCapability   string
+			+ TryAutoRecover        bool  
+			+ WriterCompressionType string
+			+ WriterFilePath        string
+			+ WriterRowGroupSize    int64 
+			+ WriterType            string
+			+ FromJson(json string)
+			+ Set(data map[string]any)
+		}
 	}
 
-	class Dynamic{
-		+ Data map[string]any
+	namespace Buffers{
+		class Buffer{
+			<<interface>>
+			Close() error
+			Push(key string, item domain.Record) (int, error)
+			PushDLQ(key string, item domain.Record) error
+			GetDLQ() (map[string][]domain.Record, error)
+			ClearDLQ() error
+			Get(key string) []domain.Record
+			Clear(key string, size int) error
+			Len(key string) int
+			Keys() []string
+			IsReady() bool
+			HasRecovery() bool
+			PushRecovery(key string, buf *bytes.Buffer) error
+			GetRecovery() ([]*RecoveryData, error)
+			ClearRecoveryData() error
+			CheckLock(key string) bool		
+		}
 
-		+ GetInfo(): RecordInfo
-		+ Decode(data map[string]any)
-		+ ToJson(): string
-		+ FromJson(data string)
-		+ ToString(): string
-		+ ToMsgPack(): []byte
-		+ FromMsgPack(data []byte)		
+		class Mem["Buffer::Mem"]{
+			- config Config
+			+ New(config Config)
+			+ Close(): error
+			+ Push(key string, item domain.Record): (int, error)
+			+ PushDLQ(key string, item domain.Record): error
+			+ GetDLQ() (map[string][]domain.Record, error)
+			+ ClearDLQ(): error
+			+ Get(key string): []domain.Record
+			+ Clear(key string, size int): error
+			+ Len(key string): int
+			+ Keys(): []string
+			+ IsReady(): bool
+			+ HasRecovery() bool
+			+ PushRecovery(key string, buf *bytes.Buffer): error
+			+ GetRecovery(): ([]*RecoveryData, error)
+			+ ClearRecoveryData(): error
+			+ CheckLock(key string): bool
+		}
+
+		class Redis["Buffer::Redis"]{
+			- config Config
+			+ New(config Config)
+			+ Close(): error
+			+ Push(key string, item domain.Record): (int, error)
+			+ PushDLQ(key string, item domain.Record): error
+			+ GetDLQ() (map[string][]domain.Record, error)
+			+ ClearDLQ(): error
+			+ Get(key string): []domain.Record
+			+ Clear(key string, size int): error
+			+ Len(key string): int
+			+ Keys(): []string
+			+ IsReady(): bool
+			+ HasRecovery() bool
+			+ PushRecovery(key string, buf *bytes.Buffer): error
+			+ GetRecovery(): ([]*RecoveryData, error)
+			+ ClearRecoveryData(): error
+			+ CheckLock(key string): bool
+		}
 	}
 
-	class Log{
-		+ Time                        string           
-		+ Level                       string           
-		+ CorrelationId               *string          
-		+ SessionId                   *string          
-		+ MessageId                   *string          
-		+ PersonId                    *string          
-		+ UserId                      *string          
-		+ DeviceId                    *string          
-		+ Message                     string           
-		+ BusinessCapability          string           
-		+ BusinessDomain              string           
-		+ BusinessService             string           
-		+ ApplicationService          string           
-		+ Audit                       *bool            
-		+ ResourceType                *string          
-		+ CloudProvider               *string          
-		+ SourceId                    *string          
-		+ HTTPResponse                *string          
-		+ ErrorCode                   *string          
-		+ Error                       *string          
-		+ StackTrace                  *string          
-		+ Duration                    *string          
-		+ TraceIP                     []string         
-		+ Region                      *string          
-		+ AZ                          *string          
-		+ Tags                        []string         
-		+ Args                        map[string]string
-		+ TransactionMessageReference *string          
-		+ Ttl                         *string          
-		+ AutoIndex                   *bool            
-		+ LoggerName                  *string          
-		+ ThreadName                  *string          
-		+ ExtraFields                 map[string]string
+	namespace Writers{
+		class Writer{
+			<<interface>>
+			Init() error
+			Write(key string, buf *bytes.Buffer) error
+			Close() error
+			IsReady() bool
+		}
 
-		+ GetInfo(): RecordInfo
-		+ Decode(data map[string]any)
-		+ ToJson(): string
-		+ FromJson(data string)
-		+ ToString(): string
-		+ ToMsgPack(): []byte
-		+ FromMsgPack(data []byte)
-	}
+		class File["Writer::File"]{
+			- config Config
+			+ New(config Config)
+			+ Init() error
+			+ Write(key string, buf *bytes.Buffer) error
+			+ Close() error
+			+ IsReady() bool
+		}
 
-	class Mem{
-		+ config Config
-		+ New(config Config)
-		+ Close(): error
-		+ Push(key string, item domain.Record): (int, error)
-		+ PushDLQ(key string, item domain.Record): error
-		+ GetDLQ() (map[string][]domain.Record, error)
-		+ ClearDLQ(): error
-		+ Get(key string): []domain.Record
-		+ Clear(key string, size int): error
-		+ Len(key string): int
-		+ Keys(): []string
-		+ IsReady(): bool
-		+ HasRecovery() bool
-		+ PushRecovery(key string, buf *bytes.Buffer): error
-		+ GetRecovery(): ([]*RecoveryData, error)
-		+ ClearRecoveryData(): error
-		+ CheckLock(key string): bool
-	}
-
-	class Redis{
-		+ config Config
-		+ New(config Config)
-		+ Close(): error
-		+ Push(key string, item domain.Record): (int, error)
-		+ PushDLQ(key string, item domain.Record): error
-		+ GetDLQ() (map[string][]domain.Record, error)
-		+ ClearDLQ(): error
-		+ Get(key string): []domain.Record
-		+ Clear(key string, size int): error
-		+ Len(key string): int
-		+ Keys(): []string
-		+ IsReady(): bool
-		+ HasRecovery() bool
-		+ PushRecovery(key string, buf *bytes.Buffer): error
-		+ GetRecovery(): ([]*RecoveryData, error)
-		+ ClearRecoveryData(): error
-		+ CheckLock(key string): bool
-	}
-
-	class Receiver{
-		+ config config.Config
-		+ writer Writer
-		+ buffer Buffer
-		+ New(config Config)
-		+ Write(record Record): error
-		+ Flush(): error
-		+ FlushKey(key string): error
-		+ TryResendData(): error
-		+ Close(): error
-		+ HealthCheck(): error
+		class AWS-S3["Writer::AWS-S3"]{
+			- config Config
+			+ New(config Config)
+			+ Init() error
+			+ Write(key string, buf *bytes.Buffer) error
+			+ Close() error
+			+ IsReady() bool
+		}
 	}
 ```
 
