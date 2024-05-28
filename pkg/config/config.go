@@ -197,26 +197,45 @@ func (c *Config) Set(cfg map[string]string) error {
 		case "BufferType":
 			c.BufferType = value
 		case "FlushInterval":
-			fmt.Sscanf(value, "%d", &c.FlushInterval)
+			_, err := fmt.Sscanf(value, "%d", &c.FlushInterval)
+			if err != nil {
+				slog.Warn("Error parsing FlushInterval", "error", err)
+				c.FlushInterval = 5
+			}
 		case "BufferSize":
-			fmt.Sscanf(value, "%d", &c.BufferSize)
+			_, err := fmt.Sscanf(value, "%d", &c.BufferSize)
+			if err != nil {
+				slog.Warn("Error parsing BufferSize", "error", err)
+				c.BufferSize = 100
+			}
 		case "WriterFilePath":
 			c.WriterFilePath = value
 		case "WriterCompression_type":
 			c.WriterCompressionType = value
 		case "WriterRowGroupSize":
-			fmt.Sscanf(value, "%d", &c.WriterRowGroupSize)
+			_, err := fmt.Sscanf(value, "%d", &c.WriterRowGroupSize)
+			if err != nil {
+				slog.Warn("Error parsing WriterRowGroupSize", "error", err)
+				c.WriterRowGroupSize = 128 * 1024 * 1024
+			}
 		case "Address":
 			c.Address = value
 		case "Port":
-			c.Port = 0
-			fmt.Sscanf(value, "%d", &c.Port)
+			_, err := fmt.Sscanf(value, "%d", &c.Port)
+			if err != nil {
+				slog.Warn("Error parsing Port", "error", err)
+				c.Port = 8080
+			}
 		case "RedisHost":
 			c.RedisHost = value
 		case "RedisPassword":
 			c.RedisPassword = value
 		case "RedisDB":
-			fmt.Sscanf(value, "%d", &c.RedisDB)
+			_, err := fmt.Sscanf(value, "%d", &c.RedisDB)
+			if err != nil {
+				slog.Warn("Error parsing RedisDB", "error", err)
+				c.RedisDB = 0
+			}
 		case "RedisRecoveryKey":
 			c.RedisRecoveryKey = value
 		case "RedisDataPrefix":
@@ -242,11 +261,19 @@ func (c *Config) Set(cfg map[string]string) error {
 		case "RedisLockPrefix":
 			c.RedisLockPrefix = value
 		case "RedisLockTTL":
-			fmt.Sscanf(value, "%d", &c.RedisLockTTL)
+			_, err := fmt.Sscanf(value, "%d", &c.RedisLockTTL)
+			if err != nil {
+				slog.Warn("Error parsing RedisLockTTL", "error", err)
+				c.RedisLockTTL = int(c.FlushInterval + c.FlushInterval/2)
+			}
 		case "RedisLockInstanceName":
 			c.RedisLockInstanceName = value
 		case "RedisTimeout":
-			fmt.Sscanf(value, "%d", &c.RedisTimeout)
+			_, err := fmt.Sscanf(value, "%d", &c.RedisTimeout)
+			if err != nil {
+				slog.Warn("Error parsing RedisTimeout", "error", err)
+				c.RedisTimeout = 0
+			}
 		case "S3DefaultCapability":
 			c.S3DefaultCapability = value
 

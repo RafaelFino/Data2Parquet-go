@@ -9,7 +9,7 @@ fi
 
 if [ "$par" == "lint" ]; then
     echo ">> Linting..."
-    docker run -t --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.58.1 golangci-lint run -v
+    docker run -t --rm -v $(pwd):/app -w /app golangci/golangci-lint:latest-alpine golangci-lint run -v --timeout=5m
     exit 0
 fi
 
