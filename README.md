@@ -6,7 +6,7 @@ We need to receive a large amount of json data and create structured parquet fil
 
 ## Flows
 
-### Receiving data
+### Receiving data (Redis example)
 ```mermaid
 sequenceDiagram
 	autonumber
@@ -28,7 +28,7 @@ sequenceDiagram
     end
 ```
 
-### Flush process
+### Flush process (Redis example)
 ```mermaid
 sequenceDiagram
 	autonumber
@@ -160,6 +160,9 @@ classDiagram
 
 	Log <|-- Record: implement
 	Dynamic <|-- Record: implement
+
+	File <-- RecordInfo: use
+	AWS-S3 <-- RecordInfo: use
 
 	Receiver  <-- Record: use
 	Receiver <-- Config: use

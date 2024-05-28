@@ -30,14 +30,21 @@ type Buffer interface {
 }
 
 func New(ctx context.Context, cfg *config.Config) Buffer {
+	var ret Buffer
 	switch cfg.BufferType {
 	case config.BufferTypeRedis:
-		return NewRedis(ctx, cfg)
+		ret = NewRedis(ctx, cfg)
+		if ret == nil {
+			slog.Error("Error creating Redis buffer, using memory buffer instead")
+			ret = NewMem(ctx, cfg)
+		}
 	case config.BufferTypeMem:
-		return NewMem(ctx, cfg)
+		ret = NewMem(ctx, cfg)
 	default:
-		return NewMem(ctx, cfg)
+		ret = NewMem(ctx, cfg)
 	}
+
+	return ret
 }
 
 type RecoveryData struct {
