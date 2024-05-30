@@ -139,7 +139,7 @@ func (s *S3) CheckBucket() error {
 		slog.Warn("Warning to check S3 bucket", "error", err, "module", "writer.s3", "function", "CheckBucket", "bucket", s.config.S3BuketName, "region", s.config.S3Region)
 	}
 
-	return nil
+	return err
 }
 
 func (s *S3) Write(key string, buf *bytes.Buffer) error {
