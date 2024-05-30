@@ -24,7 +24,7 @@
     "_writer_type" : "aws-s3",
     "s3_bucket_name": "data2parquet",
 	"s3_region": "us-east-2",
-	"s3_role_arn": "arn:aws:iam::localstack:role/localhost:4566   ",
+	"s3_role_arn": "arn:aws:iam::localstack:role/localhost:4566",
 	"s3_sts_endpoint": "http://localhost:4566",
 	"s3_endpoint":"http://localhost:4566",
 	"s3_account": "localstack"
