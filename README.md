@@ -264,6 +264,7 @@ classDiagram
 			+ S3STSEndpoint         string
 			+ S3DefaultCapability   string
 			+ TryAutoRecover        bool  
+			+ UseDLQ				bool
 			+ WriterCompressionType string
 			+ WriterFilePath        string
 			+ WriterRowGroupSize    int64 
@@ -458,6 +459,7 @@ Write data in a local file, use the tag `WriterFilePath` to choose path to store
 - **S3STSEndpoint**: S3STSEndpoint configuration tag, describe the endpoint of the STS server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 - **S3Endpoint**: S3Endpoint configuration tag, describe the endpoint of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 - **TryAutoRecover**: TryAutoRecover configuration tag, describe the auto recover mode, its an optional field. The default value is `false`. If set to `true` the system will try to recover the data that failed to write after flash, using recovery cache.
+- **UseDLQ**: UseDLQ configuration tag, describe the use of DLQ, its an optional field. The default value is `false`. If set to `true` the system will use the DLQ to store the data that failed to write after flash.
 - **WriterCompressionType**: WriterCompressionType configuration tag, describe the compression type of the writer, its an optional field. The default and recommended value is `snappy`. This fields accepte two values, `snappy`, `gzip` or `none`.
 - **WriterFilePath**: WriterFilePath configuration tag, describe the file path of the writer, its an optional field. The default value is `./out`.
 - **WriterRowGroupSize**: WriterRowGroupSize configuration tag, describe the row group size of the writer, its an optional field. The default value is `134217728` (128M).
@@ -465,13 +467,11 @@ Write data in a local file, use the tag `WriterFilePath` to choose path to store
 
 ``` golang
 type Config struct {
-	Address               string `json:"address,omitempty"`
 	BufferSize            int    `json:"buffer_size"`
 	BufferType            string `json:"buffer_type"`
 	Debug                 bool   `json:"debug,omitempty"`
 	FlushInterval         int    `json:"flush_interval"`
 	JsonSchemaPath        string `json:"json_schema_path,omitempty"`
-	Port                  int    `json:"port,omitempty"`
 	RecordType            string `json:"record_type"`
 	RecoveryAttempts      int    `json:"recovery_attempts,omitempty"`
 	RedisDataPrefix       string `json:"redis_data_prefix,omitempty"`
@@ -491,6 +491,7 @@ type Config struct {
 	S3RoleARN             string `json:"s3_role_arn,omitempty"`
 	S3STSEndpoint         string `json:"s3_sts_endpoint,omitempty"`
 	TryAutoRecover        bool   `json:"try_auto_recover,omitempty"`
+	UseDLQ				  bool   `json:"use_dlq,omitempty"`
 	WriterCompressionType string `json:"writer_compression_type,omitempty"`
 	WriterFilePath        string `json:"writer_file_path,omitempty"`
 	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
@@ -545,6 +546,7 @@ To FluentBit, use the main key name, example: `WriterType` instead `writer_type`
   FlushInterval 12
   BufferType redis
   Debug true
+  UseDLQ false
   WriterFilePath /home/fino/git/Data2Parquet-go/data
   WriterType aws-s3
   S3BucketName data2parquet
@@ -581,6 +583,7 @@ var keys = []string{
 	"S3STSEndpoint",
 	"S3Endpoint",
 	"TryAutoRecover",
+	"UseDLQ",
 	"WriterCompressionType",
 	"WriterFilePath",
 	"WriterRowGroupSize",
