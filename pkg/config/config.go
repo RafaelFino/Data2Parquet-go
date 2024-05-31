@@ -35,6 +35,7 @@ type Config struct {
 	//S3STSEndpoint: S3STSEndpoint configuration tag, describe the endpoint of the STS server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 	//S3Endpoint: S3Endpoint configuration tag, describe the endpoint of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 	//TryAutoRecover: TryAutoRecover configuration tag, describe the auto recover mode, its an optional field. The default value is `false`. If set to `true` the system will try to recover the data that failed to write after flash, using recovery cache.
+	//UseDLQ: UseDLQ configuration tag, describe the use of DLQ, its an optional field. The default value is `false`. If set to `true` the system will use the DLQ to store the data that failed to write after flash.
 	//WriterCompressionType: WriterCompressionType configuration tag, describe the compression type of the writer, its an optional field. The default and recommended value is `snappy`. This fields accepte two values, `snappy`, `gzip` or `none`.
 	//WriterFilePath: WriterFilePath configuration tag, describe the file path of the writer, its an optional field. The default value is `./out`.
 	//WriterRowGroupSize: WriterRowGroupSize configuration tag, describe the row group size of the writer, its an optional field. The default value is `134217728` (128M).
@@ -67,6 +68,7 @@ type Config struct {
 	S3STSEndpoint         string `json:"s3_sts_endpoint,omitempty"`
 	S3DefaultCapability   string `json:"s3_default_capability,omitempty"`
 	TryAutoRecover        bool   `json:"try_auto_recover,omitempty"`
+	UseDLQ                bool   `json:"use_dlq,omitempty"`
 	WriterCompressionType string `json:"writer_compression_type,omitempty"`
 	WriterFilePath        string `json:"writer_file_path,omitempty"`
 	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
@@ -122,6 +124,7 @@ var keys = []string{
 	"S3STSEndpoint",
 	"S3Endpoint",
 	"S3DefaultCapability",
+	"UseDLQ",
 	"TryAutoRecover",
 	"WriterCompressionType",
 	"WriterFilePath",
@@ -277,6 +280,9 @@ func (c *Config) Set(cfg map[string]string) error {
 		case "S3DefaultCapability":
 			c.S3DefaultCapability = value
 
+		case "UseDLQ":
+			c.UseDLQ = strings.ToLower(value) == "true"
+
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
 		}
@@ -317,6 +323,7 @@ func (c *Config) Get() map[string]interface{} {
 	ret["S3Endpoint"] = c.S3Endpoint
 	ret["S3DefaultCapability"] = c.S3DefaultCapability
 	ret["TryAutoRecover"] = c.TryAutoRecover
+	ret["UseDLQ"] = c.UseDLQ
 	ret["WriterCompressionType"] = c.WriterCompressionType
 	ret["WriterFilePath"] = c.WriterFilePath
 	ret["WriterRowGroupSize"] = c.WriterRowGroupSize
@@ -431,5 +438,12 @@ func (c *Config) SetDefaults() {
 	if len(c.S3DefaultCapability) == 0 {
 		slog.Debug("S3 default capability is empty, setting to empty")
 		c.S3DefaultCapability = "undefined"
+	}
+
+	if c.UseDLQ {
+		slog.Info("DLQ is enabled")
+		if len(c.RedisDLQPrefix) == 0 {
+			slog.Warn("DLQ is enabled but DLQ prefix is empty, using default value")
+		}
 	}
 }
