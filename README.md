@@ -491,7 +491,7 @@ type Config struct {
 	S3RoleARN             string `json:"s3_role_arn,omitempty"`
 	S3STSEndpoint         string `json:"s3_sts_endpoint,omitempty"`
 	TryAutoRecover        bool   `json:"try_auto_recover,omitempty"`
-	UseDLQ				  bool   `json:"use_dlq,omitempty"`
+	UseDLQ                bool   `json:"use_dlq,omitempty"`
 	WriterCompressionType string `json:"writer_compression_type,omitempty"`
 	WriterFilePath        string `json:"writer_file_path,omitempty"`
 	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
