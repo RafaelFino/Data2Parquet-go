@@ -62,7 +62,7 @@ func (i *LogInfo) Target() string {
 	year, month, day := tm.Date()
 	hour, min, sec := tm.Clock()
 
-	return fmt.Sprintf("%s/year=%04d/month=%02d/day=%02d/hour=%02d/%02d%02d%02d-%s.parquet", i.Capability(), year, month, day, hour, hour, min, sec, i.Key())
+	return fmt.Sprintf("capability=%s/year=%04d/month=%02d/day=%02d/hour=%02d/%02d%02d%02d-%s.parquet", i.Capability(), year, month, day, hour, hour, min, sec, i.Key())
 }
 
 func (i *LogInfo) makeKey() {

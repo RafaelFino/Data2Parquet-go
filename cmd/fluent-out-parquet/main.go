@@ -107,7 +107,7 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 			slog.Warn("Invalid log record", "record", logData)
 			continue
 		}
-		
+
 		record := domain.NewLog(logData)
 
 		err := rcv.Write(record)
@@ -170,13 +170,11 @@ func CreateDataMap(data map[interface{}]interface{}, tm time.Time, tag string) m
 	logData["fluent-tag"] = tag
 
 	for k, v := range data {
-		key := strings.ToLower(fmt.Sprintf("%v", k))
+		key := strings.ToLower(strings.ReplaceAll(fmt.Sprint(k), "_", "-"))
 
 		var value interface{}
 
-		t := fmt.Sprintf("%T", v)
-
-		switch t {
+		switch fmt.Sprintf("%T", v) {
 		case "[]uint8":
 			value = string(v.([]byte))
 		case "bool":
@@ -192,17 +190,28 @@ func CreateDataMap(data map[interface{}]interface{}, tm time.Time, tag string) m
 		case "int":
 			value = v.(int)
 		case "map[interface {}]interface {}":
-			if key == "args" {
+			if key == "args" ||
+				key == "context" ||
+				key == "fields" ||
+				key == "metadata" ||
+				key == "properties" ||
+				key == "trace" ||
+				key == "data" ||
+				key == "details" ||
+				key == "trace-attributes" {
 				args := make(map[string]string)
 				for arg_key, arg_val := range v.(map[interface{}]interface{}) {
-					args[arg_key.(string)] = string(arg_val.([]byte))
+					args[fmt.Sprint(arg_key)] = fmt.Sprint(arg_val)
 				}
 				value = args
 			} else {
 				value = fmt.Sprintf("%v", v)
 			}
 		case "[]interface {}":
-			if key == "tags" || key == "trace_ip" {
+			if key == "tags" ||
+				key == "trace_ip" ||
+				key == "ips" ||
+				key == "labels" {
 				tags := make([]string, 0)
 				for _, tag := range v.([]interface{}) {
 					tags = append(tags, string(tag.([]byte)))
