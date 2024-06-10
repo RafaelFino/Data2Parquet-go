@@ -10,19 +10,21 @@ import (
 )
 
 type Log struct {
+	Info                        *LogInfo          `json:"info,omitempty" msg:"info"`
 	Time                        string            `json:"time" parquet:"name=time, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"time"`
 	Level                       string            `json:"level" parquet:"name=level, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"level"`
+	Message                     string            `json:"message" parquet:"name=message, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"message"`
+	BusinessCapability          string            `json:"business-capability" parquet:"name=business-capability, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-capability"`
+	BusinessDomain              string            `json:"business-domain" parquet:"name=business-domain, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-domain"`
+	BusinessService             string            `json:"business-service" parquet:"name=business-service, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-service"`
+	ApplicationService          string            `json:"application-service" parquet:"name=application-service, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"application-service"`
+	ExtraFields                 map[string]string `json:"extra-fields,omitempty" parquet:"name=extra-fields, type=MAP, convertedtype=MAP, keytype=BYTE_ARRAY, keyconvertedtype=UTF8, valuetype=BYTE_ARRAY" msg:"extra-fields"`
 	CorrelationId               *string           `json:"correlation-id,omitempty" parquet:"name=correlation-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"correlation-id"`
 	SessionId                   *string           `json:"session-id,omitempty" parquet:"name=session-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"session-id"`
 	MessageId                   *string           `json:"message-id,omitempty" parquet:"name=message-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"message-id"`
 	PersonId                    *string           `json:"person-id,omitempty" parquet:"name=person-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"person-id"`
 	UserId                      *string           `json:"user-id,omitempty" parquet:"name=user-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"user-id"`
 	DeviceId                    *string           `json:"device-id,omitempty" parquet:"name=device-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"device-id"`
-	Message                     string            `json:"message" parquet:"name=message, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"message"`
-	BusinessCapability          string            `json:"business-capability" parquet:"name=business-capability, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-capability"`
-	BusinessDomain              string            `json:"business-domain" parquet:"name=business-domain, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-domain"`
-	BusinessService             string            `json:"business-service" parquet:"name=business-service, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-service"`
-	ApplicationService          string            `json:"application-service" parquet:"name=application-service, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"application-service"`
 	Audit                       *bool             `json:"audit,omitempty" parquet:"name=audit, type=BOOLEAN" msg:"audit"`
 	ResourceType                *string           `json:"resource-type" parquet:"name=resource-type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"resource-type"`
 	CloudProvider               *string           `json:"cloud-provider" parquet:"name=cloud-provider, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"cloud-provider"`
@@ -42,8 +44,6 @@ type Log struct {
 	AutoIndex                   *bool             `json:"auto-index,omitempty" parquet:"name=auto-index, type=BOOLEAN" msg:"auto-index"`
 	LoggerName                  *string           `json:"logger-name,omitempty" parquet:"name=logger-name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"logger-name"`
 	ThreadName                  *string           `json:"thread-name,omitempty" parquet:"name=thread-name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"thread-name"`
-	ExtraFields                 map[string]string `json:"extra-fields,omitempty" parquet:"name=extra-fields, type=MAP, convertedtype=MAP, keytype=BYTE_ARRAY, keyconvertedtype=UTF8, valuetype=BYTE_ARRAY" msg:"extra-fields"`
-	info                        RecordInfo
 }
 
 // / CloudProviderAWS is the AWS cloud provider
@@ -102,28 +102,29 @@ func NewLog(data map[string]interface{}) Record {
 		TraceIP:     make([]string, 0),
 		Tags:        make([]string, 0),
 		Args:        make(map[string]string),
-		Level:       LevelInfo,
 		Audit:       new(bool),
 		AutoIndex:   new(bool),
+		Level:       LevelInfo,
+		Message:     "",
 	}
 
 	ret.Decode(data)
-	ret.info = NewLogInfo(ret)
+	ret.UpdateInfo()
 
 	return ret
 }
 
-func NewLogInfo(log *Log) RecordInfo {
+func (l *Log) UpdateInfo() {
 	ret := &LogInfo{
-		BusinessCapability: log.BusinessCapability,
-		BusinessDomain:     log.BusinessDomain,
-		BusinessService:    log.BusinessService,
-		ApplicationService: log.ApplicationService,
+		BusinessCapability: l.BusinessCapability,
+		BusinessDomain:     l.BusinessDomain,
+		BusinessService:    l.BusinessService,
+		ApplicationService: l.ApplicationService,
 	}
 
 	ret.makeKey()
 
-	return ret
+	l.Info = ret
 }
 
 func (l *Log) GetData() map[string]interface{} {
@@ -164,41 +165,6 @@ func (l *Log) GetData() map[string]interface{} {
 	ret["extra-fields"] = l.ExtraFields
 
 	return ret
-}
-
-func GetInt64(n any) int64 {
-	if n == nil {
-		return 0
-	}
-
-	switch v := n.(type) {
-	case int64:
-		return v
-	case int:
-		return int64(v)
-	case float64:
-		return int64(v)
-	case uint64:
-		return int64(v)
-	case uint:
-		return int64(v)
-	case int32:
-		return int64(v)
-	case uint32:
-		return int64(v)
-	case int16:
-		return int64(v)
-	case uint16:
-		return int64(v)
-	case int8:
-		return int64(v)
-	case uint8:
-		return int64(v)
-	case float32:
-		return int64(v)
-	default:
-		return 0
-	}
 }
 
 func (l *Log) Decode(data map[string]interface{}) {
@@ -322,7 +288,10 @@ func (l *Log) Decode(data map[string]interface{}) {
 }
 
 func (l *Log) GetInfo() RecordInfo {
-	return l.info
+	if l.Info == nil {
+		l.UpdateInfo()
+	}
+	return l.Info
 }
 
 func (l *Log) ToString() string {
@@ -330,11 +299,8 @@ func (l *Log) ToString() string {
 }
 
 func (l *Log) Key() string {
-	if l.info == nil {
-		l.info = NewLogInfo(l)
-	}
-
-	return l.info.Key()
+	i := l.GetInfo()
+	return i.Key()
 }
 
 func (l *Log) ToJson() string {
@@ -356,7 +322,7 @@ func (l *Log) FromJson(data string) error {
 		return err
 	}
 
-	l.info = NewLogInfo(l)
+	l.UpdateInfo()
 
 	return nil
 }
@@ -380,7 +346,7 @@ func (l *Log) FromMsgPack(data []byte) error {
 		return err
 	}
 
-	l.info = NewLogInfo(l)
+	l.UpdateInfo()
 
 	return nil
 }

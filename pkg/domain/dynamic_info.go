@@ -33,34 +33,6 @@ func NewDynamicInfoFromKey(key string) RecordInfo {
 	return ret
 }
 
-func NewDynamicInfo(d *Dynamic) RecordInfo {
-	ret := &DynamicInfo{}
-
-	ret.DynamicService = "dynamic_service"
-	if v, ok := d.Data["service"]; ok {
-		ret.DynamicService = fmt.Sprintf("%s", v)
-	}
-
-	ret.DynamicDomain = "dynamic_domain"
-	if v, ok := d.Data["domain"]; ok {
-		ret.DynamicDomain = fmt.Sprintf("%s", v)
-	}
-
-	ret.DynamicCapability = "dynamic_capability"
-	if v, ok := d.Data["capability"]; ok {
-		ret.DynamicCapability = fmt.Sprintf("%s", v)
-	}
-
-	ret.DynamicApplication = "dynamic_application"
-	if v, ok := d.Data["application"]; ok {
-		ret.DynamicApplication = fmt.Sprintf("%s", v)
-	}
-
-	ret.makeKey()
-
-	return ret
-}
-
 func (i *DynamicInfo) RecordType() string {
 	return config.RecordTypeDynamic
 }

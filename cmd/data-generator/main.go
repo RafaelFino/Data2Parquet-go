@@ -139,20 +139,21 @@ func GenerateLog(pid int, count int, result chan domain.Record, wg *sync.WaitGro
 
 	for i := 0; i < count; i++ {
 		duration := fmt.Sprint(time.Since(start).Milliseconds())
+
 		line := &domain.Log{
 			Level:                       "INFO",
 			Message:                     words.Sentences(5),
 			Time:                        time.Now().Format(time.RFC3339Nano),
+			BusinessCapability:          "business_capability" + fmt.Sprintf("%02d", i%10),
+			BusinessDomain:              "business_domain" + fmt.Sprintf("%02d", i%10),
+			BusinessService:             "business_service" + fmt.Sprintf("%02d", i%20),
+			ApplicationService:          "application_service" + fmt.Sprintf("%02d", i%30),
 			CorrelationId:               getID(),
 			SessionId:                   getID(),
 			MessageId:                   getID(),
 			PersonId:                    getID(),
 			UserId:                      getID(),
 			DeviceId:                    getID(),
-			BusinessCapability:          "business_capability" + fmt.Sprintf("%02d", i%10),
-			BusinessDomain:              "business_domain" + fmt.Sprintf("%02d", i%10),
-			BusinessService:             "business_service" + fmt.Sprintf("%02d", i%20),
-			ApplicationService:          "application_service" + fmt.Sprintf("%02d", i%30),
 			ResourceType:                &resType,
 			CloudProvider:               &cloudProvider,
 			SourceId:                    getID(),

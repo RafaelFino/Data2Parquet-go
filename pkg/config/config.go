@@ -92,11 +92,13 @@ var WriterTypes = map[string]int{
 }
 
 const RecordTypeLog = "log"
+const RecordTypeLogLegacy = "log_legacy"
 const RecordTypeDynamic = "dynamic"
 
 var RecordTypes = map[string]int{
-	RecordTypeLog:     1,
-	RecordTypeDynamic: 2,
+	RecordTypeLog:       1,
+	RecordTypeDynamic:   2,
+	RecordTypeLogLegacy: 3,
 }
 
 var keys = []string{
