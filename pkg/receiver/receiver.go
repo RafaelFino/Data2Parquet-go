@@ -55,7 +55,7 @@ func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 		converter:     converter.New(config),
 		interval:      time.Duration(config.FlushInterval) * time.Second,
 		mu:            &sync.Mutex{},
-		update:        make(chan *UpdateItem, 500000),
+		update:        make(chan *UpdateItem, config.BufferSize),
 	}
 
 	if ret.buffer == nil {
@@ -132,7 +132,7 @@ func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 						err := r.flushKey(key, ctrl)
 
 						if err != nil {
-							slog.Error("Error flushing buffer", "error", err, "key", key, "module", "receiver", "function", "Write")
+							slog.Error("Error flushing buffer", "error", err, "key", key)
 						}
 
 						slog.Debug("Waiting interval to flush buffer", "key", key, "interval", r.interval)
@@ -174,7 +174,7 @@ func (r *Receiver) Write(record domain.Record) error {
 	n, err := r.buffer.Push(key, record)
 
 	if err != nil {
-		slog.Error("Error pushing record", "error", err, "record", record.ToString(), "module", "receiver", "function", "Write")
+		slog.Error("Error pushing record", "error", err, "record", record.ToString())
 		return err
 	}
 
@@ -256,7 +256,7 @@ func (r *Receiver) flushKey(key string, ctrl *BufferControl) error {
 				err := r.buffer.PushDLQ(item.Key, item.Record)
 
 				if err != nil {
-					slog.Error("Error pushing to DLQ Buffer", "error", err, "key", key, "module", "receiver", "function", "Flush")
+					slog.Error("Error pushing to DLQ Buffer", "error", err, "key", key)
 					panic(err)
 				}
 			} else {
@@ -287,7 +287,7 @@ func (r *Receiver) flushKey(key string, ctrl *BufferControl) error {
 	err = r.buffer.Clear(key, len(data))
 
 	if err != nil {
-		slog.Error("Error clearing buffer", "error", err, "key", key, "size", len(data), "module", "receiver")
+		slog.Error("Error clearing buffer", "error", err, "key", key, "size", len(data))
 	}
 
 	//Reset buffer control
@@ -384,7 +384,7 @@ func (r *Receiver) TryResendData() {
 
 func (r *Receiver) Flush() error {
 	start := time.Now()
-	slog.Debug("Flushing all keys", "module", "receiver", "function", "Flush")
+	slog.Debug("Flushing all keys")
 
 	keys := map[string]*BufferControl{}
 
@@ -398,18 +398,18 @@ func (r *Receiver) Flush() error {
 		err := r.flushKey(key, ctrl)
 
 		if err != nil {
-			slog.Error("Error flushing key", "error", err, "key", key, "module", "receiver", "function", "Flush")
+			slog.Error("Error flushing key", "error", err, "key", key)
 			return err
 		}
 	}
 
-	slog.Info("Flush finished", "module", "receiver", "function", "Flush", "duration", time.Since(start))
+	slog.Info("Flush finished", "duration", time.Since(start))
 
 	return nil
 }
 
 func (r *Receiver) Close() error {
-	slog.Debug("Closing receiver", "module", "receiver", "function", "Close")
+	slog.Debug("Closing receiver")
 	r.running = false
 	close(r.update)
 
@@ -434,7 +434,7 @@ func (r *Receiver) Close() error {
 }
 
 func (r *Receiver) Healthcheck() error {
-	slog.Debug("Healthcheck", "running", r.running, "module", "receiver", "function", "Healthcheck")
+	slog.Debug("Healthcheck", "running", r.running)
 	if !r.running {
 		return errors.New("receiver is not running")
 	}
