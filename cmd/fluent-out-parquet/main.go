@@ -166,8 +166,8 @@ func IsLogRecord(data map[string]interface{}) bool {
 func CreateDataMap(data map[interface{}]interface{}, tm time.Time, tag string) map[string]any {
 	logData := make(map[string]any)
 
-	logData["fluent_timestamp"] = tm.Format(time.RFC3339Nano)
-	logData["fluent_tag"] = tag
+	logData["fluent-timestamp"] = tm.Format(time.RFC3339Nano)
+	logData["fluent-tag"] = tag
 
 	for k, v := range data {
 		key := strings.ToLower(fmt.Sprintf("%v", k))

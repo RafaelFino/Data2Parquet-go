@@ -12,37 +12,37 @@ import (
 type Log struct {
 	Time                        string            `json:"time" parquet:"name=time, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"time"`
 	Level                       string            `json:"level" parquet:"name=level, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"level"`
-	CorrelationId               *string           `json:"correlation_id,omitempty" parquet:"name=correlation_id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"correlation_id"`
-	SessionId                   *string           `json:"session_id,omitempty" parquet:"name=session_id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"session_id"`
-	MessageId                   *string           `json:"message_id,omitempty" parquet:"name=message_id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"message_id"`
-	PersonId                    *string           `json:"person_id,omitempty" parquet:"name=person_id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"person_id"`
-	UserId                      *string           `json:"user_id,omitempty" parquet:"name=user_id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"user_id"`
-	DeviceId                    *string           `json:"device_id,omitempty" parquet:"name=device_id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"device_id"`
+	CorrelationId               *string           `json:"correlation-id,omitempty" parquet:"name=correlation-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"correlation-id"`
+	SessionId                   *string           `json:"session-id,omitempty" parquet:"name=session-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"session-id"`
+	MessageId                   *string           `json:"message-id,omitempty" parquet:"name=message-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"message-id"`
+	PersonId                    *string           `json:"person-id,omitempty" parquet:"name=person-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"person-id"`
+	UserId                      *string           `json:"user-id,omitempty" parquet:"name=user-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"user-id"`
+	DeviceId                    *string           `json:"device-id,omitempty" parquet:"name=device-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"device-id"`
 	Message                     string            `json:"message" parquet:"name=message, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"message"`
-	BusinessCapability          string            `json:"business_capability" parquet:"name=business_capability, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business_capability"`
-	BusinessDomain              string            `json:"business_domain" parquet:"name=business_domain, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business_domain"`
-	BusinessService             string            `json:"business_service" parquet:"name=business_service, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business_service"`
-	ApplicationService          string            `json:"application_service" parquet:"name=application_service, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"application_service"`
+	BusinessCapability          string            `json:"business-capability" parquet:"name=business-capability, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-capability"`
+	BusinessDomain              string            `json:"business-domain" parquet:"name=business-domain, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-domain"`
+	BusinessService             string            `json:"business-service" parquet:"name=business-service, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-service"`
+	ApplicationService          string            `json:"application-service" parquet:"name=application-service, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"application-service"`
 	Audit                       *bool             `json:"audit,omitempty" parquet:"name=audit, type=BOOLEAN" msg:"audit"`
-	ResourceType                *string           `json:"resource_type" parquet:"name=resource_type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"resource_type"`
-	CloudProvider               *string           `json:"cloud_provider" parquet:"name=cloud_provider, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"cloud_provider"`
-	SourceId                    *string           `json:"source_id,omitempty" parquet:"name=source_id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"source_id"`
-	HTTPResponse                *string           `json:"http_response,omitempty" parquet:"name=http_response, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"http_response"`
-	ErrorCode                   *string           `json:"error_code,omitempty" parquet:"name=error_code, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"error_code"`
+	ResourceType                *string           `json:"resource-type" parquet:"name=resource-type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"resource-type"`
+	CloudProvider               *string           `json:"cloud-provider" parquet:"name=cloud-provider, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"cloud-provider"`
+	SourceId                    *string           `json:"source-id,omitempty" parquet:"name=source-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"source-id"`
+	HTTPResponse                *string           `json:"http-response,omitempty" parquet:"name=http-response, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"http-response"`
+	ErrorCode                   *string           `json:"error-code,omitempty" parquet:"name=error-code, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"error-code"`
 	Error                       *string           `json:"error,omitempty" parquet:"name=error, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"error"`
-	StackTrace                  *string           `json:"stack_trace,omitempty" parquet:"name=stack_trace, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"stack_trace"`
+	StackTrace                  *string           `json:"stack-trace,omitempty" parquet:"name=stack-trace, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"stack-trace"`
 	Duration                    *string           `json:"duration,omitempty" parquet:"name=duration, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"duration"`
-	TraceIP                     []string          `json:"trace_ip,omitempty" parquet:"name=trace_ip, type=MAP, convertedtype=LIST, valuetype=BYTE_ARRAY, valueconvertedtype=UTF8" msg:"trace_ip"`
+	TraceIP                     []string          `json:"trace-ip,omitempty" parquet:"name=trace-ip, type=MAP, convertedtype=LIST, valuetype=BYTE_ARRAY, valueconvertedtype=UTF8" msg:"trace-ip"`
 	Region                      *string           `json:"region,omitempty" parquet:"name=region, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"region"`
 	AZ                          *string           `json:"az,omitempty" parquet:"name=az, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"az"`
 	Tags                        []string          `json:"tags,omitempty" parquet:"name=tags, type=MAP, convertedtype=LIST, valuetype=BYTE_ARRAY, valueconvertedtype=UTF8" msg:"tags"`
 	Args                        map[string]string `json:"args,omitempty" parquet:"name=args, type=MAP, convertedtype=MAP, keytype=BYTE_ARRAY, keyconvertedtype=UTF8, valuetype=BYTE_ARRAY" msg:"args"`
-	TransactionMessageReference *string           `json:"transaction_message_reference,omitempty" parquet:"name=transaction_message_reference, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"transaction_message_reference"`
+	TransactionMessageReference *string           `json:"transaction-message-reference,omitempty" parquet:"name=transaction-message-reference, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"transaction-message-reference"`
 	Ttl                         *string           `json:"ttl,omitempty" parquet:"name=ttl, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"ttl"`
-	AutoIndex                   *bool             `json:"auto_index,omitempty" parquet:"name=auto_index, type=BOOLEAN" msg:"auto_index"`
-	LoggerName                  *string           `json:"logger_name,omitempty" parquet:"name=logger_name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"logger_name"`
-	ThreadName                  *string           `json:"thread_name,omitempty" parquet:"name=thread_name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"thread_name"`
-	ExtraFields                 map[string]string `json:"extra_fields,omitempty" parquet:"name=extra_fields, type=MAP, convertedtype=MAP, keytype=BYTE_ARRAY, keyconvertedtype=UTF8, valuetype=BYTE_ARRAY" msg:"extra_fields"`
+	AutoIndex                   *bool             `json:"auto-index,omitempty" parquet:"name=auto-index, type=BOOLEAN" msg:"auto-index"`
+	LoggerName                  *string           `json:"logger-name,omitempty" parquet:"name=logger-name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"logger-name"`
+	ThreadName                  *string           `json:"thread-name,omitempty" parquet:"name=thread-name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"thread-name"`
+	ExtraFields                 map[string]string `json:"extra-fields,omitempty" parquet:"name=extra-fields, type=MAP, convertedtype=MAP, keytype=BYTE_ARRAY, keyconvertedtype=UTF8, valuetype=BYTE_ARRAY" msg:"extra-fields"`
 	info                        RecordInfo
 }
 
@@ -131,37 +131,37 @@ func (l *Log) GetData() map[string]interface{} {
 
 	ret["time"] = l.Time
 	ret["level"] = l.Level
-	ret["correlation_id"] = l.CorrelationId
-	ret["session_id"] = l.SessionId
-	ret["message_id"] = l.MessageId
-	ret["person_id"] = l.PersonId
-	ret["user_id"] = l.UserId
-	ret["device_id"] = l.DeviceId
+	ret["correlation-id"] = l.CorrelationId
+	ret["session-id"] = l.SessionId
+	ret["message-id"] = l.MessageId
+	ret["person-id"] = l.PersonId
+	ret["user-id"] = l.UserId
+	ret["device-id"] = l.DeviceId
 	ret["message"] = l.Message
-	ret["business_capability"] = l.BusinessCapability
-	ret["business_domain"] = l.BusinessDomain
-	ret["business_service"] = l.BusinessService
-	ret["application_service"] = l.ApplicationService
+	ret["business-capability"] = l.BusinessCapability
+	ret["business-domain"] = l.BusinessDomain
+	ret["business-service"] = l.BusinessService
+	ret["application-service"] = l.ApplicationService
 	ret["audit"] = l.Audit
-	ret["resource_type"] = l.ResourceType
-	ret["cloud_provider"] = l.CloudProvider
-	ret["source_id"] = l.SourceId
-	ret["http_response"] = l.HTTPResponse
-	ret["error_code"] = l.ErrorCode
+	ret["resource-type"] = l.ResourceType
+	ret["cloud-provider"] = l.CloudProvider
+	ret["source-id"] = l.SourceId
+	ret["http-response"] = l.HTTPResponse
+	ret["error-code"] = l.ErrorCode
 	ret["error"] = l.ErrorCode
-	ret["stack_trace"] = l.StackTrace
+	ret["stack-trace"] = l.StackTrace
 	ret["duration"] = l.Duration
-	ret["trace_ip"] = l.TraceIP
+	ret["trace-ip"] = l.TraceIP
 	ret["region"] = l.Region
 	ret["az"] = l.AZ
 	ret["tags"] = l.Tags
 	ret["args"] = l.Args
-	ret["transaction_message_reference"] = l.TransactionMessageReference
+	ret["transaction-message-reference"] = l.TransactionMessageReference
 	ret["ttl"] = l.Ttl
-	ret["auto_index"] = l.AutoIndex
-	ret["logger_name"] = l.LoggerName
-	ret["thread_name"] = l.ThreadName
-	ret["extra_fields"] = l.ExtraFields
+	ret["auto-index"] = l.AutoIndex
+	ret["logger-name"] = l.LoggerName
+	ret["thread-name"] = l.ThreadName
+	ret["extra-fields"] = l.ExtraFields
 
 	return ret
 }
@@ -203,7 +203,7 @@ func GetInt64(n any) int64 {
 
 func (l *Log) Decode(data map[string]interface{}) {
 	for k, v := range data {
-		key := strings.ToLower(fmt.Sprintf("%v", k))
+		key := strings.ReplaceAll(strings.ToLower(fmt.Sprintf("%v", k)), "_", "-")
 
 		switch key {
 		case "time":
@@ -214,17 +214,17 @@ func (l *Log) Decode(data map[string]interface{}) {
 			l.Level = v.(string)
 		case "lvl":
 			l.Level = v.(string)
-		case "correlation_id":
+		case "correlation-id":
 			l.CorrelationId = GetStringP(v)
-		case "session_id":
+		case "session-id":
 			l.SessionId = GetStringP(v)
-		case "message_id":
+		case "message-id":
 			l.MessageId = GetStringP(v)
-		case "person_id":
+		case "person-id":
 			l.PersonId = GetStringP(v)
-		case "user_id":
+		case "user-id":
 			l.UserId = GetStringP(v)
-		case "device_id":
+		case "device-id":
 			l.DeviceId = GetStringP(v)
 		case "message":
 			l.Message = v.(string)
@@ -232,42 +232,42 @@ func (l *Log) Decode(data map[string]interface{}) {
 			l.Message = v.(string)
 		case "log":
 			l.Message = v.(string)
-		case "business_capability":
+		case "business-capability":
 			l.BusinessCapability = v.(string)
-		case "business_domain":
+		case "business-domain":
 			l.BusinessDomain = v.(string)
-		case "business_service":
+		case "business-service":
 			l.BusinessService = v.(string)
-		case "application_service":
+		case "application-service":
 			l.ApplicationService = v.(string)
 		case "audit":
 			val := v.(bool)
 			l.Audit = &val
-		case "resource_type":
+		case "resource-type":
 			l.ResourceType = GetStringP(v)
-		case "cloud_provider":
+		case "cloud-provider":
 			l.CloudProvider = GetStringP(v)
-		case "source_id":
+		case "source-id":
 			l.SourceId = GetStringP(v)
-		case "http_response":
+		case "http-response":
 			l.HTTPResponse = GetStringP(v)
-		case "error_code":
+		case "error-code":
 			l.ErrorCode = GetStringP(v)
 		case "error":
 			l.ErrorCode = GetStringP(v)
-		case "error_message":
+		case "error-message":
 			l.ErrorCode = GetStringP(v)
-		case "error_msg":
+		case "error-msg":
 			l.ErrorCode = GetStringP(v)
-		case "stack_trace":
+		case "stack-trace":
 			l.StackTrace = GetStringP(v)
 		case "duration":
 			l.Duration = GetStringP(v)
 		case "elapsed":
 			l.Duration = GetStringP(v)
-		case "elapsed_time":
+		case "elapsed-time":
 			l.Duration = GetStringP(v)
-		case "trace_ip":
+		case "trace-ip":
 			switch valueType := v.(type) {
 			case []string:
 				l.TraceIP = append(l.TraceIP, valueType...)
@@ -304,16 +304,16 @@ func (l *Log) Decode(data map[string]interface{}) {
 					l.Args[arg_key] = arg_val.(string)
 				}
 			}
-		case "transaction_message_reference":
+		case "transaction-message-reference":
 			l.TransactionMessageReference = GetStringP(v)
 		case "ttl":
 			l.Ttl = GetStringP(v)
-		case "auto_index":
+		case "auto-index":
 			val := v.(bool)
 			l.AutoIndex = &val
-		case "logger_name":
+		case "logger-name":
 			l.LoggerName = GetStringP(v)
-		case "thread_name":
+		case "thread-name":
 			l.ThreadName = GetStringP(v)
 		default:
 			l.ExtraFields[k] = fmt.Sprintf("%s", v)
