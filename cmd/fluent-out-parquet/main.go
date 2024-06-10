@@ -107,6 +107,7 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 			slog.Warn("Invalid log record", "record", logData)
 			continue
 		}
+		
 		record := domain.NewLog(logData)
 
 		err := rcv.Write(record)
