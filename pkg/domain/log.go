@@ -176,6 +176,8 @@ func (l *Log) Decode(data map[string]interface{}) {
 			l.Time = v.(string)
 		case "timestamp":
 			l.Time = v.(string)
+		case "when":
+			l.Time = v.(string)
 		case "level":
 			l.Level = v.(string)
 		case "lvl":

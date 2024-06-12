@@ -24,7 +24,7 @@ type Receiver struct {
 	ctx           context.Context
 	recoveryCount map[string]int
 	interval      time.Duration
-	mu            *sync.Mutex
+	mu            *sync.RWMutex
 	update        chan *UpdateItem
 }
 
@@ -54,7 +54,7 @@ func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 		recoveryCount: make(map[string]int),
 		converter:     converter.New(config),
 		interval:      time.Duration(config.FlushInterval) * time.Second,
-		mu:            &sync.Mutex{},
+		mu:            &sync.RWMutex{},
 		update:        make(chan *UpdateItem, config.BufferSize),
 	}
 
@@ -98,7 +98,10 @@ func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 
 			if c, ok := r.control[item.Key]; ok {
 				c.Count = item.Count
+
+				r.mu.Lock()
 				r.control[item.Key] = c
+				r.mu.Unlock()
 
 				if item.Count >= r.config.BufferSize && !c.running {
 					if !r.buffer.CheckLock(item.Key) {
@@ -124,7 +127,9 @@ func NewReceiver(ctx context.Context, config *config.Config) *Receiver {
 					running: false,
 				}
 
+				r.mu.Lock()
 				r.control[item.Key] = ctrl
+				r.mu.Unlock()
 
 				go func(r *Receiver, key string, ctrl *BufferControl) {
 					for r.running {
@@ -386,16 +391,25 @@ func (r *Receiver) Flush() error {
 	start := time.Now()
 	slog.Debug("Flushing all keys")
 
-	keys := map[string]*BufferControl{}
+	keys := map[string]BufferControl{}
 
-	r.mu.Lock()
-	for key, ctrl := range r.control {
-		keys[key] = ctrl
+	for !r.mu.TryRLock() {
+		slog.Info("Waiting for lock")
+		time.Sleep(1 * time.Second)
 	}
-	r.mu.Unlock()
+
+	for key, ctrl := range r.control {
+		keys[key] = BufferControl{
+			Last:    ctrl.Last,
+			Count:   ctrl.Count,
+			running: ctrl.running,
+		}
+	}
+
+	r.mu.RUnlock()
 
 	for key, ctrl := range keys {
-		err := r.flushKey(key, ctrl)
+		err := r.flushKey(key, &ctrl)
 
 		if err != nil {
 			slog.Error("Error flushing key", "error", err, "key", key)
@@ -425,7 +439,6 @@ func (r *Receiver) Close() error {
 			r.control[key] = ctrl
 		}
 	}
-
 	r.mu.Unlock()
 
 	r.Flush()

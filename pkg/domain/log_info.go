@@ -60,9 +60,10 @@ func (i *LogInfo) Key() string {
 func (i *LogInfo) Target() string {
 	tm := time.Now()
 	year, month, day := tm.Date()
-	hour, min, sec := tm.Clock()
+	hour, _, _ := tm.Clock()
+	id := MakeID()
 
-	return fmt.Sprintf("capability=%s/year=%04d/month=%02d/day=%02d/hour=%02d/%02d%02d%02d-%s.parquet", i.Capability(), year, month, day, hour, hour, min, sec, i.Key())
+	return fmt.Sprintf("capability=%s/year=%04d/month=%02d/day=%02d/hour=%02d/%s-%s.parquet", i.Capability(), year, month, day, hour, id, i.Key())
 }
 
 func (i *LogInfo) makeKey() {

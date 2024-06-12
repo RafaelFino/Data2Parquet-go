@@ -3,9 +3,11 @@ package domain
 import (
 	"data2parquet/pkg/config"
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
+	"github.com/oklog/ulid"
 	"golang.org/x/exp/slog"
 )
 
@@ -208,4 +210,11 @@ func GetInt64(n any) int64 {
 	default:
 		return 0
 	}
+}
+
+var entropy = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+func MakeID() string {
+	ret := ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String()
+	return ret
 }
