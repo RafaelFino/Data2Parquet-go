@@ -252,14 +252,10 @@ func testBuffer(buf buffer.Buffer, t *testing.T) {
 			t.Error("Record thread_name is empty")
 		}
 
-		if recData["trace_ip"] == nil {
-			t.Error("Record trace_ip is nil")
-		}
-
 		source := data[i]
 
 		if source.ToJson() != record.ToJson() {
-			t.Error("Record to json is not equal")
+			t.Errorf("Record to json is not equal to source: \nsource: %s\nrecord:%s", source.ToJson(), record.ToJson())
 		}
 	}
 

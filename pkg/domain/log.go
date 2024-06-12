@@ -10,7 +10,7 @@ import (
 )
 
 type Log struct {
-	Info                        *LogInfo          `json:"info,omitempty" msg:"info"`
+	info                        *LogInfo
 	Time                        string            `json:"time" parquet:"name=time, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"time"`
 	Level                       string            `json:"level" parquet:"name=level, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"level"`
 	Message                     string            `json:"message" parquet:"name=message, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"message"`
@@ -109,7 +109,6 @@ func NewLog(data map[string]interface{}) Record {
 	}
 
 	ret.Decode(data)
-	ret.UpdateInfo()
 
 	return ret
 }
@@ -124,7 +123,7 @@ func (l *Log) UpdateInfo() {
 
 	ret.makeKey()
 
-	l.Info = ret
+	l.info = ret
 }
 
 func (l *Log) GetData() map[string]interface{} {
@@ -287,13 +286,15 @@ func (l *Log) Decode(data map[string]interface{}) {
 			l.ExtraFields[k] = fmt.Sprintf("%s", v)
 		}
 	}
+
+	l.UpdateInfo()
 }
 
 func (l *Log) GetInfo() RecordInfo {
-	if l.Info == nil {
+	if l.info == nil {
 		l.UpdateInfo()
 	}
-	return l.Info
+	return l.info
 }
 
 func (l *Log) ToString() string {
