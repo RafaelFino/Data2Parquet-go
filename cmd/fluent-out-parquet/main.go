@@ -77,7 +77,7 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int {
 	defer func() {
 		if r := recover(); r != nil {
-			slog.Warn("Recovered in FLBPluginFlushCtx", "result", r)
+			slog.Error("Recovered in FLBPluginFlushCtx", "result", r)
 		}
 	}()
 

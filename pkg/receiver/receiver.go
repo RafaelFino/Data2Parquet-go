@@ -220,7 +220,7 @@ func (r *Receiver) flushKey(key string, reason FlushReason) error {
 	r.last[key] = &start
 
 	if !r.buffer.CheckLock(key) {
-		slog.Info("Skipping flush, buffer is locked by other process", "key", key)
+		slog.Debug("Skipping flush, buffer is locked by other process", "key", key)
 		return nil
 	}
 

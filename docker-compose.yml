@@ -8,7 +8,9 @@ services:
     ports:
       - '6379:6379'
     volumes: 
-      - ./data/buffer:/data
+      - ./data/docker-redis:/data
+    depends_on:
+      - localstack
       
   localstack:
     image: localstack/localstack
@@ -21,7 +23,14 @@ services:
   
   fluent-bit:
     image: cr.fluentbit.io/fluent/fluent-bit
+    # restart: always
     volumes:
-      - ./etc/:/fluent-bit/etc/
+      - ./etc/fluent-docker:/fluent-bit/etc/
       - ./data/docker-fluent/:/var/data
-      - ./bin/linux-arm64:/fluent-bit/plugin/
+      - ./bin/linux-amd64:/fluent-bit/plugin/
+    depends_on:
+      - redis
+      - localstack
+    links:
+      - redis
+      - localstack

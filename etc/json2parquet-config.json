@@ -18,7 +18,7 @@
     "_writer_compression_type": "gzip",
     "writer_compression_type": "snappy",
     "__writer_compression_type": "none",
-    "writer_file_path": "./data",
+    "writer_file_path": "./data/local",
     "writer_row_group_size": 134217728,
     "writer_type": "file",
     "_writer_type" : "aws-s3",
