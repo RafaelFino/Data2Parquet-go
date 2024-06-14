@@ -6,12 +6,16 @@ import (
 	"data2parquet/pkg/domain"
 	"data2parquet/pkg/receiver"
 	"encoding/json"
-	"log/slog"
+
+	"data2parquet/pkg/logger" //"log/slog"
+
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+var slog = logger.GetLogger()
 
 type LogHandler struct {
 	rcv    *receiver.Receiver

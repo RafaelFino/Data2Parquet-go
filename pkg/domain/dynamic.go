@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	msgp "github.com/vmihailenco/msgpack/v5"
-	"golang.org/x/exp/slog"
 )
 
 type Dynamic struct {

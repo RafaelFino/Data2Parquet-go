@@ -1,0 +1,9 @@
+FROM amazonlinux 
+
+RUN yum install wget -y
+RUN wget https://packages.fluentbit.io/amazonlinux/2023/fluent-bit-2.2.3-1.x86_64.rpm
+RUN yum install -y fluent-bit-2.2.3-1.x86_64.rpm
+
+ENV PATH="${PATH}:/opt/fluent-bit/bin"
+
+ENTRYPOINT ["fluent-bit", "-c", "/etc/fluent-bit/fluent-bit.conf"]

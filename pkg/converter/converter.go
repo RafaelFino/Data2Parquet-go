@@ -3,13 +3,15 @@ package converter
 import (
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
+	"data2parquet/pkg/logger" //"log/slog"
 	"io"
-	"log/slog"
 	"os"
 
 	"github.com/xitongsys/parquet-go/parquet"
 	"github.com/xitongsys/parquet-go/writer"
 )
+
+var slog = logger.GetLogger()
 
 // / Compression types
 var CompressionTypeSnappy = "snappy"

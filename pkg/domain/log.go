@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	msgp "github.com/vmihailenco/msgpack/v5"
-	"golang.org/x/exp/slog"
 
 	"data2parquet/pkg/config"
 )

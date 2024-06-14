@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"context"
 	"data2parquet/pkg/config"
+	"data2parquet/pkg/logger" // "log/slog"
 )
+
+var slog = logger.GetLogger()
 
 type Writer interface {
 	Init() error

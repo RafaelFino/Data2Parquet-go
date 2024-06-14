@@ -4,23 +4,22 @@ import (
 	"C"
 	"context"
 	"fmt"
-	"log/slog"
-	"os"
 	"strings"
 	"time"
 	"unsafe"
 
 	"github.com/fluent/fluent-bit-go/output"
-	"github.com/phsym/console-slog"
 
 	"data2parquet/pkg/config"
+	"data2parquet/pkg/domain"
+	"data2parquet/pkg/logger" // "log/slog"
 	"data2parquet/pkg/receiver"
 )
-import "data2parquet/pkg/domain"
 
 var cfg = &config.Config{}
 var rcv *receiver.Receiver
 var ctx = context.Background()
+var slog = logger.GetLogger()
 
 func main() {
 	slog.Info("Starting plugin")
@@ -35,12 +34,7 @@ func FLBPluginRegister(def unsafe.Pointer) int {
 
 //export FLBPluginInit
 func FLBPluginInit(plugin unsafe.Pointer) int {
-	logLevel := slog.LevelInfo.Level()
-
-	logHandler := console.NewHandler(os.Stderr, &console.HandlerOptions{Level: logLevel})
-	logger := slog.New(logHandler)
-
-	logger.Info("Initializing plugin")
+	slog.Info("Initializing plugin")
 
 	cfgMap := make(map[string]string, 0)
 
@@ -54,18 +48,14 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 	err := cfg.Set(cfgMap)
 
 	if err != nil {
-		logger.Error("Error setting config", "error", err)
+		slog.Error("Error setting config", "error", err)
 		return output.FLB_ERROR
 	}
 
 	if cfg.Debug {
-		logger.Info("Debug mode enabled")
-		slog.SetLogLoggerLevel(slog.LevelDebug.Level())
-	} else {
-		slog.SetLogLoggerLevel(slog.LevelInfo.Level())
+		slog.Info("Debug mode enabled")
+		slog.SetLogLoggerLevel(logger.LevelDebug)
 	}
-
-	slog.SetDefault(logger)
 
 	rcv = receiver.NewReceiver(ctx, cfg)
 

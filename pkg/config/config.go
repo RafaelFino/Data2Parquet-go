@@ -3,10 +3,13 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
+
+	"data2parquet/pkg/logger" //"log/slog"
 	"os"
 	"strings"
 )
+
+var slog = logger.GetLogger()
 
 type Config struct {
 	//Address: HTTP server Address configuration tag, describe the address of the server, its an optional field only used for HTTP server. The default value is empty.
@@ -75,6 +78,7 @@ type Config struct {
 	WriterType            string `json:"writer_type"`
 	UseHash               bool   `json:"use_hash,omitempty"`
 	UseHMAC               bool   `json:"use_hmac,omitempty"`
+	DisableLogColors      bool   `json:"disable_log_colors,omitempty"`
 }
 
 var UseHMAC = false
@@ -138,6 +142,7 @@ var keys = []string{
 	"WriterType",
 	"UseHash",
 	"UseHMAC",
+	"DisableLogColors",
 }
 
 func NewConfig() *Config {
@@ -296,6 +301,10 @@ func (c *Config) Set(cfg map[string]string) error {
 
 		case "UseHMAC":
 			c.UseHMAC = strings.ToLower(value) == "true"
+
+		case "DisableLogColors":
+			c.DisableLogColors = strings.ToLower(value) == "true"
+
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
 		}
@@ -343,6 +352,7 @@ func (c *Config) Get() map[string]interface{} {
 	ret["WriterFilePath"] = c.WriterFilePath
 	ret["WriterRowGroupSize"] = c.WriterRowGroupSize
 	ret["WriterType"] = c.WriterType
+	ret["DisableLogColors"] = c.DisableLogColors
 
 	return ret
 }
@@ -461,6 +471,8 @@ func (c *Config) SetDefaults() {
 			slog.Warn("DLQ is enabled but DLQ prefix is empty, using default value")
 		}
 	}
+
+	slog.Colors = !c.DisableLogColors
 
 	UseHMAC = c.UseHMAC
 	slog.Debug("Config", "data", c.Get())

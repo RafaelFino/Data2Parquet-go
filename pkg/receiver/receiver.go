@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"log/slog"
+
+	"data2parquet/pkg/logger" //"log/slog"
+
 	"sync"
 	"time"
 
@@ -14,6 +16,8 @@ import (
 	"data2parquet/pkg/domain"
 	"data2parquet/pkg/writer"
 )
+
+var slog = logger.GetLogger()
 
 type Receiver struct {
 	config        *config.Config

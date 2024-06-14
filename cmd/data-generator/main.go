@@ -2,8 +2,8 @@ package main
 
 import (
 	"data2parquet/pkg/domain"
+	"data2parquet/pkg/logger"
 	"fmt"
-	"log/slog"
 	"math/rand"
 	"os"
 	"runtime/debug"
@@ -13,17 +13,12 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/oklog/ulid"
-	"github.com/phsym/console-slog"
 	"gopkg.in/loremipsum.v1"
 )
 
+var slog = logger.GetLogger()
+
 func main() {
-	var logLevel = slog.LevelInfo
-	logHandler := console.NewHandler(os.Stderr, &console.HandlerOptions{Level: logLevel})
-
-	logger := slog.New(logHandler)
-	slog.SetDefault(logger)
-
 	count := 500000
 	parallel := 10
 

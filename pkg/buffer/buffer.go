@@ -5,11 +5,13 @@ import (
 	"context"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
-	"log/slog"
+	"data2parquet/pkg/logger" //"log/slog"
 	"time"
 
 	msgp "github.com/vmihailenco/msgpack/v5"
 )
+
+var slog = logger.GetLogger()
 
 type Buffer interface {
 	Close() error

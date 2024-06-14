@@ -9,10 +9,12 @@ import (
 	"time"
 
 	"github.com/oklog/ulid"
-	"golang.org/x/exp/slog"
 
 	"data2parquet/pkg/config"
+	"data2parquet/pkg/logger"
 )
+
+var slog = logger.GetLogger()
 
 const KeySeparator = "-"
 

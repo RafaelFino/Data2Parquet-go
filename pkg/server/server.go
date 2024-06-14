@@ -4,15 +4,17 @@ import (
 	"context"
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/handler"
+	"data2parquet/pkg/logger" // "log/slog"
 	"data2parquet/pkg/receiver"
 	"fmt"
-	"log/slog"
 	"os"
 
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+var slog = logger.GetLogger()
 
 type Server struct {
 	engine *gin.Engine

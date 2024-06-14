@@ -2,18 +2,18 @@ package main
 
 import (
 	"context"
+	"data2parquet/pkg/logger" // "log/slog"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"os"
 	"time"
-
-	"github.com/phsym/console-slog"
 
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/domain"
 	"data2parquet/pkg/receiver"
 )
+
+var slog = logger.GetLogger()
 
 func main() {
 	PrintLogo()
@@ -29,16 +29,6 @@ func main() {
 		fmt.Printf("Error loading config file, %s", err)
 		os.Exit(1)
 	}
-
-	var logLevel = slog.LevelInfo
-	if cfg.Debug {
-		logLevel = slog.LevelDebug.Level()
-	}
-
-	logHandler := console.NewHandler(os.Stderr, &console.HandlerOptions{Level: logLevel})
-
-	logger := slog.New(logHandler)
-	slog.SetDefault(logger)
 
 	slog.Info("Starting...")
 	start := time.Now()

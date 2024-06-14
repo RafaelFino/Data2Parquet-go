@@ -3,7 +3,6 @@ package writer
 import (
 	"bytes"
 	"context"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
