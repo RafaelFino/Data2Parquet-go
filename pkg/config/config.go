@@ -16,6 +16,7 @@ type Config struct {
 	//BufferSize: BufferSize configuration tag, describe the size of the buffer, its an important field for control buffer and page size to flush data. The default value is `100`.
 	//BufferType: BufferType configuration tag, describe the type of the buffer, this fields accepte two values, `mem` or `redis`. The default value is `mem`.
 	//Debug: Debug configuration tag, describe the debug mode, its an optional field. The debug mode will generate a lot of information. The default value is `false`.
+	//DisableLogColors: DisableLogColors configuration tag, describe the disable log colors mode, its an optional field. The default value is `false`.
 	//FlushInterval: FlushInterval configuration tag, describe the interval to flush data in seconds, its an important field to control the time to flush data. The default value is `5`.
 	//JsonSchemaPath: JsonSchemaPath configuration tag, describe the path to the JSON schema file, its an optional field. The default value is empty. *This feature is not implemented yet.
 	//Port: Port configuration tag, describe the port of the server, its an optional field only used for HTTP server. The default value is `8080``.
@@ -23,22 +24,24 @@ type Config struct {
 	//RecoveryAttempts: RecoveryAttempts configuration tag, describe the number of attempts to recover data, its an optional field. The default value is `0``.
 	//RedisDataPrefix: RedisDataPrefix configuration tag, describe the prefix of the data key in Redis, its an optional field. The default value is `data`.
 	//RedisDB: RedisDB configuration tag, describe the database number in Redis, its an optional field. The default value is `0`.
+	//RedisDLQPrefix: RedisDLQPrefix configuration tag, describe the prefix of the DLQ key in Redis, its an optional field. The default value is `dlq`.
 	//RedisHost: RedisHost configuration tag, describe the host of the Redis server, its an optional field if you use 'BufferType` as `mem`, but became required if `BufferType` is `redis`. The default value is empty but need to be set if `BufferType` is `redis`.
 	//RedisKeys: RedisKeys configuration tag, describe the keys of the Redis server, its an optional field. The default value is `keys`.
+	//RedisLockInstanceName: RedisLockInstanceName configuration tag, describe the instance name of the lock key in Redis, its an optional field. The default value is empty and in this case, instance hostname will be considered.
 	//RedisLockPrefix: RedisLockPrefix configuration tag, describe the prefix of the lock key in Redis, its an optional field. The default value is `lock`.
+	//RedisLockTTL: RedisLockTTL configuration tag, describe the TTL of the lock key in Redis, its an optional field. The default value is `1.5x` 'FlushInterval` value.
 	//RedisPassword: RedisPassword configuration tag, describe the password of the Redis server, its an optional field. The default value is empty.
 	//RedisRecoveryKey: RedisRecoveryKey configuration tag, describe the recovery key in Redis, its an optional field. The default value is `recovery`.
-	//RedisDLQPrefix: RedisDLQPrefix configuration tag, describe the prefix of the DLQ key in Redis, its an optional field. The default value is `dlq`.
-	//RedisLockTTL: RedisLockTTL configuration tag, describe the TTL of the lock key in Redis, its an optional field. The default value is `1.5x` 'FlushInterval` value.
-	//RedisLockInstanceName: RedisLockInstanceName configuration tag, describe the instance name of the lock key in Redis, its an optional field. The default value is empty and in this case, instance hostname will be considered.
 	//RedisTimeout: RedisTimeout configuration tag, describe the timeout of the Redis server, its an optional field. The default value is empty, in this case, `0` will be the value (Redis defaults).
 	//S3BucketName: S3BucketName configuration tag, describe the bucket name in S3, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+	//S3Endpoint: S3Endpoint configuration tag, describe the endpoint of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 	//S3Region: S3Region configuration tag, describe the region of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 	//S3RoleARN: S3RoleName configuration tag, describe the role name of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 	//S3STSEndpoint: S3STSEndpoint configuration tag, describe the endpoint of the STS server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
-	//S3Endpoint: S3Endpoint configuration tag, describe the endpoint of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 	//TryAutoRecover: TryAutoRecover configuration tag, describe the auto recover mode, its an optional field. The default value is `false`. If set to `true` the system will try to recover the data that failed to write after flash, using recovery cache.
 	//UseDLQ: UseDLQ configuration tag, describe the use of DLQ, its an optional field. The default value is `false`. If set to `true` the system will use the DLQ to store the data that failed to write after flash.
+	//UseHash: UseHash configuration tag, describe the use of hash, its an optional field. The default value is `false`. If set to `true` the system will use the hash to store the data in the buffer.
+	//UseHMAC: UseHMAC configuration tag, describe the use of HMAC, its an optional field. The default value is `false`. If set to `true` the system will use the HMAC to sign the data.
 	//WriterCompressionType: WriterCompressionType configuration tag, describe the compression type of the writer, its an optional field. The default and recommended value is `snappy`. This fields accepte two values, `snappy`, `gzip` or `none`.
 	//WriterFilePath: WriterFilePath configuration tag, describe the file path of the writer, its an optional field. The default value is `./out`.
 	//WriterRowGroupSize: WriterRowGroupSize configuration tag, describe the row group size of the writer, its an optional field. The default value is `134217728` (128M).
@@ -48,6 +51,7 @@ type Config struct {
 	BufferSize            int    `json:"buffer_size"`
 	BufferType            string `json:"buffer_type"`
 	Debug                 bool   `json:"debug,omitempty"`
+	DisableLogColors      bool   `json:"disable_log_colors,omitempty"`
 	FlushInterval         int    `json:"flush_interval"`
 	JsonSchemaPath        string `json:"json_schema_path,omitempty"`
 	Port                  int    `json:"port,omitempty"`
@@ -58,27 +62,26 @@ type Config struct {
 	RedisDLQPrefix        string `json:"redis_dlq_prefix,omitempty"`
 	RedisHost             string `json:"redis_host,omitempty"`
 	RedisKeys             string `json:"redis_keys,omitempty"`
+	RedisLockInstanceName string `json:"redis_lock_instance_name,omitempty"`
 	RedisLockPrefix       string `json:"redis_lock_prefix,omitempty"`
 	RedisLockTTL          int    `json:"redis_lock_ttl,omitempty"`
-	RedisLockInstanceName string `json:"redis_lock_instance_name,omitempty"`
 	RedisPassword         string `json:"redis_password,omitempty"`
 	RedisRecoveryKey      string `json:"redis_recovery_key,omitempty"`
 	RedisTimeout          int    `json:"redis_timeout,omitempty"`
 	S3BuketName           string `json:"s3_bucket_name"`
+	S3DefaultCapability   string `json:"s3_default_capability,omitempty"`
 	S3Endpoint            string `json:"s3_endpoint,omitempty"`
 	S3Region              string `json:"s3_region"`
 	S3RoleARN             string `json:"s3_role_arn,omitempty"`
 	S3STSEndpoint         string `json:"s3_sts_endpoint,omitempty"`
-	S3DefaultCapability   string `json:"s3_default_capability,omitempty"`
 	TryAutoRecover        bool   `json:"try_auto_recover,omitempty"`
 	UseDLQ                bool   `json:"use_dlq,omitempty"`
+	UseHash               bool   `json:"use_hash,omitempty"`
+	UseHMAC               bool   `json:"use_hmac,omitempty"`
 	WriterCompressionType string `json:"writer_compression_type,omitempty"`
 	WriterFilePath        string `json:"writer_file_path,omitempty"`
 	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
 	WriterType            string `json:"writer_type"`
-	UseHash               bool   `json:"use_hash,omitempty"`
-	UseHMAC               bool   `json:"use_hmac,omitempty"`
-	DisableLogColors      bool   `json:"disable_log_colors,omitempty"`
 }
 
 var UseHMAC = false
@@ -113,6 +116,7 @@ var keys = []string{
 	"BufferSize",
 	"BufferType",
 	"Debug",
+	"DisableLogColors",
 	"FlushInterval",
 	"JsonSchemaPath",
 	"RecordType",
@@ -121,28 +125,27 @@ var keys = []string{
 	"RedisDB",
 	"RedisHost",
 	"RedisKeys",
+	"RedisLockInstanceName",
 	"RedisLockPrefix",
 	"RedisLockTTL",
-	"RedisLockInstanceName",
 	"RedisPassword",
 	"RedisRecoveryKey",
 	"RedisSQLPrefix",
 	"RedisTimeout",
 	"S3BucketName",
+	"S3DefaultCapability",
+	"S3Endpoint",
 	"S3Region",
 	"S3RoleARN",
 	"S3STSEndpoint",
-	"S3Endpoint",
-	"S3DefaultCapability",
-	"UseDLQ",
 	"TryAutoRecover",
+	"UseDLQ",
+	"UseHash",
+	"UseHMAC",
 	"WriterCompressionType",
 	"WriterFilePath",
 	"WriterRowGroupSize",
 	"WriterType",
-	"UseHash",
-	"UseHMAC",
-	"DisableLogColors",
 }
 
 func NewConfig() *Config {
@@ -322,6 +325,7 @@ func (c *Config) Get() map[string]interface{} {
 	ret["BufferSize"] = c.BufferSize
 	ret["BufferType"] = c.BufferType
 	ret["Debug"] = c.Debug
+	ret["DisableLogColors"] = c.DisableLogColors
 	ret["FlushInterval"] = c.FlushInterval
 	ret["JsonSchemaPath"] = c.JsonSchemaPath
 	ret["Port"] = c.Port
@@ -329,21 +333,21 @@ func (c *Config) Get() map[string]interface{} {
 	ret["RecoveryAttempts"] = c.RecoveryAttempts
 	ret["RedisDataPrefix"] = c.RedisDataPrefix
 	ret["RedisDB"] = c.RedisDB
+	ret["RedisDLQPrefix"] = c.RedisDLQPrefix
 	ret["RedisHost"] = c.RedisHost
 	ret["RedisKeys"] = c.RedisKeys
+	ret["RedisLockInstanceName"] = c.RedisLockInstanceName
 	ret["RedisLockPrefix"] = c.RedisLockPrefix
 	ret["RedisLockTTL"] = c.RedisLockTTL
-	ret["RedisLockInstanceName"] = c.RedisLockInstanceName
 	ret["RedisPassword"] = c.RedisPassword
 	ret["RedisRecoveryKey"] = c.RedisRecoveryKey
-	ret["RedisDLQPrefix"] = c.RedisDLQPrefix
 	ret["RedisTimeout"] = c.RedisTimeout
 	ret["S3BucketName"] = c.S3BuketName
+	ret["S3DefaultCapability"] = c.S3DefaultCapability
+	ret["S3Endpoint"] = c.S3Endpoint
 	ret["S3Region"] = c.S3Region
 	ret["S3RoleARN"] = c.S3RoleARN
 	ret["S3STSEndpoint"] = c.S3STSEndpoint
-	ret["S3Endpoint"] = c.S3Endpoint
-	ret["S3DefaultCapability"] = c.S3DefaultCapability
 	ret["TryAutoRecover"] = c.TryAutoRecover
 	ret["UseDLQ"] = c.UseDLQ
 	ret["UseHash"] = c.UseHash
@@ -352,7 +356,6 @@ func (c *Config) Get() map[string]interface{} {
 	ret["WriterFilePath"] = c.WriterFilePath
 	ret["WriterRowGroupSize"] = c.WriterRowGroupSize
 	ret["WriterType"] = c.WriterType
-	ret["DisableLogColors"] = c.DisableLogColors
 
 	return ret
 }
