@@ -73,7 +73,11 @@ type Config struct {
 	WriterFilePath        string `json:"writer_file_path,omitempty"`
 	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
 	WriterType            string `json:"writer_type"`
+	UseHash               bool   `json:"use_hash,omitempty"`
+	UseHMAC               bool   `json:"use_hmac,omitempty"`
 }
+
+var UseHMAC = false
 
 const BufferTypeMem = "mem"
 const BufferTypeRedis = "redis"
@@ -132,6 +136,8 @@ var keys = []string{
 	"WriterFilePath",
 	"WriterRowGroupSize",
 	"WriterType",
+	"UseHash",
+	"UseHMAC",
 }
 
 func NewConfig() *Config {
@@ -285,6 +291,11 @@ func (c *Config) Set(cfg map[string]string) error {
 		case "UseDLQ":
 			c.UseDLQ = strings.ToLower(value) == "true"
 
+		case "UseHash":
+			c.UseHash = strings.ToLower(value) == "true"
+
+		case "UseHMAC":
+			c.UseHMAC = strings.ToLower(value) == "true"
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
 		}
@@ -326,6 +337,8 @@ func (c *Config) Get() map[string]interface{} {
 	ret["S3DefaultCapability"] = c.S3DefaultCapability
 	ret["TryAutoRecover"] = c.TryAutoRecover
 	ret["UseDLQ"] = c.UseDLQ
+	ret["UseHash"] = c.UseHash
+	ret["UseHMAC"] = c.UseHMAC
 	ret["WriterCompressionType"] = c.WriterCompressionType
 	ret["WriterFilePath"] = c.WriterFilePath
 	ret["WriterRowGroupSize"] = c.WriterRowGroupSize
@@ -448,4 +461,7 @@ func (c *Config) SetDefaults() {
 			slog.Warn("DLQ is enabled but DLQ prefix is empty, using default value")
 		}
 	}
+
+	UseHMAC = c.UseHMAC
+	slog.Debug("Config", "data", c.Get())
 }

@@ -18,3 +18,10 @@ services:
       - "127.0.0.1:4510-4559:4510-4559"
     environment:
       - SERVICES=s3,sts
+  
+  fluent-bit:
+    image: cr.fluentbit.io/fluent/fluent-bit
+    volumes:
+      - ./etc/:/fluent-bit/etc/
+      - ./data/docker-fluent/:/var/data
+      - ./bin/linux-arm64:/fluent-bit/plugin/

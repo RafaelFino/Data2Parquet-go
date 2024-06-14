@@ -7,6 +7,8 @@ import (
 
 	msgp "github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/exp/slog"
+
+	"data2parquet/pkg/config"
 )
 
 type Log struct {
@@ -44,6 +46,7 @@ type Log struct {
 	AutoIndex                   *bool             `json:"auto-index,omitempty" parquet:"name=auto-index, type=BOOLEAN" msg:"auto-index"`
 	LoggerName                  *string           `json:"logger-name,omitempty" parquet:"name=logger-name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"logger-name"`
 	ThreadName                  *string           `json:"thread-name,omitempty" parquet:"name=thread-name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"thread-name"`
+	HMAC                        string            `parquet:"name=hmac, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
 }
 
 // / CloudProviderAWS is the AWS cloud provider
@@ -122,6 +125,9 @@ func (l *Log) UpdateInfo() {
 	}
 
 	ret.makeKey()
+	if config.UseHMAC {
+		l.HMAC = GetMD5Sum(l.ToMsgPack())
+	}
 
 	l.info = ret
 }

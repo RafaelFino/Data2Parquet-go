@@ -3,12 +3,13 @@ package buffer
 import (
 	"bytes"
 	"context"
-	"data2parquet/pkg/config"
-	"data2parquet/pkg/domain"
 	"errors"
 	"log/slog"
 	"sync"
 	"time"
+
+	"data2parquet/pkg/config"
+	"data2parquet/pkg/domain"
 )
 
 type Mem struct {
@@ -147,6 +148,12 @@ func (m *Mem) Get(key string) []domain.Record {
 
 	if _, ok := m.data[key]; !ok {
 		return nil
+	}
+
+	l := len(m.data[key])
+
+	if l > m.config.BufferSize {
+		return m.data[key][:m.config.BufferSize]
 	}
 
 	return m.data[key]

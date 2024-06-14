@@ -2,21 +2,19 @@ package main
 
 import (
 	"C"
+	"context"
+	"fmt"
 	"log/slog"
+	"os"
+	"strings"
 	"time"
 	"unsafe"
 
 	"github.com/fluent/fluent-bit-go/output"
+	"github.com/phsym/console-slog"
 
 	"data2parquet/pkg/config"
 	"data2parquet/pkg/receiver"
-
-	"context"
-	"fmt"
-	"os"
-	"strings"
-
-	"github.com/phsym/console-slog"
 )
 import "data2parquet/pkg/domain"
 
@@ -31,6 +29,7 @@ func main() {
 //export FLBPluginRegister
 func FLBPluginRegister(def unsafe.Pointer) int {
 	slog.Info("Registering plugin")
+
 	return output.FLBPluginRegister(def, "out_parquet", "Fluent Bit Parquet Output")
 }
 
@@ -76,7 +75,11 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 
 //export FLBPluginFlushCtx
 func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int {
-	slog.Debug("Flushing context")
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Warn("Recovered in FLBPluginFlushCtx", "result", r)
+		}
+	}()
 
 	var ret int
 	var ts interface{}
@@ -84,9 +87,16 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 
 	dec := output.NewDecoder(data, int(length))
 
+	if dec == nil {
+		slog.Error("error to create fluent decoder, aborting flush process")
+		return output.FLB_ERROR
+	}
+
 	for {
 		ret, ts, record = output.GetRecord(dec)
+
 		if ret != 0 {
+			slog.Debug("no records to process", "ret", ret)
 			break
 		}
 

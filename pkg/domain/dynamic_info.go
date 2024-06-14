@@ -1,10 +1,11 @@
 package domain
 
 import (
-	"data2parquet/pkg/config"
 	"fmt"
 	"strings"
 	"time"
+
+	"data2parquet/pkg/config"
 )
 
 type DynamicInfo struct {
@@ -57,12 +58,12 @@ func (i *DynamicInfo) Key() string {
 	return fmt.Sprintf("%s%s%s%s%s%s%s", i.Capability(), KeySeparator, i.Domain(), KeySeparator, i.Service(), KeySeparator, i.Application())
 }
 
-func (i *DynamicInfo) Target() string {
+func (i *DynamicInfo) Target(id string, hash string) string {
 	tm := time.Now()
 	year, month, day := tm.Date()
-	hour, min, sec := tm.Clock()
+	hour, _, _ := tm.Clock()
 
-	return fmt.Sprintf("%s/year=%04d/month=%02d/day=%02d/hour=%02d/%02d%02d%02d-%s.parquet", i.Capability(), year, month, day, hour, hour, min, sec, i.Key())
+	return fmt.Sprintf("%s/year=%04d/month=%02d/day=%02d/hour=%02d/%s-%s-%s.parquet", i.Capability(), year, month, day, hour, id, i.Key(), hash)
 }
 
 func (i *DynamicInfo) makeKey() {

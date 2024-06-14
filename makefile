@@ -1,8 +1,8 @@
 build:
 	@./build.sh current
 
-all:
-	@./build.sh all
+linux:
+	@./build.sh linux
 
 clean:
 	@./build.sh clean

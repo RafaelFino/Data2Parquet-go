@@ -2,9 +2,6 @@ package main
 
 import (
 	"context"
-	"data2parquet/pkg/config"
-	"data2parquet/pkg/domain"
-	"data2parquet/pkg/receiver"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -12,6 +9,10 @@ import (
 	"time"
 
 	"github.com/phsym/console-slog"
+
+	"data2parquet/pkg/config"
+	"data2parquet/pkg/domain"
+	"data2parquet/pkg/receiver"
 )
 
 func main() {
@@ -75,14 +76,7 @@ func main() {
 	}
 
 	slog.Info("Records wrote", "duration", time.Since(start), "count", len(records))
-	start = time.Now()
-	err = rcv.Flush()
 
-	if err != nil {
-		slog.Error("Error flushing records", "error", err)
-	}
-
-	slog.Info("Flushed", "duration", time.Since(start))
 	start = time.Now()
 	err = rcv.Close()
 

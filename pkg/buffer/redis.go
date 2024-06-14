@@ -3,8 +3,6 @@ package buffer
 import (
 	"bytes"
 	"context"
-	"data2parquet/pkg/config"
-	"data2parquet/pkg/domain"
 	"fmt"
 	"log/slog"
 	"math/rand"
@@ -12,6 +10,9 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/oklog/ulid"
+
+	"data2parquet/pkg/config"
+	"data2parquet/pkg/domain"
 )
 
 type Redis struct {
@@ -255,7 +256,7 @@ func (r *Redis) Get(key string) []domain.Record {
 	size := cmd.Val()
 
 	if size > int64(r.config.BufferSize) {
-		slog.Info("Buffer size is bigger than config, will get partial data", "key", key, "buffer-size", size, "get-size", r.config.BufferSize)
+		slog.Debug("Buffer size is bigger than config, will get partial data", "key", key, "buffer-size", size, "get-size", r.config.BufferSize)
 		size = int64(r.config.BufferSize)
 	}
 

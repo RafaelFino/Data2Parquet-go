@@ -2,9 +2,6 @@ package receiver_test
 
 import (
 	"context"
-	"data2parquet/pkg/config"
-	"data2parquet/pkg/domain"
-	"data2parquet/pkg/receiver"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -16,6 +13,10 @@ import (
 
 	"github.com/oklog/ulid"
 	"gopkg.in/loremipsum.v1"
+
+	"data2parquet/pkg/config"
+	"data2parquet/pkg/domain"
+	"data2parquet/pkg/receiver"
 )
 
 func PrepareConfig() *config.Config {
@@ -55,7 +56,7 @@ func TestReceiverPush(t *testing.T) {
 		}
 	}
 
-	outputdir := cfg.WriterFilePath + "/" + filepath.Dir(data[0].GetInfo().Target())
+	outputdir := cfg.WriterFilePath + "/" + filepath.Dir(data[0].GetInfo().Target(domain.MakeID(), domain.GetMD5Sum([]byte("blablabla"))))
 
 	err := rec.Flush()
 

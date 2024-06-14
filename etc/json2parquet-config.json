@@ -3,7 +3,7 @@
     "buffer_type": "mem",
     "_buffer_type": "redis",
     "debug": false,
-    "flush_interval": 10,
+    "flush_interval": 360,
     "ledis_path": "/tmp",
     "log_path": "./logs",
     "record_type": "log",
@@ -27,5 +27,7 @@
 	"s3_role_arn": "arn:aws:iam::localstack:role/localhost:4566",
 	"s3_sts_endpoint": "http://localhost:4566",
 	"s3_endpoint":"http://localhost:4566",
-	"s3_account": "localstack"
+	"s3_account": "localstack",
+    "use_hash": true,
+    "use_hmac": true
 }

@@ -3,12 +3,13 @@ package writer
 import (
 	"bytes"
 	"context"
-	"data2parquet/pkg/config"
-	"data2parquet/pkg/domain"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
+
+	"data2parquet/pkg/config"
+	"data2parquet/pkg/domain"
 )
 
 type File struct {
@@ -32,7 +33,12 @@ func (f *File) Write(key string, buf *bytes.Buffer) error {
 	start := time.Now()
 
 	recInfo := domain.NewRecordInfoFromKey(f.config.RecordType, key)
-	filePath := f.config.WriterFilePath + "/" + recInfo.Target()
+	id := domain.MakeID()
+	var hash = ""
+	if f.config.UseHash {
+		hash = "-" + domain.GetMD5Sum(buf.Bytes())
+	}
+	filePath := f.config.WriterFilePath + "/" + recInfo.Target(id, hash)
 
 	err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm)
 

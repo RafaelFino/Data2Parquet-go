@@ -3,8 +3,6 @@ package writer
 import (
 	"bytes"
 	"context"
-	"data2parquet/pkg/config"
-	"data2parquet/pkg/domain"
 	"errors"
 	"log/slog"
 	"path/filepath"
@@ -17,6 +15,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/aws/smithy-go"
+
+	"data2parquet/pkg/config"
+	"data2parquet/pkg/domain"
 )
 
 type S3 struct {
@@ -145,7 +146,12 @@ func (s *S3) CheckBucket() error {
 func (s *S3) Write(key string, buf *bytes.Buffer) error {
 	start := time.Now()
 	recInfo := domain.NewRecordInfoFromKey(s.config.RecordType, key)
-	s3Key := recInfo.Target()
+	id := domain.MakeID()
+	var hash = ""
+	if s.config.UseHash {
+		hash = "-" + domain.GetMD5Sum(buf.Bytes())
+	}
+	s3Key := recInfo.Target(id, hash)
 
 	_, err := s.client.PutObject(
 		s.ctx,

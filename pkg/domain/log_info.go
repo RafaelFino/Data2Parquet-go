@@ -1,10 +1,11 @@
 package domain
 
 import (
-	"data2parquet/pkg/config"
 	"fmt"
 	"strings"
 	"time"
+
+	"data2parquet/pkg/config"
 )
 
 type LogInfo struct {
@@ -57,13 +58,12 @@ func (i *LogInfo) Key() string {
 	return i.key
 }
 
-func (i *LogInfo) Target() string {
+func (i *LogInfo) Target(id string, hash string) string {
 	tm := time.Now()
 	year, month, day := tm.Date()
 	hour, _, _ := tm.Clock()
-	id := MakeID()
 
-	return fmt.Sprintf("capability=%s/year=%04d/month=%02d/day=%02d/hour=%02d/%s-%s.parquet", i.Capability(), year, month, day, hour, id, i.Key())
+	return fmt.Sprintf("capability=%s/year=%04d/month=%02d/day=%02d/hour=%02d/%s-%s%s.parquet", i.Capability(), year, month, day, hour, id, i.Key(), hash)
 }
 
 func (i *LogInfo) makeKey() {

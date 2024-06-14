@@ -1,7 +1,8 @@
 package domain
 
 import (
-	"data2parquet/pkg/config"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/oklog/ulid"
 	"golang.org/x/exp/slog"
+
+	"data2parquet/pkg/config"
 )
 
 const KeySeparator = "-"
@@ -32,7 +35,7 @@ type RecordInfo interface {
 	Service() string
 	Domain() string
 	Capability() string
-	Target() string
+	Target(id string, hash string) string
 }
 
 func NewRecordInfoFromKey(recordType string, key string) RecordInfo {
@@ -217,4 +220,9 @@ var entropy = rand.New(rand.NewSource(time.Now().UnixNano()))
 func MakeID() string {
 	ret := ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String()
 	return ret
+}
+
+func GetMD5Sum(data []byte) string {
+	hash := md5.Sum(data)
+	return hex.EncodeToString(hash[:])
 }
