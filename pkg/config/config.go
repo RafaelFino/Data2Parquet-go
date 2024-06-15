@@ -476,7 +476,7 @@ func (c *Config) SetDefaults() {
 		}
 	}
 
-	slog.SetFormater(c.LogFormatter)
+	slog.SetFormatterByName(c.LogFormatter)
 
 	UseHMAC = c.UseHMAC
 	slog.Debug("Config", "data", c.Get())

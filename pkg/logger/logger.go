@@ -59,7 +59,6 @@ var White = "\033[97m"
 type Logger struct {
 	DefaultLevel LogLevel
 	data         chan *LogItem
-	args         map[string]string
 	formatter    func(item *LogItem) string
 }
 
@@ -73,7 +72,7 @@ func NewLogger() *Logger {
 	ret := &Logger{
 		data:         make(chan *LogItem, 1024*4),
 		DefaultLevel: LevelInfo,
-		formatter:    colorTextFormatter,
+		formatter:    multiLineColorFormatter,
 	}
 
 	go ret.writer()
@@ -188,7 +187,7 @@ func colorTextFormatter(item *LogItem) string {
 }
 
 func textFormatter(item *LogItem) string {
-	return fmt.Sprintf("%s %s %s   %s", item.When.Format("2006-01-02 15:04:05"), getLevel(item.Level), item.Msg, printArgs(item.Args))
+	return fmt.Sprintf("%s %s %s\t%s", item.When.Format("2006-01-02 15:04:05"), getLevel(item.Level), item.Msg, printArgs(item.Args))
 }
 
 func jsonFormatter(item *LogItem) string {
@@ -216,6 +215,8 @@ func getColorLevel(level LogLevel) string {
 	case LevelDebug:
 		return fmt.Sprintf("%s%s%s", Gray, logLevelMap[level], Reset)
 	}
+
+	return "UNK"
 }
 
 func getLevel(level LogLevel) string {
@@ -245,9 +246,9 @@ func colorMultilinePrintArgs(args map[string]string) string {
 		return ""
 	}
 
-	ret := "\n"
+	ret := ""
 	for k, v := range args {
-		ret += fmt.Sprintf("%s%12s%s:%s%s%s\n", Cyan, k, Reset, Yellow, v, Reset)
+		ret += fmt.Sprintf("\n%s%12s%s:%s%s%s", Cyan, k, Reset, Yellow, v, Reset)
 	}
 
 	return ret

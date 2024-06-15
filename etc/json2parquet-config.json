@@ -5,7 +5,7 @@
     "debug": false,
     "flush_interval": 360,
     "ledis_path": "/tmp",
-    "log_path": "./logs",
+    "log_formatter": "color",
     "record_type": "log",
     "_record_type": "dynamic",
     "redis_data_prefix": "data",
