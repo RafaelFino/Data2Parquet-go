@@ -16,9 +16,9 @@ type Config struct {
 	//BufferSize: BufferSize configuration tag, describe the size of the buffer, its an important field for control buffer and page size to flush data. The default value is `100`.
 	//BufferType: BufferType configuration tag, describe the type of the buffer, this fields accepte two values, `mem` or `redis`. The default value is `mem`.
 	//Debug: Debug configuration tag, describe the debug mode, its an optional field. The debug mode will generate a lot of information. The default value is `false`.
-	//DisableLogColors: DisableLogColors configuration tag, describe the disable log colors mode, its an optional field. The default value is `false`.
 	//FlushInterval: FlushInterval configuration tag, describe the interval to flush data in seconds, its an important field to control the time to flush data. The default value is `5`.
 	//JsonSchemaPath: JsonSchemaPath configuration tag, describe the path to the JSON schema file, its an optional field. The default value is empty. *This feature is not implemented yet.
+	//LogFormatter: LogFormatter configuration tag, describe the log formatter, this fields accepte four values, `color`, `text`, `json` or `multi`. The default value is `color`.
 	//Port: Port configuration tag, describe the port of the server, its an optional field only used for HTTP server. The default value is `8080``.
 	//RecordType: RecordType configuration tag, describe the type of the record, this fields accepte two values, `log` or `dynamic``. The default value is log. *Dynamic type is not implemented yet.
 	//RecoveryAttempts: RecoveryAttempts configuration tag, describe the number of attempts to recover data, its an optional field. The default value is `0``.
@@ -51,9 +51,9 @@ type Config struct {
 	BufferSize            int    `json:"buffer_size"`
 	BufferType            string `json:"buffer_type"`
 	Debug                 bool   `json:"debug,omitempty"`
-	DisableLogColors      bool   `json:"disable_log_colors,omitempty"`
 	FlushInterval         int    `json:"flush_interval"`
 	JsonSchemaPath        string `json:"json_schema_path,omitempty"`
+	LogFormatter          string `json:"log_formatter,omitempty"`
 	Port                  int    `json:"port,omitempty"`
 	RecordType            string `json:"record_type"`
 	RecoveryAttempts      int    `json:"recovery_attempts,omitempty"`
@@ -119,6 +119,7 @@ var keys = []string{
 	"DisableLogColors",
 	"FlushInterval",
 	"JsonSchemaPath",
+	"LogFormatter",
 	"RecordType",
 	"RecoveryAttempts",
 	"RedisDataPrefix",
@@ -305,8 +306,8 @@ func (c *Config) Set(cfg map[string]string) error {
 		case "UseHMAC":
 			c.UseHMAC = strings.ToLower(value) == "true"
 
-		case "DisableLogColors":
-			c.DisableLogColors = strings.ToLower(value) == "true"
+		case "LogFormatter":
+			c.LogFormatter = strings.ToLower(value)
 
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
@@ -325,9 +326,9 @@ func (c *Config) Get() map[string]interface{} {
 	ret["BufferSize"] = c.BufferSize
 	ret["BufferType"] = c.BufferType
 	ret["Debug"] = c.Debug
-	ret["DisableLogColors"] = c.DisableLogColors
 	ret["FlushInterval"] = c.FlushInterval
 	ret["JsonSchemaPath"] = c.JsonSchemaPath
+	ret["LogFormatter"] = c.LogFormatter
 	ret["Port"] = c.Port
 	ret["RecordType"] = c.RecordType
 	ret["RecoveryAttempts"] = c.RecoveryAttempts
@@ -475,7 +476,7 @@ func (c *Config) SetDefaults() {
 		}
 	}
 
-	slog.Colors = !c.DisableLogColors
+	slog.SetFormater(c.LogFormatter)
 
 	UseHMAC = c.UseHMAC
 	slog.Debug("Config", "data", c.Get())

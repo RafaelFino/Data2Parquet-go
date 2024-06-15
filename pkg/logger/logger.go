@@ -1,7 +1,9 @@
 package logger
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -13,6 +15,22 @@ const (
 	LevelInfo
 	LevelDebug
 )
+
+type FormatterType int
+
+const (
+	FormatterColorText FormatterType = iota
+	FormatterText
+	FormatterJson
+	FormatterMultiLineColor
+)
+
+var FormatterMap = map[string]FormatterType{
+	"color": FormatterColorText,
+	"text":  FormatterText,
+	"json":  FormatterJson,
+	"multi": FormatterMultiLineColor,
+}
 
 var logLevelMap = map[LogLevel]string{
 	LevelError: "ERR",
@@ -39,9 +57,10 @@ var Gray = "\033[37m"
 var White = "\033[97m"
 
 type Logger struct {
-	data         chan *LogItem
 	DefaultLevel LogLevel
-	Colors       bool
+	data         chan *LogItem
+	args         map[string]string
+	formatter    func(item *LogItem) string
 }
 
 var instance = NewLogger()
@@ -54,7 +73,7 @@ func NewLogger() *Logger {
 	ret := &Logger{
 		data:         make(chan *LogItem, 1024*4),
 		DefaultLevel: LevelInfo,
-		Colors:       true,
+		formatter:    colorTextFormatter,
 	}
 
 	go ret.writer()
@@ -70,8 +89,27 @@ func (l *Logger) GetLogLoggerLevel() LogLevel {
 	return l.DefaultLevel
 }
 
-func (l *Logger) SetColors(value bool) {
-	l.Colors = value
+func (l *Logger) SetFormatterByName(formatter string) {
+	if f, ok := FormatterMap[strings.ToLower(formatter)]; ok {
+		l.SetFormater(f)
+	} else {
+		l.SetFormater(FormatterColorText)
+	}
+}
+
+func (l *Logger) SetFormater(formatter FormatterType) {
+	switch formatter {
+	case FormatterColorText:
+		l.formatter = colorTextFormatter
+	case FormatterText:
+		l.formatter = textFormatter
+	case FormatterJson:
+		l.formatter = jsonFormatter
+	case FormatterMultiLineColor:
+		l.formatter = multiLineColorFormatter
+	default:
+		l.formatter = colorTextFormatter
+	}
 }
 
 func (l *Logger) getArgs(args []any) map[string]string {
@@ -140,43 +178,76 @@ func (l *Logger) writer() {
 		item, running := <-l.data
 
 		if running && item != nil {
-			fmt.Println(l.textFormatter(item))
+			fmt.Println(l.formatter(item))
 		}
 	}
 }
 
-func (l *Logger) textFormatter(item *LogItem) string {
-	if l.Colors {
-		return fmt.Sprintf("%s%s %s %s%s%s   %s%s", Blue, item.When.Format("2006-01-02 15:04:05"), l.getLevel(item.Level), White, item.Msg, Reset, l.printArgs(item.Args), Reset)
-	}
-	return fmt.Sprintf("%s %s %s   %s", item.When.Format("2006-01-02 15:04:05"), l.getLevel(item.Level), item.Msg, l.printArgs(item.Args))
+func colorTextFormatter(item *LogItem) string {
+	return fmt.Sprintf("%s%s %s %s%s%s   %s%s", Blue, item.When.Format("2006-01-02 15:04:05"), getColorLevel(item.Level), White, item.Msg, Reset, colorPrintArgs(item.Args), Reset)
 }
 
-func (l *Logger) getLevel(level LogLevel) string {
-	if l.Colors {
-		switch level {
-		case LevelError:
-			return fmt.Sprintf("%s%s%s", Red, logLevelMap[level], Reset)
-		case LevelWarn:
-			return fmt.Sprintf("%s%s%s", Yellow, logLevelMap[level], Reset)
-		case LevelInfo:
-			return fmt.Sprintf("%s%s%s", Green, logLevelMap[level], Reset)
-		case LevelDebug:
-			return fmt.Sprintf("%s%s%s", Gray, logLevelMap[level], Reset)
-		}
+func textFormatter(item *LogItem) string {
+	return fmt.Sprintf("%s %s %s   %s", item.When.Format("2006-01-02 15:04:05"), getLevel(item.Level), item.Msg, printArgs(item.Args))
+}
+
+func jsonFormatter(item *LogItem) string {
+	ret, err := json.Marshal(item)
+
+	if err != nil {
+		return fmt.Sprintf("{\"when\":\"%s\",\"level\":\"%s\",\"msg\":\"%s\",\"args\":%v}", item.When.Format("2006-01-02 15:04:05"), getLevel(item.Level), item.Msg, item.Args)
 	}
 
+	return string(ret)
+}
+
+func multiLineColorFormatter(item *LogItem) string {
+	return fmt.Sprintf("%s%s %s %s%s%s%s%s", Blue, item.When.Format("2006-01-02 15:04:05"), getColorLevel(item.Level), White, item.Msg, Reset, colorMultilinePrintArgs(item.Args), Reset)
+}
+
+func getColorLevel(level LogLevel) string {
+	switch level {
+	case LevelError:
+		return fmt.Sprintf("%s%s%s", Red, logLevelMap[level], Reset)
+	case LevelWarn:
+		return fmt.Sprintf("%s%s%s", Yellow, logLevelMap[level], Reset)
+	case LevelInfo:
+		return fmt.Sprintf("%s%s%s", Green, logLevelMap[level], Reset)
+	case LevelDebug:
+		return fmt.Sprintf("%s%s%s", Gray, logLevelMap[level], Reset)
+	}
+}
+
+func getLevel(level LogLevel) string {
 	return logLevelMap[level]
 }
 
-func (l *Logger) printArgs(args map[string]string) string {
+func colorPrintArgs(args map[string]string) string {
 	ret := ""
 	for k, v := range args {
-		if l.Colors {
-			ret += fmt.Sprintf("  %s%s%s:%s%s%s", Cyan, k, Reset, Yellow, v, Reset)
-		} else {
-			ret += fmt.Sprintf("  %s:%s", k, v)
-		}
+		ret += fmt.Sprintf("  %s%s%s:%s%s%s", Cyan, k, Reset, Yellow, v, Reset)
+	}
+
+	return ret
+}
+
+func printArgs(args map[string]string) string {
+	ret := ""
+	for k, v := range args {
+		ret += fmt.Sprintf("  %s:%s", k, v)
+	}
+
+	return ret
+}
+
+func colorMultilinePrintArgs(args map[string]string) string {
+	if len(args) == 0 {
+		return ""
+	}
+
+	ret := "\n"
+	for k, v := range args {
+		ret += fmt.Sprintf("%s%12s%s:%s%s%s\n", Cyan, k, Reset, Yellow, v, Reset)
 	}
 
 	return ret

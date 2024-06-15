@@ -441,24 +441,25 @@ Write data in a local file, use the tag `WriterFilePath` to choose path to store
 - **DisableLogColors**: DisableLogColors configuration tag, describe the disable log colors mode, its an optional field. The default value is `false`.
 - **FlushInterval**: FlushInterval configuration tag, describe the interval to flush data in seconds, its an important field to control the time to flush data. The default value is `5`.
 - **JsonSchemaPath**: JsonSchemaPath configuration tag, describe the path to the JSON schema file, its an optional field. The default value is empty. *This feature is not implemented yet.
+- **LogFormatter**: LogFormatter configuration tag, describe the log formatter, this fields accepte four values, `color`, `text`, `json` or `multi`. The default value is `color`.
 - **RecordType**: RecordType configuration tag, describe the type of the record, this fields accepte two values, `log` or `dynamic`. The default value is log. *Dynamic type is not implemented yet.
 - **RecoveryAttempts**: RecoveryAttempts configuration tag, describe the number of attempts to recover data, its an optional field. The default value is `0`.
 - **RedisDataPrefix**: RedisDataPrefix configuration tag, describe the prefix of the data key in Redis, its an optional field. The default value is `data`.
 - **RedisDB**: RedisDB configuration tag, describe the database number in Redis, its an optional field. The default value is `0`.
+- **RedisDLQPrefix**: RedisDLQPrefix configuration tag, describe the prefix of the DLQ key in Redis, its an optional field. The default value is `dlq`.
 - **RedisHost**: RedisHost configuration tag, describe the host of the Redis server, its an optional field if you use `BufferType` as `mem`, but became required if `BufferType` is `redis`. The default value is empty but need to be set if `BufferType` is `redis`.
 - **RedisKeys**: RedisKeys configuration tag, describe the keys of the Redis server, its an optional field. The default value is `keys`.
+- **RedisLockInstanceName**: RedisLockInstanceName configuration tag, describe the instance name of the lock key in Redis, its an optional field. The default value is empty and in this case, instance hostname will be considered.
 - **RedisLockPrefix**: RedisLockPrefix configuration tag, describe the prefix of the lock key in Redis, its an optional field. The default value is `lock`.
+- **RedisLockTTL**: RedisLockTTL configuration tag, describe the TTL of the lock key in Redis, its an optional field. The default value is `1.5x` 'FlushInterval` value.
 - **RedisPassword**: RedisPassword configuration tag, describe the password of the Redis server, its an optional field. The default value is empty.
 - **RedisRecoveryKey**: RedisRecoveryKey configuration tag, describe the recovery key in Redis, its an optional field. The default value is `recovery`.
-- **RedisDLQPrefix**: RedisDLQPrefix configuration tag, describe the prefix of the DLQ key in Redis, its an optional field. The default value is `dlq`.
-- **RedisLockTTL**: RedisLockTTL configuration tag, describe the TTL of the lock key in Redis, its an optional field. The default value is `1.5x` 'FlushInterval` value.
-- **RedisLockInstanceName**: RedisLockInstanceName configuration tag, describe the instance name of the lock key in Redis, its an optional field. The default value is empty and in this case, instance hostname will be considered.
 - **RedisTimeout**: RedisTimeout configuration tag, describe the timeout of the Redis server, its an optional field. The default value is empty, in this case, `0` will be the value (Redis defaults).
 - **S3BucketName**: S3BucketName configuration tag, describe the bucket name in S3, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
+- **S3Endpoint**: S3Endpoint configuration tag, describe the endpoint of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 - **S3Region**: S3Region configuration tag, describe the region of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 - **S3RoleARN**: S3RoleARN configuration tag, describe the role name of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 - **S3STSEndpoint**: S3STSEndpoint configuration tag, describe the endpoint of the STS server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
-- **S3Endpoint**: S3Endpoint configuration tag, describe the endpoint of the S3 server, its an optional field. The default value is empty but need to be set if you use `aws-s3` as a writer.
 - **TryAutoRecover**: TryAutoRecover configuration tag, describe the auto recover mode, its an optional field. The default value is `false`. If set to `true` the system will try to recover the data that failed to write after flash, using recovery cache.
 - **UseDLQ**: UseDLQ configuration tag, describe the use of DLQ, its an optional field. The default value is `false`. If set to `true` the system will use the DLQ to store the data that failed to write after flash.
 - **UseHash**: UseHash configuration tag, describe the use of hash, its an optional field. The default value is `false`. If set to `true` the system will use the hash to store the data in the buffer.
@@ -475,6 +476,7 @@ type Config struct {
 	Debug                 bool   `json:"debug,omitempty"`
 	FlushInterval         int    `json:"flush_interval"`
 	JsonSchemaPath        string `json:"json_schema_path,omitempty"`
+	LogFormatter          string `json:"log_formatter,omitempty"`
 	RecordType            string `json:"record_type"`
 	RecoveryAttempts      int    `json:"recovery_attempts,omitempty"`
 	RedisDataPrefix       string `json:"redis_data_prefix,omitempty"`
@@ -482,27 +484,26 @@ type Config struct {
 	RedisDLQPrefix        string `json:"redis_dlq_prefix,omitempty"`
 	RedisHost             string `json:"redis_host,omitempty"`
 	RedisKeys             string `json:"redis_keys,omitempty"`
+	RedisLockInstanceName string `json:"redis_lock_instance_name,omitempty"`
 	RedisLockPrefix       string `json:"redis_lock_prefix,omitempty"`
 	RedisLockTTL          int    `json:"redis_lock_ttl,omitempty"`
-	RedisLockInstanceName string `json:"redis_lock_instance_name,omitempty"`
 	RedisPassword         string `json:"redis_password,omitempty"`
 	RedisRecoveryKey      string `json:"redis_recovery_key,omitempty"`
 	RedisTimeout          int    `json:"redis_timeout,omitempty"`
 	S3BuketName           string `json:"s3_bucket_name"`
+	S3DefaultCapability   string `json:"s3_default_capability,omitempty"`
 	S3Endpoint            string `json:"s3_endpoint,omitempty"`
 	S3Region              string `json:"s3_region"`
 	S3RoleARN             string `json:"s3_role_arn,omitempty"`
 	S3STSEndpoint         string `json:"s3_sts_endpoint,omitempty"`
-	S3DefaultCapability   string `json:"s3_default_capability,omitempty"`
 	TryAutoRecover        bool   `json:"try_auto_recover,omitempty"`
 	UseDLQ                bool   `json:"use_dlq,omitempty"`
+	UseHash               bool   `json:"use_hash,omitempty"`
+	UseHMAC               bool   `json:"use_hmac,omitempty"`
 	WriterCompressionType string `json:"writer_compression_type,omitempty"`
 	WriterFilePath        string `json:"writer_file_path,omitempty"`
 	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
 	WriterType            string `json:"writer_type"`
-	UseHash               bool   `json:"use_hash,omitempty"`
-	UseHMAC               bool   `json:"use_hmac,omitempty"`
-	DisableLogColors      bool   `json:"disable_log_colors,omitempty"`
 }
 ```
 
@@ -569,9 +570,9 @@ var keys = []string{
 	"BufferSize",
 	"BufferType",
 	"Debug",
-	"DisableLogColors",
 	"FlushInterval",
 	"JsonSchemaPath",
+	"LogFormatter",
 	"RecordType",
 	"RecoveryAttempts",
 	"RedisDataPrefix",
@@ -629,3 +630,8 @@ echo ">>   [$os $arch] Building fluent-out-parquet -> ./bin/$os-$arch/fluent-out
 GOOS=$os GOARCH=$arch CGO_ENABLED=1 CC=x86_64-linux-gnu-gcc go build -buildmode=c-shared -o bin/$os-$arch/fluent-out-parquet.so -ldflags="-s -w" -trimpath cmd/fluent-out-parquet/main.go
 
 ```
+
+## Knowed issues
+### Golang bug with versions 1.20+ 
+Bug on CGO calls from C to golang in golang 1.20+ versions: `runtime: morestack on g0 when C calls Go with deep stack`
+To skip this issue, we lock go.mod on golang 1.20 version. Because this workaround, we removed log.slog (new strucutred golang log) and created one small and simple [logger](https://github.com/RafaelFino/Data2Parquet-go/blob/main/pkg/logger/logger.go) justo to print messages on stdout 
