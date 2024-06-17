@@ -631,7 +631,7 @@ GOOS=$os GOARCH=$arch CGO_ENABLED=1 CC=x86_64-linux-gnu-gcc go build -buildmode=
 
 ```
 
-## Knowed issues
+## Known issues
 ### Golang bug with versions 1.20+ 
 Bug on CGO calls from C to golang in golang 1.20+ versions: `runtime: morestack on g0 when C calls Go with deep stack`
 To skip this issue, we lock go.mod on golang 1.20 version. Because this workaround, we removed log.slog (new strucutred golang log) and created one small and simple [logger](https://github.com/RafaelFino/Data2Parquet-go/blob/main/pkg/logger/logger.go) justo to print messages on stdout 
