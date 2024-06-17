@@ -175,6 +175,10 @@ func (l *Log) Decode(data map[string]interface{}) {
 	for k, v := range data {
 		key := strings.ReplaceAll(strings.ToLower(fmt.Sprintf("%v", k)), "_", "-")
 
+		if _, ignore := config.IgnoredFields[key]; ignore {
+			continue
+		}
+
 		switch key {
 		case "time":
 			l.Time = v.(string)
@@ -331,7 +335,6 @@ func (l *Log) Decode(data map[string]interface{}) {
 			default:
 				l.ExtraFields[filtered] = fmt.Sprintf("%s", v)
 			}
-
 		}
 	}
 

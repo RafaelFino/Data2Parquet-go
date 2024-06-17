@@ -18,6 +18,8 @@ var slog = logger.GetLogger()
 
 const KeySeparator = "-"
 
+var IgnoredFields = make(map[string]any)
+
 type Record interface {
 	GetInfo() RecordInfo
 	Decode(data map[string]interface{})

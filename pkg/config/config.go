@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 
 	"data2parquet/pkg/logger" //"log/slog"
 	"os"
@@ -17,6 +18,7 @@ type Config struct {
 	//BufferType: BufferType configuration tag, describe the type of the buffer, this fields accepte two values, `mem` or `redis`. The default value is `mem`.
 	//Debug: Debug configuration tag, describe the debug mode, its an optional field. The debug mode will generate a lot of information. The default value is `false`.
 	//FlushInterval: FlushInterval configuration tag, describe the interval to flush data in seconds, its an important field to control the time to flush data. The default value is `5`.
+	//IgnoredFields: IgnoredFields configuration tag, describe the fields to ignore in the data, its an optional field. The default value is empty. Fields must be separated by comma.
 	//JsonSchemaPath: JsonSchemaPath configuration tag, describe the path to the JSON schema file, its an optional field. The default value is empty. *This feature is not implemented yet.
 	//LogFormatter: LogFormatter configuration tag, describe the log formatter, this fields accepte four values, `color`, `text`, `json` or `multi`. The default value is `color`.
 	//Port: Port configuration tag, describe the port of the server, its an optional field only used for HTTP server. The default value is `8080``.
@@ -52,6 +54,7 @@ type Config struct {
 	BufferType            string `json:"buffer_type"`
 	Debug                 bool   `json:"debug,omitempty"`
 	FlushInterval         int    `json:"flush_interval"`
+	IgnoredFields         string `json:"ignored_fields,omitempty"`
 	JsonSchemaPath        string `json:"json_schema_path,omitempty"`
 	LogFormatter          string `json:"log_formatter,omitempty"`
 	Port                  int    `json:"port,omitempty"`
@@ -118,6 +121,7 @@ var keys = []string{
 	"Debug",
 	"DisableLogColors",
 	"FlushInterval",
+	"IgnoredFields",
 	"JsonSchemaPath",
 	"LogFormatter",
 	"RecordType",
@@ -148,6 +152,8 @@ var keys = []string{
 	"WriterRowGroupSize",
 	"WriterType",
 }
+
+var IgnoredFields = make(map[string]any)
 
 func NewConfig() *Config {
 	ret := &Config{}
@@ -204,6 +210,7 @@ func (c *Config) WriteToFile(filename string) error {
 	}
 	return nil
 }
+
 func (c *Config) Set(cfg map[string]string) error {
 	for key, value := range cfg {
 		switch key {
@@ -309,6 +316,8 @@ func (c *Config) Set(cfg map[string]string) error {
 		case "LogFormatter":
 			c.LogFormatter = strings.ToLower(value)
 
+		case "IgnoredFields":
+			c.IgnoredFields = value
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
 		}
@@ -327,6 +336,7 @@ func (c *Config) Get() map[string]interface{} {
 	ret["BufferType"] = c.BufferType
 	ret["Debug"] = c.Debug
 	ret["FlushInterval"] = c.FlushInterval
+	ret["IgnoredFields"] = c.IgnoredFields
 	ret["JsonSchemaPath"] = c.JsonSchemaPath
 	ret["LogFormatter"] = c.LogFormatter
 	ret["Port"] = c.Port
@@ -479,5 +489,14 @@ func (c *Config) SetDefaults() {
 	slog.SetFormatterByName(c.LogFormatter)
 
 	UseHMAC = c.UseHMAC
+
+	if len(c.IgnoredFields) > 0 {
+		rgx := regexp.MustCompile(`;|:|,| |\||\/|\\`)
+		fields := strings.ToLower(rgx.ReplaceAllString(c.IgnoredFields, ","))
+		for _, f := range strings.Split(fields, ",") {
+			slog.Debug("Ignoring field", "field", f)
+			IgnoredFields[f] = nil
+		}
+	}
 	slog.Debug("Config", "data", c.Get())
 }
