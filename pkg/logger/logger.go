@@ -72,7 +72,7 @@ func NewLogger() *Logger {
 	ret := &Logger{
 		data:         make(chan *LogItem, 1024*4),
 		DefaultLevel: LevelInfo,
-		formatter:    multiLineColorFormatter,
+		formatter:    colorTextFormatter,
 	}
 
 	go ret.writer()

@@ -20,10 +20,13 @@ import (
 	"gopkg.in/loremipsum.v1"
 )
 
+var bfSize = 1000
+
 func PrepareConfigMem() *config.Config {
 	return &config.Config{
 		RecordType: config.RecordTypeLog,
 		BufferType: config.BufferTypeMem,
+		BufferSize: bfSize,
 	}
 }
 
@@ -33,6 +36,7 @@ func PrepareConfigRedis() *config.Config {
 	err := ret.Set(map[string]string{
 		"RecordType": config.RecordTypeLog,
 		"BufferType": config.BufferTypeRedis,
+		"BufferSize": fmt.Sprintf("%d", bfSize),
 		"RedisHost":  "localhost",
 		"RedisPort":  "6379",
 	})
@@ -109,7 +113,7 @@ func testBuffer(buf buffer.Buffer, t *testing.T) {
 	}
 
 	var key string = "test"
-	data := generateData(100)
+	data := generateData(bfSize)
 
 	for _, record := range data {
 		_, err := buf.Push(key, record)
@@ -119,14 +123,14 @@ func testBuffer(buf buffer.Buffer, t *testing.T) {
 		}
 	}
 
-	if buf.Len(key) != 100 {
-		t.Error("Buffer length is not 100")
+	if buf.Len(key) != bfSize {
+		t.Errorf("Buffer length is not %d", bfSize)
 	}
 
 	result := buf.Get(key)
 
-	if len(result) != 100 {
-		t.Error("Buffer length is not 100")
+	if len(result) != bfSize {
+		t.Errorf("Buffer length is not %d", bfSize)
 	}
 
 	for i, record := range result {

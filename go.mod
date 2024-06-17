@@ -1,6 +1,8 @@
 module data2parquet
 
-go 1.20
+go 1.21
+
+toolchain go1.22.4
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.27.2
@@ -14,11 +16,9 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/goccy/go-json v0.10.3
 	github.com/oklog/ulid v1.3.1
-	github.com/phsym/console-slog v0.3.1
 	github.com/testcontainers/testcontainers-go v0.31.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	github.com/xitongsys/parquet-go v1.6.2
-	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8
 	gopkg.in/loremipsum.v1 v1.1.2
 )
 

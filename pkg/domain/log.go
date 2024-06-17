@@ -241,6 +241,8 @@ func (l *Log) Decode(data map[string]interface{}) {
 			l.Duration = GetStringP(v)
 		case "trace-ip":
 			switch valueType := v.(type) {
+			case string:
+				l.TraceIP = append(l.TraceIP, valueType)
 			case []string:
 				l.TraceIP = append(l.TraceIP, valueType...)
 			case []interface{}:
@@ -287,12 +289,84 @@ func (l *Log) Decode(data map[string]interface{}) {
 			l.LoggerName = GetStringP(v)
 		case "thread-name":
 			l.ThreadName = GetStringP(v)
+		case "host":
+			l.Args["host"] = fmt.Sprintf("%v", v)
+		case "hostname":
+			l.Args["host"] = fmt.Sprintf("%v", v)
+		case "ip":
+			l.TraceIP = append(l.TraceIP, fmt.Sprintf("%v", v))
+		case "container-image":
+			l.Args["container-image"] = fmt.Sprintf("%s", v)
+		case "vendor":
+			l.Args["vendor"] = fmt.Sprintf("%s", v)
+		case "details":
+			l.Args = getMap("details", v, l.Args)
 		default:
-			l.ExtraFields[k] = fmt.Sprintf("%s", v)
+			filtered := strings.ReplaceAll(key, "tags-", "")
+			switch filtered {
+			case "owner-squad":
+				l.Args["squad"] = fmt.Sprintf("%s", v)
+			case "owner-sre":
+				l.Args["sre"] = fmt.Sprintf("%s", v)
+			case "platform":
+				l.Args["platform"] = fmt.Sprintf("%s", v)
+			case "service":
+				l.Args["service"] = fmt.Sprintf("%s", v)
+			case "product":
+				l.Args["product"] = fmt.Sprintf("%s", v)
+			case "fluent-tag":
+				l.Args["fluent-tag"] = fmt.Sprintf("%s", v)
+			case "fluent-time":
+				l.Args["fluent-time"] = fmt.Sprintf("%s", v)
+			case "enviroment":
+				l.Args["enviroment"] = fmt.Sprintf("%s", v)
+			case "-container-type":
+				l.Args["container-type"] = fmt.Sprintf("%s", v)
+			case "context":
+				l.Args = getMap("ctx", v, l.Args)
+			case "trace":
+				l.Args = getMap("trace", v, l.Args)
+			case "fields":
+				l.Args = getMap("fields", v, l.Args)
+			default:
+				l.ExtraFields[filtered] = fmt.Sprintf("%s", v)
+			}
+
 		}
 	}
 
 	l.UpdateInfo()
+}
+
+func getMap(prefix string, v any, src map[string]string) map[string]string {
+	if src == nil {
+		src = make(map[string]string)
+	}
+
+	if v == nil {
+		return src
+	}
+
+	if prefix != "" {
+		prefix = "args"
+	}
+
+	switch valueType := v.(type) {
+	case map[string]string:
+		for arg_key, arg_val := range valueType {
+			src[fmt.Sprintf("%s-%s", prefix, arg_key)] = arg_val
+		}
+	case map[interface{}]interface{}:
+		for arg_key, arg_val := range valueType {
+			src[fmt.Sprintf("%s-%v", prefix, arg_key)] = fmt.Sprint(arg_val)
+		}
+	case map[string]interface{}:
+		for arg_key, arg_val := range valueType {
+			src[fmt.Sprintf("%s-%v", prefix, arg_key)] = fmt.Sprint(arg_val)
+		}
+	}
+
+	return src
 }
 
 func (l *Log) GetInfo() RecordInfo {

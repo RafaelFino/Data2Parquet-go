@@ -25,7 +25,8 @@ func PrepareConfig() *config.Config {
 		BufferType:     config.BufferTypeMem,
 		WriterType:     config.WriterTypeFile,
 		WriterFilePath: "/tmp/data2parquet",
-		FlushInterval:  5,
+		BufferSize:     100,
+		FlushInterval:  1,
 	}
 }
 
@@ -65,6 +66,8 @@ func TestReceiverPush(t *testing.T) {
 	}
 
 	err = rec.Close()
+
+	time.Sleep(10 * time.Second)
 
 	if err != nil {
 		t.Error("Error closing receiver")
