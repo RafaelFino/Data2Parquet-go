@@ -1,15 +1,13 @@
 module data2parquet
 
-go 1.21
-
-toolchain go1.22.4
+go 1.20
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.27.2
-	github.com/aws/aws-sdk-go-v2/config v1.27.18
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.18
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.55.1
-	github.com/aws/aws-sdk-go-v2/service/sts v1.28.12
+	github.com/aws/aws-sdk-go-v2 v1.28.0
+	github.com/aws/aws-sdk-go-v2/config v1.27.19
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.19
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.55.2
+	github.com/aws/aws-sdk-go-v2/service/sts v1.28.13
 	github.com/aws/smithy-go v1.20.2
 	github.com/fluent/fluent-bit-go v0.0.0-20230731091245-a7a013e2473c
 	github.com/gin-gonic/gin v1.10.0
@@ -30,17 +28,17 @@ require (
 	github.com/apache/arrow/go/arrow v0.0.0-20200730104253-651201b0f516 // indirect
 	github.com/apache/thrift v0.14.2 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.2 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.5 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.9 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.9 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.6 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.10 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.10 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.0 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.9 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.10 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.11.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.3.11 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.11.11 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.17.9 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.20.11 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.24.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.3.12 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.11.12 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.17.10 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.20.12 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.24.6 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
@@ -103,13 +101,12 @@ require (
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
-	golang.org/x/crypto v0.24.0 // indirect
-	golang.org/x/mod v0.18.0 // indirect
-	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.21.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
-	golang.org/x/tools v0.22.0 // indirect
+	golang.org/x/crypto v0.23.0 // indirect
+	golang.org/x/mod v0.16.0 // indirect
+	golang.org/x/net v0.25.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
+	golang.org/x/tools v0.13.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230731190214-cbb8c96f2d6d // indirect
 	google.golang.org/grpc v1.58.3 // indirect

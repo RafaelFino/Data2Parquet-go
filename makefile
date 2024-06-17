@@ -17,4 +17,4 @@ full:
 	@./build.sh clean
 	@./build.sh lint
 	@./build.sh test
-	@./build.sh all
+	@./build.sh linux

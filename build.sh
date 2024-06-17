@@ -1,6 +1,12 @@
 #!/bin/bash
 par=$1
 
+if [ ! -f "go.mod" ]; then
+    echo ">> Creating go.mod..."
+    go mod init data2parquet
+    go mod tidy
+fi
+
 if [ "$par" == "clean" ]; then
     echo ">> Cleaning bin directory"
     rm -rf bin
@@ -18,6 +24,7 @@ if [ "$par" == "test" ]; then
     go test ./...
     exit 0
 fi
+
 echo ">> Go format..."
 go fmt ./...
 
