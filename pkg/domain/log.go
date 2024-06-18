@@ -12,16 +12,19 @@ import (
 
 type Log struct {
 	info                        *LogInfo
+	Time                        string            `json:"time" parquet:"name=time, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"time"`
+	Level                       string            `json:"level" parquet:"name=level, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"level"`
+	Message                     string            `json:"message" parquet:"name=message, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"message"`
+	CorrelationId               *string           `json:"correlation-id,omitempty" parquet:"name=correlation-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"correlation-id"`
+	BusinessCapability          string            `json:"business-capability" parquet:"name=business-capability, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-capability"`
+	BusinessDomain              string            `json:"business-domain" parquet:"name=business-domain, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-domain"`
+	BusinessService             string            `json:"business-service" parquet:"name=business-service, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-service"`
 	ApplicationService          string            `json:"application-service" parquet:"name=application-service, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"application-service"`
 	Args                        map[string]string `json:"args,omitempty" parquet:"name=args, type=MAP, convertedtype=MAP, keytype=BYTE_ARRAY, keyconvertedtype=UTF8, valuetype=BYTE_ARRAY" msg:"args"`
 	Audit                       *bool             `json:"audit,omitempty" parquet:"name=audit, type=BOOLEAN" msg:"audit"`
 	AutoIndex                   *bool             `json:"auto-index,omitempty" parquet:"name=auto-index, type=BOOLEAN" msg:"auto-index"`
 	AZ                          *string           `json:"az,omitempty" parquet:"name=az, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"az"`
-	BusinessCapability          string            `json:"business-capability" parquet:"name=business-capability, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-capability"`
-	BusinessDomain              string            `json:"business-domain" parquet:"name=business-domain, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-domain"`
-	BusinessService             string            `json:"business-service" parquet:"name=business-service, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"business-service"`
 	CloudProvider               *string           `json:"cloud-provider" parquet:"name=cloud-provider, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"cloud-provider"`
-	CorrelationId               *string           `json:"correlation-id,omitempty" parquet:"name=correlation-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"correlation-id"`
 	DeviceId                    *string           `json:"device-id,omitempty" parquet:"name=device-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"device-id"`
 	Duration                    *string           `json:"duration,omitempty" parquet:"name=duration, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"duration"`
 	Error                       *string           `json:"error,omitempty" parquet:"name=error, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"error"`
@@ -29,9 +32,7 @@ type Log struct {
 	ExtraFields                 map[string]string `json:"extra-fields,omitempty" parquet:"name=extra-fields, type=MAP, convertedtype=MAP, keytype=BYTE_ARRAY, keyconvertedtype=UTF8, valuetype=BYTE_ARRAY" msg:"extra-fields"`
 	HMAC                        string            `parquet:"name=hmac, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
 	HTTPResponse                *string           `json:"http-response,omitempty" parquet:"name=http-response, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"http-response"`
-	Level                       string            `json:"level" parquet:"name=level, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"level"`
 	LoggerName                  *string           `json:"logger-name,omitempty" parquet:"name=logger-name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"logger-name"`
-	Message                     string            `json:"message" parquet:"name=message, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"message"`
 	MessageId                   *string           `json:"message-id,omitempty" parquet:"name=message-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"message-id"`
 	PersonId                    *string           `json:"person-id,omitempty" parquet:"name=person-id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"person-id"`
 	Region                      *string           `json:"region,omitempty" parquet:"name=region, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"region"`
@@ -41,7 +42,6 @@ type Log struct {
 	StackTrace                  *string           `json:"stack-trace,omitempty" parquet:"name=stack-trace, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"stack-trace"`
 	Tags                        []string          `json:"tags,omitempty" parquet:"name=tags, type=MAP, convertedtype=LIST, valuetype=BYTE_ARRAY, valueconvertedtype=UTF8" msg:"tags"`
 	ThreadName                  *string           `json:"thread-name,omitempty" parquet:"name=thread-name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"thread-name"`
-	Time                        string            `json:"time" parquet:"name=time, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"time"`
 	TraceIP                     []string          `json:"trace-ip,omitempty" parquet:"name=trace-ip, type=MAP, convertedtype=LIST, valuetype=BYTE_ARRAY, valueconvertedtype=UTF8" msg:"trace-ip"`
 	TransactionMessageReference *string           `json:"transaction-message-reference,omitempty" parquet:"name=transaction-message-reference, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"transaction-message-reference"`
 	Ttl                         *string           `json:"ttl,omitempty" parquet:"name=ttl, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY" msg:"ttl"`
@@ -175,6 +175,10 @@ func (l *Log) Decode(data map[string]interface{}) {
 	for k, v := range data {
 		key := strings.ReplaceAll(strings.ToLower(fmt.Sprintf("%v", k)), "_", "-")
 
+		if len(key) == 0 {
+			continue
+		}
+
 		if _, ignore := config.IgnoredFields[key]; ignore {
 			continue
 		}
@@ -243,16 +247,29 @@ func (l *Log) Decode(data map[string]interface{}) {
 			l.Duration = GetStringP(v)
 		case "elapsed-time":
 			l.Duration = GetStringP(v)
+		case "ip":
 		case "trace-ip":
 			switch valueType := v.(type) {
 			case string:
-				l.TraceIP = append(l.TraceIP, valueType)
-			case []string:
-				l.TraceIP = append(l.TraceIP, valueType...)
-			case []interface{}:
-				for _, ip := range valueType {
-					l.TraceIP = append(l.TraceIP, ip.(string))
+				if len(v.(string)) > 0 {
+					l.TraceIP = append(l.TraceIP, v.(string))
 				}
+			case []string:
+				for _, ip := range v.([]string) {
+					if len(ip) > 0 {
+						l.TraceIP = append(l.TraceIP, ip)
+					}
+				}
+			case []interface{}:
+				for _, ip := range v.([]interface{}) {
+					item := fmt.Sprintf("%s", ip)
+					if len(item) > 0 {
+						l.TraceIP = append(l.TraceIP, item)
+					}
+				}
+			default:
+				slog.Debug("Unknown trace-ip type", "type", valueType)
+				l.TraceIP = append(l.TraceIP, fmt.Sprintf("%s", v))
 			}
 		case "region":
 			l.Region = GetStringP(v)
@@ -261,26 +278,46 @@ func (l *Log) Decode(data map[string]interface{}) {
 		case "tags":
 			switch valueType := v.(type) {
 			case []string:
-				l.Tags = append(l.Tags, valueType...)
-			case []interface{}:
-				for _, tag := range valueType {
-					l.Tags = append(l.Tags, tag.(string))
+				for _, tag := range v.([]string) {
+					if len(tag) > 0 {
+						l.Tags = append(l.Tags, tag)
+					}
 				}
+			case []interface{}:
+				for _, tag := range v.([]interface{}) {
+					item := fmt.Sprintf("%s", tag)
+					if len(item) > 0 {
+						l.Tags = append(l.Tags, item)
+					}
+				}
+			default:
+				slog.Debug("Unknown tags type", "type", valueType)
+				l.Tags = append(l.Tags, fmt.Sprintf("%s", v))
 			}
 		case "args":
 			switch valueType := v.(type) {
 			case map[string]string:
-				for arg_key, arg_val := range valueType {
-					l.Args[arg_key] = arg_val
-				}
-			case map[interface{}]interface{}:
-				for arg_key, arg_val := range valueType {
-					l.Args[arg_key.(string)] = arg_val.(string)
+				for arg_key, arg_val := range v.(map[string]string) {
+					if len(arg_val) > 0 {
+						l.Args[arg_key] = arg_val
+					}
 				}
 			case map[string]interface{}:
-				for arg_key, arg_val := range valueType {
-					l.Args[arg_key] = arg_val.(string)
+				for arg_key, arg_val := range v.(map[string]interface{}) {
+					item := fmt.Sprintf("%s", arg_val)
+					if len(item) > 0 {
+						l.Args[arg_key] = fmt.Sprintf("%s", arg_val)
+					}
 				}
+			case map[interface{}]interface{}:
+				for arg_key, arg_val := range v.(map[interface{}]interface{}) {
+					item := fmt.Sprintf("%s", arg_val)
+					if len(item) > 0 {
+						l.Args[fmt.Sprintf("%s", arg_key)] = fmt.Sprintf("%s", arg_val)
+					}
+				}
+			default:
+				slog.Debug("Unknown args type", "type", valueType)
 			}
 		case "transaction-message-reference":
 			l.TransactionMessageReference = GetStringP(v)
@@ -297,14 +334,20 @@ func (l *Log) Decode(data map[string]interface{}) {
 			l.Args["host"] = fmt.Sprintf("%v", v)
 		case "hostname":
 			l.Args["host"] = fmt.Sprintf("%v", v)
-		case "ip":
-			l.TraceIP = append(l.TraceIP, fmt.Sprintf("%v", v))
 		case "container-image":
 			l.Args["container-image"] = fmt.Sprintf("%s", v)
 		case "vendor":
 			l.Args["vendor"] = fmt.Sprintf("%s", v)
 		case "details":
 			l.Args = getMap("details", v, l.Args)
+			if value, found := l.Args["details-tags"]; found {
+				for _, tag := range strings.Split(value, ",") {
+					if len(tag) > 0 {
+						l.Tags = append(l.Tags, tag)
+					}
+				}
+				delete(l.Args, "details-tags")
+			}
 		default:
 			filtered := strings.ReplaceAll(key, "tags-", "")
 			switch filtered {
@@ -322,6 +365,7 @@ func (l *Log) Decode(data map[string]interface{}) {
 				l.Args["fluent-tag"] = fmt.Sprintf("%s", v)
 			case "fluent-time":
 				l.Args["fluent-time"] = fmt.Sprintf("%s", v)
+			case "env":
 			case "enviroment":
 				l.Args["enviroment"] = fmt.Sprintf("%s", v)
 			case "-container-type":
@@ -333,7 +377,7 @@ func (l *Log) Decode(data map[string]interface{}) {
 			case "fields":
 				l.Args = getMap("fields", v, l.Args)
 			default:
-				l.ExtraFields[filtered] = fmt.Sprintf("%s", v)
+				l.ExtraFields[makeKey("", filtered)] = fmt.Sprintf("%s", v)
 			}
 		}
 	}
@@ -342,34 +386,57 @@ func (l *Log) Decode(data map[string]interface{}) {
 }
 
 func getMap(prefix string, v any, src map[string]string) map[string]string {
-	if src == nil {
-		src = make(map[string]string)
-	}
-
 	if v == nil {
 		return src
 	}
 
-	if prefix != "" {
-		prefix = "args"
+	if src == nil {
+		src = make(map[string]string)
 	}
 
 	switch valueType := v.(type) {
 	case map[string]string:
-		for arg_key, arg_val := range valueType {
-			src[fmt.Sprintf("%s-%s", prefix, arg_key)] = arg_val
+		for arg_key, arg_val := range v.(map[string]string) {
+			src[makeKey(prefix, arg_key)] = arg_val
 		}
 	case map[interface{}]interface{}:
-		for arg_key, arg_val := range valueType {
-			src[fmt.Sprintf("%s-%v", prefix, arg_key)] = fmt.Sprint(arg_val)
-		}
 	case map[string]interface{}:
-		for arg_key, arg_val := range valueType {
-			src[fmt.Sprintf("%s-%v", prefix, arg_key)] = fmt.Sprint(arg_val)
+		for arg_key, arg_val := range v.(map[string]interface{}) {
+			switch avt := arg_val.(type) {
+			case string:
+				src[makeKey(prefix, arg_key)] = fmt.Sprintf("%s", arg_val)
+			case []string:
+			case []interface{}:
+				joinValues := []string{}
+				for _, val := range arg_val.([]interface{}) {
+					item := fmt.Sprintf("%s", val)
+					if len(item) > 0 {
+						joinValues = append(joinValues, item)
+					}
+				}
+				src[makeKey(prefix, arg_key)] = strings.Join(joinValues, ",")
+			case nil:
+				slog.Debug("Nil arg map", "prefix", prefix, "value", v, "Type", avt)
+			default:
+				src[makeKey(prefix, arg_key)] = fmt.Sprintf("%s", arg_val)
+			}
 		}
+	case []string:
+		slog.Debug("String array", "prefix", prefix, "value", v, "type", valueType)
+		src[makeKey(prefix, "value")] = strings.Join(v.([]string), ",")
+	default:
+		src[makeKey(prefix, "value")] = fmt.Sprintf("%s", v)
 	}
 
 	return src
+}
+
+func makeKey(prefix string, key any) string {
+	if len(prefix) > 0 {
+		prefix = prefix + "-"
+	}
+
+	return strings.ReplaceAll(strings.ToLower(fmt.Sprintf("%s%v", prefix, key)), "_", "-")
 }
 
 func (l *Log) GetInfo() RecordInfo {

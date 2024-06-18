@@ -104,15 +104,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	_, err = file.Write(jsonData)
+	n, err := file.Write(jsonData)
 
 	if err != nil {
 		slog.Error("Error writing data to file", "error", err)
 		os.Exit(1)
 	}
 
-	slog.Info("Data written", "filePath", filePath, "duration", time.Since(start), "fileSize", len(jsonData))
-
+	slog.Info("Data written", "filePath", filePath, "duration", time.Since(start), "fileSize", n)
 }
 
 func GenerateLog(pid int, count int, result chan domain.Record, wg *sync.WaitGroup, parallel int) {

@@ -47,9 +47,9 @@ type LogItem struct {
 }
 
 var Reset = "\033[0m"
-var Red = "\033[31m"
-var Green = "\033[32m"
-var Yellow = "\033[33m"
+var Red = "\033[31;1m"
+var Green = "\033[32;1m"
+var Yellow = "\033[33;1m"
 var Blue = "\033[34m"
 var Magenta = "\033[35m"
 var Cyan = "\033[36m"

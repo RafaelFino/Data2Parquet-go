@@ -18,8 +18,6 @@ var slog = logger.GetLogger()
 
 const KeySeparator = "-"
 
-var IgnoredFields = make(map[string]any)
-
 type Record interface {
 	GetInfo() RecordInfo
 	Decode(data map[string]interface{})
@@ -78,7 +76,26 @@ func GetStringP(s interface{}) *string {
 		return &emptyString
 	}
 
-	ret := fmt.Sprintf("%s", s)
+	var ret = ""
+
+	switch v := s.(type) {
+	case string:
+		ret = v
+	case []byte:
+		ret = string(v)
+	case int:
+		ret = fmt.Sprintf("%d", s)
+	case int32:
+		ret = fmt.Sprintf("%d", s)
+	case int64:
+		ret = fmt.Sprintf("%d", s)
+	case float32:
+		ret = fmt.Sprintf("%f", s)
+	case float64:
+		ret = fmt.Sprintf("%f", s)
+	default:
+		ret = fmt.Sprintf("%v", s)
+	}
 
 	if len(ret) == 0 {
 		return &emptyString

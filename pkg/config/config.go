@@ -493,6 +493,7 @@ func (c *Config) SetDefaults() {
 	if len(c.IgnoredFields) > 0 {
 		rgx := regexp.MustCompile(`;|:|,| |\||\/|\\`)
 		fields := strings.ToLower(rgx.ReplaceAllString(c.IgnoredFields, ","))
+
 		for _, f := range strings.Split(fields, ",") {
 			slog.Debug("Ignoring field", "field", f)
 			IgnoredFields[f] = nil

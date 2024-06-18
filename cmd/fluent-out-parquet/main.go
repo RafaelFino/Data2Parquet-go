@@ -15,6 +15,7 @@ import (
 	"data2parquet/pkg/logger" // "log/slog"
 	"data2parquet/pkg/receiver"
 )
+import "runtime/debug"
 
 var cfg = &config.Config{}
 var rcv *receiver.Receiver
@@ -67,7 +68,7 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int {
 	defer func() {
 		if r := recover(); r != nil {
-			slog.Error("Recovered in FLBPluginFlushCtx", "result", r)
+			slog.Error("Recovered in FLBPluginFlushCtx", "result", r, "stack", string(debug.Stack()))
 		}
 	}()
 
@@ -199,27 +200,23 @@ func CreateDataMap(data map[interface{}]interface{}, tm time.Time, tag string) m
 				key == "data" ||
 				key == "details" ||
 				key == "trace-attributes" {
-				args := make(map[string]string)
+				args := make(map[string]any)
 				for arg_key, arg_val := range v.(map[interface{}]interface{}) {
-					args[fmt.Sprint(arg_key)] = fmt.Sprint(arg_val)
+					args[fmt.Sprint(arg_key)] = arg_val
 				}
 				value = args
 			} else {
 				value = fmt.Sprintf("%v", v)
 			}
 		case "[]interface {}":
-			if key == "tags" ||
-				key == "trace_ip" ||
-				key == "ips" ||
-				key == "labels" {
-				tags := make([]string, 0)
-				for _, tag := range v.([]interface{}) {
-					tags = append(tags, string(tag.([]byte)))
+			tags := make([]string, len(v.([]interface{})))
+			for _, tag := range v.([]interface{}) {
+				item := string(tag.([]byte))
+				if len(item) > 0 {
+					tags = append(tags, item)
 				}
-				value = tags
-			} else {
-				value = fmt.Sprintf("%v", v)
 			}
+			value = tags
 		default:
 			value = fmt.Sprintf("%s", v)
 		}
