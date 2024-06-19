@@ -183,6 +183,10 @@ func (l *Log) Decode(data map[string]interface{}) {
 			continue
 		}
 
+		if _, ignore := config.MaskFields[key]; ignore {
+			v = "*"
+		}
+
 		switch key {
 		case "time":
 			l.Time = v.(string)

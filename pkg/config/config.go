@@ -21,6 +21,7 @@ type Config struct {
 	//IgnoredFields: IgnoredFields configuration tag, describe the fields to ignore in the data, its an optional field. The default value is empty. Fields must be separated by comma.
 	//JsonSchemaPath: JsonSchemaPath configuration tag, describe the path to the JSON schema file, its an optional field. The default value is empty. *This feature is not implemented yet.
 	//LogFormatter: LogFormatter configuration tag, describe the log formatter, this fields accepte four values, `color`, `text`, `json` or `multi`. The default value is `color`.
+	//MaskFields: MaskFields configuration tag, describe the fields to mask in the data, its an optional field. The default value is empty. Fields must be separated by comma.
 	//Port: Port configuration tag, describe the port of the server, its an optional field only used for HTTP server. The default value is `8080``.
 	//RecordType: RecordType configuration tag, describe the type of the record, this fields accepte two values, `log` or `dynamic``. The default value is log. *Dynamic type is not implemented yet.
 	//RecoveryAttempts: RecoveryAttempts configuration tag, describe the number of attempts to recover data, its an optional field. The default value is `0``.
@@ -57,6 +58,7 @@ type Config struct {
 	IgnoredFields         string `json:"ignored_fields,omitempty"`
 	JsonSchemaPath        string `json:"json_schema_path,omitempty"`
 	LogFormatter          string `json:"log_formatter,omitempty"`
+	MaskFields            string `json:"mask_fields,omitempty"`
 	Port                  int    `json:"port,omitempty"`
 	RecordType            string `json:"record_type"`
 	RecoveryAttempts      int    `json:"recovery_attempts,omitempty"`
@@ -86,8 +88,6 @@ type Config struct {
 	WriterRowGroupSize    int64  `json:"writer_row_group_size,omitempty"`
 	WriterType            string `json:"writer_type"`
 }
-
-var UseHMAC = false
 
 const BufferTypeMem = "mem"
 const BufferTypeRedis = "redis"
@@ -124,6 +124,7 @@ var keys = []string{
 	"IgnoredFields",
 	"JsonSchemaPath",
 	"LogFormatter",
+	"MaskFields",
 	"RecordType",
 	"RecoveryAttempts",
 	"RedisDataPrefix",
@@ -153,7 +154,9 @@ var keys = []string{
 	"WriterType",
 }
 
+var UseHMAC = false
 var IgnoredFields = make(map[string]any)
+var MaskFields = make(map[string]any)
 
 func NewConfig() *Config {
 	ret := &Config{}
@@ -318,6 +321,8 @@ func (c *Config) Set(cfg map[string]string) error {
 
 		case "IgnoredFields":
 			c.IgnoredFields = value
+		case "MaskFields":
+			c.MaskFields = value
 		default:
 			slog.Warn("Unknown key", "key", key, "value", value, "module", "config", "function", "Set")
 		}
@@ -339,6 +344,7 @@ func (c *Config) Get() map[string]interface{} {
 	ret["IgnoredFields"] = c.IgnoredFields
 	ret["JsonSchemaPath"] = c.JsonSchemaPath
 	ret["LogFormatter"] = c.LogFormatter
+	ret["MaskFields"] = c.MaskFields
 	ret["Port"] = c.Port
 	ret["RecordType"] = c.RecordType
 	ret["RecoveryAttempts"] = c.RecoveryAttempts
@@ -489,15 +495,25 @@ func (c *Config) SetDefaults() {
 	slog.SetFormatterByName(c.LogFormatter)
 
 	UseHMAC = c.UseHMAC
+	rgxFields := regexp.MustCompile(`;|:|,| |\||\/|\\`)
 
 	if len(c.IgnoredFields) > 0 {
-		rgx := regexp.MustCompile(`;|:|,| |\||\/|\\`)
-		fields := strings.ToLower(rgx.ReplaceAllString(c.IgnoredFields, ","))
+		fields := strings.ToLower(rgxFields.ReplaceAllString(c.IgnoredFields, ","))
 
 		for _, f := range strings.Split(fields, ",") {
-			slog.Debug("Ignoring field", "field", f)
+			slog.Info("Ignoring field", "field", f)
 			IgnoredFields[f] = nil
 		}
 	}
+
+	if len(c.MaskFields) > 0 {
+		fields := strings.ToLower(rgxFields.ReplaceAllString(c.MaskFields, ","))
+
+		for _, f := range strings.Split(fields, ",") {
+			slog.Info("Mask field", "field", f)
+			MaskFields[f] = nil
+		}
+	}
+
 	slog.Debug("Config", "data", c.Get())
 }

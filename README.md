@@ -440,8 +440,10 @@ Write data in a local file, use the tag `WriterFilePath` to choose path to store
 - **Debug**: Debug configuration tag, describe the debug mode, its an optional field. The debug mode will generate a lot of information. The default value is `false`.
 - **DisableLogColors**: DisableLogColors configuration tag, describe the disable log colors mode, its an optional field. The default value is `false`.
 - **FlushInterval**: FlushInterval configuration tag, describe the interval to flush data in seconds, its an important field to control the time to flush data. The default value is `5`.
+- **IgnoredFields**: IgnoredFields configuration tag, describe the fields to ignore in the data, its an optional field. The default value is empty. Fields must be separated by comma.
 - **JsonSchemaPath**: JsonSchemaPath configuration tag, describe the path to the JSON schema file, its an optional field. The default value is empty. *This feature is not implemented yet.
 - **LogFormatter**: LogFormatter configuration tag, describe the log formatter, this fields accepte four values, `color`, `text`, `json` or `multi`. The default value is `color`.
+- **MaskFields**: MaskFields configuration tag, describe the fields to mask in the data, its an optional field. The default value is empty. Fields must be separated by comma.
 - **RecordType**: RecordType configuration tag, describe the type of the record, this fields accepte two values, `log` or `dynamic`. The default value is log. *Dynamic type is not implemented yet.
 - **RecoveryAttempts**: RecoveryAttempts configuration tag, describe the number of attempts to recover data, its an optional field. The default value is `0`.
 - **RedisDataPrefix**: RedisDataPrefix configuration tag, describe the prefix of the data key in Redis, its an optional field. The default value is `data`.
@@ -475,8 +477,10 @@ type Config struct {
 	BufferType            string `json:"buffer_type"`
 	Debug                 bool   `json:"debug,omitempty"`
 	FlushInterval         int    `json:"flush_interval"`
+	IgnoredFields         string `json:"ignored_fields,omitempty"`
 	JsonSchemaPath        string `json:"json_schema_path,omitempty"`
 	LogFormatter          string `json:"log_formatter,omitempty"`
+	MaskFields            string `json:"mask_fields,omitempty"`
 	RecordType            string `json:"record_type"`
 	RecoveryAttempts      int    `json:"recovery_attempts,omitempty"`
 	RedisDataPrefix       string `json:"redis_data_prefix,omitempty"`
