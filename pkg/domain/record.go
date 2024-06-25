@@ -16,7 +16,7 @@ import (
 
 var slog = logger.GetLogger()
 
-const KeySeparator = "-"
+const KeySeparator = ":"
 
 type Record interface {
 	GetInfo() RecordInfo

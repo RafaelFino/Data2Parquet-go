@@ -9,10 +9,10 @@ import (
 )
 
 type LogInfo struct {
-	BusinessCapability string `msg:"business_capability" json:"business_capability,omitempty"`
-	BusinessDomain     string `msg:"business_domain" json:"business_domain,omitempty"`
-	BusinessService    string `msg:"business_service" json:"business_service,omitempty"`
-	ApplicationService string `msg:"application_service" json:"application_service,omitempty"`
+	BusinessCapability string `msg:"business-capability" json:"business-capability,omitempty"`
+	BusinessDomain     string `msg:"business-domain" json:"business-domain,omitempty"`
+	BusinessService    string `msg:"business-service" json:"business-service,omitempty"`
+	ApplicationService string `msg:"application-service" json:"application-service,omitempty"`
 	key                string
 }
 
