@@ -1,6 +1,7 @@
 #!/bin/bash
+docker buildx build docker/golang-builder/ -t golang-builder
 docker run \
     -v ./:/go/src \
-    --entrypoint 'make' \
-    -w /go/src \
-    golang:1.20 
+    --rm \
+    --entrypoint make \
+    golang-builder linux

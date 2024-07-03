@@ -82,4 +82,4 @@ if [ "$par" == "linux" ]; then
     exit 0    
 fi
 
-echo ">> Usage: ./build.sh [clean|lint|test|all|current]"
+echo ">> Usage: ./build.sh [clean|lint|test|all|current|linux]"

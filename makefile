@@ -13,7 +13,10 @@ lint:
 test:
 	@./build.sh test
 
-full:
+container:
+	@./docker-build.sh
+
+all:
 	@./build.sh clean
 	@./build.sh lint
 	@./build.sh test
